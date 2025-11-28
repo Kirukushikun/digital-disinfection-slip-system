@@ -13,9 +13,9 @@ class SessionController extends Controller
     {
         // If user is logged in, redirect to /home
         if (Auth::check()) {
-            return redirect('/home');
+            return redirect('/');
         }
-
+        
         return view('auth.login');
     }
 
