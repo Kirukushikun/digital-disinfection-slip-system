@@ -17,7 +17,7 @@
                 @endguest
 
                 @auth
-                    <x-nav-button href="/home">Dashboard</x-nav-button>
+                    <x-nav-button href="{{ route(auth()->user()->dashboardRoute()) }}">Dashboard</x-nav-button>
                 @endauth
             </div>
         </div>

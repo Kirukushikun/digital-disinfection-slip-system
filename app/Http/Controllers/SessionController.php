@@ -31,10 +31,12 @@ class SessionController extends Controller
                 'password'=> '',
             ]);
         }
-        
 
         request()->session()->regenerate();
 
-        return redirect('/home');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return redirect()->route($user->dashboardRoute());
     }
 }

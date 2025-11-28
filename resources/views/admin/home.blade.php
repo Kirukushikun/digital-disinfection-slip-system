@@ -1,3 +1,3 @@
 <x-layout>
-    HOME
+    ADMIN HOME
 </x-layout>

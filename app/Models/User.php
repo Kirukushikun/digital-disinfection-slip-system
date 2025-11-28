@@ -39,4 +39,16 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Resolve the named route for the user's dashboard.
+     */
+    public function dashboardRoute(): string
+    {
+        return match ((int) $this->user_type) {
+            1 => 'admin.home',
+            2 => 'superadmin.home',
+            default => 'user.home', // includes 0 and null
+        };
+    }
 }
