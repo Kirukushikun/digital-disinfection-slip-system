@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Setting;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,14 +16,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create default user
         User::factory()->create([
             'first_name' => 'John',
             'middle_name' => 'Corpuz',
             'last_name' => 'Doe',
             'username' => 'JDoe',
             'user_type' => '0',
+        ]);
+
+        // Create default setting for attachment retention
+        Setting::factory()->create([
+            'setting_name' => 'attachment_retention_days',
+            'value' => '30',
         ]);
     }
 }
