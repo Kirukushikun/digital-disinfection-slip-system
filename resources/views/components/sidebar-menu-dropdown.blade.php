@@ -1,19 +1,19 @@
 @props([
-    'label' => 'Menu',
+    'active' => false,  // receives if any child route is active
     'icon' => null,
+    'label' => 'Menu'
 ])
 
-<div x-data="{ open: false }" class="space-y-1">
+<div x-data="{ open: {{ $active ? 'true' : 'false' }} }">
     <button
         type="button"
         @click="open = !open"
-        class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 rounded-md transition-colors duration-200"
+        class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-md transition-colors duration-200
+            {{ $active ? 'bg-gray-100/70 shadow-md' : 'text-gray-800 hover:bg-gray-100' }}"
     >
         <div class="flex items-center gap-3">
             @if($icon)
-                <span class="shrink-0 w-5 h-5">
-                    {!! $icon !!}
-                </span>
+                <span class="shrink-0 w-5 h-5">{!! $icon !!}</span>
             @endif
             <span>{{ $label }}</span>
         </div>
@@ -28,9 +28,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
     </button>
-    
+
     <div x-show="open" x-transition class="pl-4 space-y-1">
         {{ $slot }}
     </div>
 </div>
-

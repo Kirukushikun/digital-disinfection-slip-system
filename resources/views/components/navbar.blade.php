@@ -21,7 +21,7 @@
         
         <div 
             class="flex flex-col transition-all duration-200"
-            :class="open ? 'lg:ml-62' : ''"
+            :class="open ? 'lg:ml-60' : ''"
         >
             <span class="font-semibold text-gray-800 text-lg">{{ $module }}</span>
             <span class="text-sm text-gray-600">{{ now()->format('F d, Y') }}</span>
@@ -48,7 +48,7 @@
             x-on:click.away="open = false"
         >
             <!-- Menu Header -->
-            <div class="flex items-center justify-between gap-4">
+            <div class="bg-gray-100/90 shadow-md rounded-md p-4 flex items-center justify-between gap-4">
                 <div class="flex flex-col flex-1 min-w-0">
                     <span class="font-semibold text-gray-800 text-base wrap-break-word leading-tight">
                         {{ auth()->user()->first_name }} {{ strtoupper(substr(auth()->user()->middle_name, 0, 1)) }}. {{ auth()->user()->last_name }}
@@ -70,10 +70,22 @@
             <!-- Divider -->
             <hr class="border-2 border-black" />
 
-            <!-- Modules Section -->
+            <!-- Modules Section / Sidebar -->
             <div class="space-y-1">
-                {{ $sidebar ?? '' }}
-            </div>
+                @switch(auth()->user()->user_type)
+                    @case(0)
+                        @livewire('sidebar-user', ['currentRoute' => Route::currentRouteName()])
+                        @break
+            
+                    @case(1)
+                        @livewire('sidebar-admin')
+                        @break
+            
+                    @case(2)
+                        @livewire('sidebar-super-admin')
+                        @break
+                @endswitch
+            </div>            
 
             <!-- Divider -->
             <hr class="border-2 border-black" />
@@ -101,4 +113,3 @@
         </div>
     </div>
 </nav>
-
