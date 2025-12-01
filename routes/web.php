@@ -10,6 +10,11 @@ Route::view("/", "landing");
 
 Route::get("/login", [SessionController::class,'create'])->name('login');
 Route::post('/login', [SessionController::class,'store'])->name('login.store');
+
+// Location-based login routes
+Route::get("/location/{location}/login", [SessionController::class,'create'])->name('location.login');
+Route::post('/location/{location}/login', [SessionController::class,'store'])->name('location.login.store');
+
 Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group(function () {

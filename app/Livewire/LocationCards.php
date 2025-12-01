@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Livewire;
+
+use Livewire\Component;
+use App\Models\Location;
+use App\Models\DisinfectionSlip;
+
+class LocationCards extends Component
+{
+    protected $listeners = ['refreshLocationCards' => '$refresh'];
+
+    public function render()
+    {
+        // Get all active locations with their attachments
+        $locations = Location::where('disabled', false)
+            ->with('attachment')
+            ->get();
+    
+        // Get all ongoing slip counts in a single query for better performance
+        // Only query if there are locations to avoid empty whereIn
+        $ongoingCounts = collect();
+        if ($locations->isNotEmpty()) {
+            $ongoingCounts = DisinfectionSlip::where('status', 0)
+                ->whereIn('destination_id', $locations->pluck('id'))
+                ->selectRaw('destination_id, COUNT(*) as count')
+                ->groupBy('destination_id')
+                ->pluck('count', 'destination_id');
+        }
+    
+        // Map counts to locations
+        $locationsWithCounts = $locations->map(function ($location) use ($ongoingCounts) {
+            $location->ongoing_count = $ongoingCounts->get($location->id, 0);
+            return $location;
+        });
+    
+        return view('livewire.location-cards', [
+            'locations' => $locationsWithCounts
+        ]);
+    }    
+}

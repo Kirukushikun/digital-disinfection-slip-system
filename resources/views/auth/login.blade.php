@@ -19,11 +19,29 @@
             <div class="flex flex-col items-center mb-6">
                 <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600" class="h-10">
                 <h2 class="mt-6 text-2xl font-semibold text-gray-900 text-center">
-                    Log in to your account
+                    @if(isset($location) && $location)
+                        Log in to your account
+                    @else
+                        Log in to your account as admin
+                    @endif
                 </h2>
             </div>
 
-            <form method="POST" action="/login" class="space-y-6">
+            @if(isset($location) && $location)
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        @if($location->attachment_id && $location->attachment)
+                            <img src="{{ asset('storage/' . $location->attachment->path) }}" alt="{{ $location->location_name }}" class="h-12 w-auto object-contain">
+                        @endif
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium">Location</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ $location->location_name }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ isset($location) && $location ? route('location.login.store', $location->id) : route('login.store') }}" class="space-y-6">
                 @csrf
 
                 <div>
