@@ -74,15 +74,15 @@
             <div class="space-y-1">
                 @switch(auth()->user()->user_type)
                     @case(0)
-                        @livewire('sidebar-user', ['currentRoute' => Route::currentRouteName()])
+                        <livewire:sidebar-user :currentRoute="Route::currentRouteName()" />
                         @break
             
                     @case(1)
-                        @livewire('sidebar-admin')
+                        <livewire:sidebar-admin />
                         @break
             
                     @case(2)
-                        @livewire('sidebar-super-admin')
+                        <livewire:sidebar-super-admin />
                         @break
                 @endswitch
             </div>            
