@@ -92,13 +92,12 @@
 
             <!-- User Section -->
             <div class="space-y-3">
-                <button
-                    type="button"
-                    class="w-full rounded-full px-3 py-2 text-sm font-semibold text-gray-800 bg-[#FFF7F1] hover:bg-gray-200 hover:shadow-md hover:scale-[1.02] focus:ring-2 focus:ring-[#FFF7F1] transition-all duration-200 cursor-not-allowed opacity-60"
-                    disabled
+                <a
+                    href="{{ route('password.change') }}"
+                    class="w-full rounded-full px-3 py-2 text-sm font-semibold text-gray-800 bg-[#FFF7F1] hover:bg-gray-200 hover:shadow-md hover:scale-[1.02] focus:ring-2 focus:ring-[#FFF7F1] transition-all duration-200 cursor-pointer text-center block"
                 >
                     Change Password
-                </button>
+                </a>
                 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf

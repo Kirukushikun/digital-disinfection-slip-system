@@ -17,6 +17,13 @@ Route::post('/location/{location}/login', [SessionController::class,'store'])->n
 
 Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
 
+// Password change routes (requires authentication)
+Route::middleware('auth')->group(function () {
+    Route::get('/password/change', [App\Http\Controllers\PasswordController::class, 'show'])->name('password.change');
+    Route::post('/password/verify', [App\Http\Controllers\PasswordController::class, 'verify'])->name('password.verify');
+    Route::put('/password', [App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
+});
+
 Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     Route::get('/incoming-trucks', [UserController::class, 'incomingTrucks'])->name('incoming-trucks');
