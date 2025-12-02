@@ -38,7 +38,6 @@ class TruckListCompleted extends Component
                     ->orWhere('destination_id', $location);
             })
             ->where('status', 2)
-            ->whereNotNull('completed_at')
 
             ->orderBy('completed_at', 'desc')
             ->paginate(10);

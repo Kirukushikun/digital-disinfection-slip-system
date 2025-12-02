@@ -49,13 +49,17 @@
             {{-- Hatchery Guard --}}
             <div class="grid grid-cols-3 mb-2">
                 <div class="font-semibold text-gray-700">Hatchery Guard:</div>
-                <div class="col-span-2 text-gray-900">{{ $selectedSlip->hatcheryGuard->name ?? 'N/A' }}</div>
+                <div class="col-span-2 text-gray-900">
+                    {{ $selectedSlip->hatcheryGuard ? $selectedSlip->hatcheryGuard->first_name . ' ' . $selectedSlip->hatcheryGuard->last_name : 'N/A' }}
+                </div>
             </div>
 
             {{-- Received By --}}
             <div class="grid grid-cols-3 mb-2">
                 <div class="font-semibold text-gray-700">Received By:</div>
-                <div class="col-span-2 text-gray-900">{{ $selectedSlip->receivedGuard->name ?? 'N/A' }}</div>
+                <div class="col-span-2 text-gray-900">
+                    {{ $selectedSlip->receivedGuard ? $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name : 'N/A' }}
+                </div>
             </div>
 
             {{-- Completion Date --}}
