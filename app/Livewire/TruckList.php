@@ -93,10 +93,14 @@ class TruckList extends Component
         $slips = $query
             // SEARCH (only search within already filtered type)
             ->when($this->search, function($q) {
-                $q->whereHas('truck', function($t) {
-                    $t->where('plate_number', 'like', '%' . $this->search . '%');
+                $q->where(function($query) {
+                    $query->where('slip_id', 'like', '%' . $this->search . '%')
+                          ->orWhereHas('truck', function($t) {
+                              $t->where('plate_number', 'like', '%' . $this->search . '%');
+                          });
                 });
             })
+            
 
             // DATE RANGE FILTER
             ->when($this->filtersActive && $this->appliedDateFrom, function($q) {

@@ -1,5 +1,9 @@
-<div>
+@php
+    $isHatcheryAssigned = auth()->id() === optional($selectedSlip?->hatcheryGuard)->id;
+    $isNotCompleted = $selectedSlip?->status != 2;
+@endphp
 
+<div>
     {{-- MAIN DETAILS MODAL --}}
     <x-modal-template show="showDetailsModal"
         title="{{ strtoupper($selectedSlip?->location?->location_name . ' DISINFECTION SLIP DETAILS') }}"
@@ -11,7 +15,7 @@
             <div class="grid grid-cols-3 mb-2">
                 <div class="font-semibold text-gray-700">Date:</div>
                 <div class="col-span-2 text-gray-900">
-                    {{ $selectedSlip->created_at->format('M d, Y - h:i') }}
+                    {{ $selectedSlip->created_at->format('M d, Y - h:i A') }}
                 </div>
             </div>
 
@@ -76,7 +80,7 @@
                 <div class="col-span-2">
                     @if ($selectedSlip->attachment)
                         <button wire:click="openAttachmentModal('{{ $selectedSlip->attachment->file_path }}')"
-                            class="text-orange-500 hover:text-orange-600 underline">
+                            class="text-orange-500 hover:cursor-pointer hover:text-orange-600 underline">
                             See Attachment
                         </button>
                     @else
@@ -90,10 +94,15 @@
 
         {{-- Footer --}}
         <x-slot name="footer">
-            <button wire:click="closeDetailsModal"
-                class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <x-submit-button wire:click="closeDetailsModal" color="white">
                 Close
-            </button>
+            </x-submit-button>
+
+            @if ($isHatcheryAssigned && $isNotCompleted)
+                <x-submit-button wire:click="editDetailsModal" color="blue">
+                    Edit
+                </x-submit-button>
+            @endif
         </x-slot>
 
     </x-modal-template>
@@ -108,10 +117,10 @@
             @endif
 
             <x-slot name="footer">
-                <button wire:click="closeAttachmentModal"
+                <x-submit-button wire:click="closeAttachmentModal"
                     class="px-4 py-2 text-sm bg-gray-200 rounded-lg hover:bg-gray-300">
                     Close
-                </button>
+                </x-submit-button>
             </x-slot>
         </x-modal-template>
     @endif

@@ -36,135 +36,52 @@
     {{-- Disinfection Slip Details Modal --}}
     <livewire:disinfection-slip />
 
-    {{-- Table --}}
-    <div wire:poll class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-center">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col"
-                        class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-center w-[40%]">
-                        Plate #
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-center w-[40%]">
-                        Status
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-center w-[20%]">
-                        Action
-                    </th>
-                </tr>
-            </thead>
+    {{-- Card List --}}
+    <div wire:poll class="space-y-3">
 
-            <tbody class="divide-y divide-gray-200">
-                @forelse ($slips as $slip)
-                    <tr class="hover:bg-gray-100 transition">
+        @forelse ($slips as $slip)
+            @php
+                $statusMap = [
+                    0 => ['label' => 'Ongoing', 'color' => 'border-red-500 bg-red-50'],
+                    1 => ['label' => 'Disinfecting', 'color' => 'border-orange-500 bg-orange-50'],
+                    2 => ['label' => 'Completed', 'color' => 'border-green-500 bg-green-50'],
+                ];
+                $status = $slip->status;
+            @endphp
 
-                        {{-- Plate # --}}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 text-center w-[40%]">
-                            {{ $slip->truck->plate_number ?? 'N/A' }}
-                        </td>
+            {{-- Card --}}
+            <div
+                class="flex justify-between items-center p-4 border-l-4 rounded-lg shadow-sm transition hover:shadow-md {{ $statusMap[$status]['color'] }}">
 
-                        {{-- Status --}}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center w-[40%]">
-                            @php
-                                $status = $slip->status;
+                <div class="grid grid-cols-2 gap-y-2 text-sm">
+                    <div class="font-semibold text-gray-600">Slip ID:</div>
+                    <div class="text-gray-800">{{ $slip->slip_id }}</div>
 
-                                $statusMap = [
-                                    0 => ['label' => 'Ongoing', 'color' => 'bg-red-500'],
-                                    1 => ['label' => 'Disinfecting', 'color' => 'bg-orange-500'],
-                                    2 => ['label' => 'Completed', 'color' => 'bg-green-500'],
-                                ];
-                            @endphp
+                    <div class="font-semibold text-gray-600">Plate #:</div>
+                    <div class="text-gray-800">{{ $slip->truck->plate_number }}</div>
+                </div>
 
-                            <span class="flex items-center justify-center gap-2">
-                                <span class="w-3 h-3 rounded-full {{ $statusMap[$status]['color'] }}"></span>
-                                <span class="font-medium">{{ $statusMap[$status]['label'] }}</span>
-                            </span>
-                        </td>
 
-                        {{-- Action --}}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center w-[20%]">
-                            <x-submit-button
-                                wire:click="$dispatch('open-disinfection-details', { id: {{ $slip->id }} })"
-                                color="orange" class="w-auto px-4 whitespace-nowrap" type="button">
-                                View Details
-                            </x-submit-button>
-                        </td>
+                {{-- Right Side --}}
+                <div class="flex flex-col items-end">
+                    {{-- Action btn --}}
+                    <x-submit-button wire:click="$dispatch('open-disinfection-details', { id: {{ $slip->id }} })"
+                        class="px-4 py-2 whitespace-nowrap bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+                        View
+                    </x-submit-button>
 
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="3" class="py-4 text-gray-500 text-center">
-                            No truck slips found.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </div>
+            </div>
+
+        @empty
+
+            <div class="text-center py-6 text-gray-500">
+                No truck slips found.
+            </div>
+        @endforelse
+
     </div>
 
     {{-- Pagination --}}
-    <div class="pt-4">
-        <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-600">
-                Showing
-                {{ $slips->firstItem() }} – {{ $slips->lastItem() }}
-                of
-                {{ $slips->total() }} entries
-            </div>
-
-            <nav class="flex items-center space-x-1" aria-label="Pagination">
-                @if ($slips->onFirstPage())
-                    <button
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed">«</button>
-                @else
-                    <button wire:click="previousPage"
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100">«</button>
-                @endif
-
-                @php
-                    $current = $slips->currentPage();
-                    $last = $slips->lastPage();
-
-                    if ($last <= 3) {
-                        $start = 1;
-                        $end = $last;
-                    } else {
-                        if ($current === 1) {
-                            $start = 1;
-                            $end = 3;
-                        } elseif ($current === $last) {
-                            $start = $last - 2;
-                            $end = $last;
-                        } else {
-                            $start = $current - 1;
-                            $end = $current + 1;
-                        }
-                    }
-                @endphp
-
-                @for ($i = $start; $i <= $end; $i++)
-                    @if ($i === $current)
-                        <button
-                            class="min-w-10 py-2.5 px-4 rounded-full bg-gray-100 text-gray-800 text-sm">{{ $i }}</button>
-                    @else
-                        <button wire:click="gotoPage({{ $i }})"
-                            class="min-w-10 py-2.5 px-4 rounded-full hover:bg-gray-100 text-gray-800 text-sm">
-                            {{ $i }}
-                        </button>
-                    @endif
-                @endfor
-
-                @if ($slips->hasMorePages())
-                    <button wire:click="nextPage"
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100">»</button>
-                @else
-                    <button
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed">»</button>
-                @endif
-            </nav>
-        </div>
-    </div>
-
+    <x-nav-pagination :paginator="$slips" />
 </div>
