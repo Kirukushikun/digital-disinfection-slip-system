@@ -21,12 +21,18 @@ class DisinfectionSlip extends Model
         'hatchery_guard_id',
         'received_guard_id',
         'status',
+        'completed_at',
+    ];
+
+    protected $casts = [
+        'completed_at' => 'datetime',
     ];
 
     protected static function boot()
     {
         parent::boot();
 
+        // Auto-generate slip_id
         static::creating(function ($model) {
             if (empty($model->slip_id)) {
                 $year = date('y');
@@ -44,6 +50,19 @@ class DisinfectionSlip extends Model
                 }
 
                 $model->slip_id = sprintf("%s-%05d", $year, $nextNumber);
+            }
+        });
+
+        // Auto-manage completed_at based on status
+        static::saving(function ($slip) {
+            if ($slip->status == 2) {
+                // Set completed_at when status becomes 2 (if not already set)
+                if (is_null($slip->completed_at)) {
+                    $slip->completed_at = now();
+                }
+            } else {
+                // Clear completed_at if status is not 2
+                $slip->completed_at = null;
             }
         });
     }

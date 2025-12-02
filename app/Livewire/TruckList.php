@@ -11,7 +11,7 @@ class TruckList extends Component
 {
     use WithPagination;
 
-    public $type = 'incoming';
+    public $type = 'incoming'; // incoming or outgoing
     protected $paginationTheme = 'tailwind';
     
     public $search = '';
@@ -32,8 +32,9 @@ class TruckList extends Component
         1 => 'Disinfecting',
     ];
 
-    public function mount()
+    public function mount($type = 'incoming')
     {
+        $this->type = $type;
         $this->filterDateFrom = now()->format('Y-m-d');
         $this->filterDateTo = now()->format('Y-m-d');
     }
@@ -76,8 +77,21 @@ class TruckList extends Component
     {
         $location = Session::get('location_id');
 
-        $slips = DisinfectionSlip::with('truck')
-            // SEARCH
+        // Base query with type filter FIRST
+        $query = DisinfectionSlip::query();
+
+        // Apply type-specific filter first (most restrictive)
+        if ($this->type === 'incoming') {
+            $query->where('destination_id', $location)
+                  ->whereIn('status', [0, 1]);
+        } else {
+            $query->where('location_id', $location)
+                  ->whereIn('status', [0, 1]);
+        }
+
+        // Then apply other filters
+        $slips = $query
+            // SEARCH (only search within already filtered type)
             ->when($this->search, function($q) {
                 $q->whereHas('truck', function($t) {
                     $t->where('plate_number', 'like', '%' . $this->search . '%');
@@ -97,26 +111,7 @@ class TruckList extends Component
                 $q->where('status', $this->appliedStatus);
             })
 
-            // INCOMING
-            ->when($this->type === 'incoming', fn($q) =>
-                $q->where('destination_id', $location)
-                ->whereIn('status', [0, 1])
-            )
-
-            // OUTGOING
-            ->when($this->type === 'outgoing', fn($q) =>
-                $q->where('location_id', $location)
-                ->whereIn('status', [0, 1])
-            )
-
-            // COMPLETED
-            ->when($this->type === 'completed', fn($q) =>
-                $q->where(function($query) use ($location) {
-                    $query->where('location_id', $location)
-                        ->orWhere('destination_id', $location);
-                })->where('status', 2)
-            )
-
+            ->with('truck') // Load relationship only for final filtered results
             ->orderBy('created_at', 'desc')
             ->paginate(5);
 

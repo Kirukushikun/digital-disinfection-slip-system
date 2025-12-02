@@ -5,5 +5,5 @@
         </x-slot:sidebar>
     </x-navbar>
 
-    <livewire:truck-list type="completed" />
+    <livewire:truck-list-completed/>
 </x-layout>
