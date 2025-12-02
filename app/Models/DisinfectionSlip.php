@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DisinfectionSlip extends Model
 {
-    use HasFactory;
-    
+    use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'slip_id',
         'truck_id',
@@ -26,47 +26,44 @@ class DisinfectionSlip extends Model
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected static function boot()
     {
         parent::boot();
 
-        // Auto-generate slip_id
-        static::creating(function ($model) {
-            if (empty($model->slip_id)) {
-                $year = date('y');
-                $prefix = $year . '-';
-
-                $lastSlip = self::where('slip_id', 'LIKE', $prefix . '%')
-                    ->orderBy('slip_id', 'desc')
-                    ->lockForUpdate()
-                    ->first();
-
-                $nextNumber = 1;
-                if ($lastSlip) {
-                    $lastNumber = (int) substr($lastSlip->slip_id, 3);
-                    $nextNumber = $lastNumber + 1;
-                }
-
-                $model->slip_id = sprintf("%s-%05d", $year, $nextNumber);
-            }
-        });
-
-        // Auto-manage completed_at based on status
-        static::saving(function ($slip) {
-            if ($slip->status == 2) {
-                // Set completed_at when status becomes 2 (if not already set)
-                if (is_null($slip->completed_at)) {
-                    $slip->completed_at = now();
-                }
-            } else {
-                // Clear completed_at if status is not 2
-                $slip->completed_at = null;
+        static::creating(function ($slip) {
+            if (empty($slip->slip_id)) {
+                $slip->slip_id = self::generateSlipId();
             }
         });
     }
 
+    public static function generateSlipId()
+    {
+        $year = date('y'); // Get 2-digit year (e.g., 25 for 2025)
+        
+        // Get the last slip ID for this year
+        $lastSlip = self::withTrashed()
+            ->where('slip_id', 'like', $year . '-%')
+            ->orderBy('slip_id', 'desc')
+            ->first();
+        
+        if ($lastSlip) {
+            // Extract the number part and increment
+            $lastNumber = (int) substr($lastSlip->slip_id, 3); // Get number after "YY-"
+            $newNumber = $lastNumber + 1;
+        } else {
+            // First slip of the year
+            $newNumber = 1;
+        }
+        
+        // Format: YY-00001
+        return $year . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    // Relationships
     public function truck()
     {
         return $this->belongsTo(Truck::class);
@@ -74,7 +71,7 @@ class DisinfectionSlip extends Model
 
     public function location()
     {
-        return $this->belongsTo(Location::class, 'location_id');
+        return $this->belongsTo(Location::class);
     }
 
     public function destination()

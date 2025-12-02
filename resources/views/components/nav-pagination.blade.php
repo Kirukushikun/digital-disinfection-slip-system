@@ -9,8 +9,7 @@
             {{-- Showing text --}}
             <div class="text-sm text-gray-600 text-center md:text-left">
                 Showing
-                {{ $paginator->firstItem() }} –
-                {{ $paginator->lastItem() }}
+                {{ $paginator->firstItem() }}–{{ $paginator->lastItem() }}
                 of
                 {{ $paginator->total() }} entries
             </div>

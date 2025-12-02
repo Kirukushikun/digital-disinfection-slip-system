@@ -10,6 +10,8 @@
             'text-gray-800 bg-[#EEE9E1] border border-gray-300 hover:bg-gray-200 hover:border-gray-400 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] focus:ring-[#EEE9E1]',
         'blue' =>
             'text-gray-800 bg-blue-200 border border-blue-100 hover:bg-blue-400 hover:border-blue-400 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] focus:ring-blue-400',
+        'red' =>
+            'text-gray-800 bg-red-200 border border-red-100 hover:bg-red-400 hover:border-red-400 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] focus:ring-red-400',
     ];
 
     $preset = $presets[$color] ?? $presets['orange'];

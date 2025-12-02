@@ -23,8 +23,7 @@
     @endif
 
     <x-slot name="footer">
-        <x-submit-button wire:click="closeAttachmentModal" color="white"
-            class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+        <x-submit-button wire:click="closeAttachmentModal" color="orange">
             Close
         </x-submit-button>
     </x-slot>
