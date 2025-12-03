@@ -5,7 +5,11 @@ namespace App\Livewire\Trucks;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\DisinfectionSlip;
+use App\Models\Truck;
+use App\Models\Location;
+use App\Models\Driver;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class TruckList extends Component
 {
@@ -32,11 +36,29 @@ class TruckList extends Component
         1 => 'Disinfecting',
     ];
 
+    // Create Modal
+    public $showCreateModal = false;
+    public $truck_id;
+    public $destination_id;
+    public $driver_id;
+    public $reason_for_disinfection;
+
+    public $trucks;
+    public $locations;
+    public $drivers;
+
+    protected $listeners = ['slip-created' => '$refresh'];
+
     public function mount($type = 'incoming')
     {
         $this->type = $type;
         $this->filterDateFrom = now()->format('Y-m-d');
         $this->filterDateTo = now()->format('Y-m-d');
+
+        // Load dropdown data
+        $this->trucks = Truck::all();
+        $this->locations = Location::all();
+        $this->drivers = Driver::all();
     }
 
     public function updatedSearch()
@@ -71,6 +93,68 @@ class TruckList extends Component
         $this->filterDateFrom = now()->format('Y-m-d');
         $this->filterDateTo = now()->format('Y-m-d');
         $this->filterStatus = '';
+    }
+
+    public function openCreateModal()
+    {
+        $this->resetCreateForm();
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal()
+    {
+        $this->showCreateModal = false;
+        // Use dispatch to reset form after modal animation completes
+        $this->dispatch('modal-closed');
+    }
+
+    public function resetCreateForm()
+    {
+        $this->truck_id = null;
+        $this->destination_id = null;
+        $this->driver_id = null;
+        $this->reason_for_disinfection = null;
+        $this->resetErrorBag();
+    }
+
+    public function createSlip()
+    {
+        $this->validate([
+            'truck_id' => 'required|exists:trucks,id',
+            'destination_id' => 'required|exists:locations,id',
+            'driver_id' => 'required|exists:drivers,id',
+            'reason_for_disinfection' => 'nullable|string|max:1000',
+        ]);
+
+        $slip = DisinfectionSlip::create([
+            'truck_id' => $this->truck_id,
+            'destination_id' => $this->destination_id,
+            'driver_id' => $this->driver_id,
+            'reason_for_disinfection' => $this->reason_for_disinfection,
+            'location_id' => Session::get('location_id'),
+            'hatchery_guard_id' => Auth::id(),
+            'status' => 0, // Ongoing
+            'slip_id' => $this->generateSlipId(),
+        ]);
+
+        $this->dispatch('toast', message: 'Disinfection slip created successfully!', type: 'success');
+        
+        // Close modal first
+        $this->showCreateModal = false;
+        
+        // Then reset form and page after a brief delay
+        $this->dispatch('modal-closed');
+        $this->resetPage();
+    }
+
+    private function generateSlipId()
+    {
+        $year = now()->format('y'); // Get 2-digit year (e.g., 25, 26)
+        
+        // Count slips created in the current year
+        $count = DisinfectionSlip::whereYear('created_at', now()->year)->count() + 1;
+        
+        return "{$year}-" . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
     
     public function render()
