@@ -36,48 +36,36 @@
 
             {{-- Card (Now Clickable) --}}
             <div wire:click="$dispatch('open-disinfection-details', { id: {{ $slip->id }} })"
-                class="p-4 border-l-4 rounded-lg shadow-sm transition hover:shadow-md cursor-pointer flex justify-between items-center {{ $statusMap[$status]['color'] }}">
+                class="flex justify-between items-center p-4 border-l-4 rounded-lg shadow-sm transition hover:shadow-md cursor-pointer {{ $statusMap[$status]['color'] }}">
 
-                {{-- Left Side Info --}}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-y-2 text-sm">
-
-                    {{-- Status Badge --}}
-                    <div
-                        class="col-span-2 md:col-span-4 px-3 py-1 text-xs font-semibold text-white rounded-full w-fit
-                                {{ $status === 0 ? 'bg-red-500' : ($status === 1 ? 'bg-orange-500' : 'bg-green-500') }}">
-                        {{ $statusMap[$status]['label'] }}
-                    </div>
-
+                <div class="grid grid-cols-2 gap-y-2 text-sm">
                     <div class="font-semibold text-gray-600">Slip ID:</div>
                     <div class="text-gray-800">{{ $slip->slip_id }}</div>
 
                     <div class="font-semibold text-gray-600">Plate #:</div>
                     <div class="text-gray-800">{{ $slip->truck->plate_number ?? 'N/A' }}</div>
-
-                    <div class="font-semibold text-gray-600">Completed At:</div>
-                    <div class="text-gray-800">
-                        @if ($slip->completed_at)
-                            <div class="flex flex-col">
-                                <span>{{ \Carbon\Carbon::parse($slip->completed_at)->format('M d, Y') }}</span>
-                                <span
-                                    class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($slip->completed_at)->format('h:i A') }}</span>
-                            </div>
-                        @else
-                            <span class="text-gray-400">N/A</span>
-                        @endif
-                    </div>
                 </div>
 
-                {{-- Right Side - Arrow Icon --}}
-                <div class="flex items-center">
-                    <svg class="size-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
+                {{-- Right Side --}}
+                <div class="flex flex-col items-end gap-1">
+                    {{-- ROW 1: Receiver Name --}}
+                    @if ($slip->receivedGuard)
+                        <div class="text-xs text-gray-700 font-medium">
+                            {{ $slip->receivedGuard->first_name }} {{ $slip->receivedGuard->last_name }}
+                        </div>
+                    @endif
+
+                    {{-- ROW 2: Completion Date --}}
+                    @if ($slip->completed_at)
+                        <div class="text-xs text-gray-600">
+                            {{ \Carbon\Carbon::parse($slip->completed_at)->format('M d, Y h:i A') }}
+                        </div>
+                    @endif
                 </div>
             </div>
 
         @empty
+
             <div class="text-center py-6 text-gray-500">
                 No truck slips found.
             </div>

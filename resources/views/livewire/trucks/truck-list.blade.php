@@ -20,14 +20,28 @@
         </div>
 
         {{-- Filter Button --}}
-        <x-buttons.submit-button wire:click="$toggle('showFilters')"
-            class="w-auto px-4 py-2 flex items-center gap-2 whitespace-nowrap bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
-            <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 12h12m-7 8h2" />
-            </svg>
-            Filter
+        <x-buttons.submit-button wire:click="$toggle('showFilters')" color="orange">
+            <div class="flex items-center gap-2">
+                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 12h12m-7 8h2" />
+                </svg>
+                <span>Filter</span>
+            </div>
         </x-buttons.submit-button>
+
+        {{-- Add Button (Only for Outgoing) --}}
+        @if ($type === 'outgoing')
+            <x-buttons.submit-button color="blue">
+                <div class="flex items-center gap-2">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Add</span>
+                </div>
+            </x-buttons.submit-button>
+        @endif
     </div>
 
     {{-- Filter Modal --}}

@@ -24,7 +24,7 @@ class TruckListCompleted extends Component
     {
         $location = Session::get('location_id');
 
-        $slips = DisinfectionSlip::with('truck')
+        $slips = DisinfectionSlip::with(['truck', 'receivedGuard'])
             // SEARCH
             ->when($this->search, function($q) {
                 $q->where(function($query) {
