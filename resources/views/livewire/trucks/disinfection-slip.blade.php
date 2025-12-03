@@ -1,7 +1,9 @@
 @php
     use Illuminate\Support\Facades\Auth;
     $isHatcheryAssigned = Auth::id() === $selectedSlip?->hatchery_guard_id;
-    $isNotCompleted = $selectedSlip?->status != 2;
+    $isReceivingGuard = Auth::id() === $selectedSlip?->received_guard_id;
+    $status = $selectedSlip?->status ?? null;
+    // Status: 0 = Pending, 1 = Disinfecting, 2 = Completed
 @endphp
 
 <div>
@@ -11,6 +13,29 @@
         max-width="max-w-3xl">
 
         @if ($selectedSlip)
+
+            {{-- Status Badge --}}
+            <div class="grid grid-cols-3 mb-2">
+                <div class="font-semibold text-gray-700">Status:</div>
+                <div class="col-span-2">
+                    @if ($status == 0)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                            Pending
+                        </span>
+                    @elseif ($status == 1)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                            Disinfecting
+                        </span>
+                    @elseif ($status == 2)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                            Completed
+                        </span>
+                    @endif
+                </div>
+            </div>
 
             {{-- Date --}}
             <div class="grid grid-cols-3 mb-2">
@@ -111,7 +136,7 @@
                                 class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
                                 See Attachment
                             </button>
-                        @elseif ($isHatcheryAssigned && $isNotCompleted)
+                        @elseif ($isHatcheryAssigned && $status != 2)
                             <button wire:click="openAddAttachmentModal"
                                 class="text-blue-500 hover:text-blue-600 underline cursor-pointer">
                                 Add Attachment
@@ -130,15 +155,32 @@
         {{-- Footer --}}
         <x-slot name="footer">
             @if (!$isEditing)
-                <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
-                    Close
-                </x-buttons.submit-button>
-
-                @if ($isHatcheryAssigned && $isNotCompleted)
-                    <x-buttons.submit-button wire:click="editDetailsModal" color="blue">
-                        Edit
+                <div class="flex justify-end w-full gap-2">
+                    <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
+                        Close
                     </x-buttons.submit-button>
-                @endif
+
+                    {{-- Edit Button (Only hatchery guard and not completed) --}}
+                    @if ($isHatcheryAssigned && $status != 2)
+                        <x-buttons.submit-button wire:click="editDetailsModal" color="blue">
+                            Edit
+                        </x-buttons.submit-button>
+                    @endif
+
+                    {{-- Disinfecting Button (Status 0 -> 1) --}}
+                    @if ($status == 0)
+                        <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
+                            Start Disinfecting
+                        </x-buttons.submit-button>
+                    @endif
+
+                    {{-- Complete Button (Status 1 -> 2) --}}
+                    @if ($status == 1 && $isReceivingGuard)
+                        <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
+                            Complete Disinfection
+                        </x-buttons.submit-button>
+                    @endif
+                </div>
             @else
                 <div class="flex justify-between w-full">
                     <div>
@@ -171,10 +213,44 @@
         message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
         onConfirm="deleteSlip" />
 
+    {{-- Disinfecting Confirmation Modal --}}
+    <x-modals.modal-template show="showDisinfectingConfirmation" title="START DISINFECTING?" max-width="max-w-md">
+        <div class="text-center py-4">
+            <p class="text-gray-700 mb-2">Start disinfecting this truck?</p>
+            <p class="text-sm text-gray-600">You will be assigned as the receiving guard.</p>
+        </div>
+
+        <x-slot name="footer">
+            <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', false)" color="white">
+                Cancel
+            </x-buttons.submit-button>
+            <x-buttons.submit-button wire:click="startDisinfecting" color="blue">
+                Yes, Start Disinfecting
+            </x-buttons.submit-button>
+        </x-slot>
+    </x-modals.modal-template>
+
+    {{-- Complete Confirmation Modal --}}
+    <x-modals.modal-template show="showCompleteConfirmation" title="COMPLETE DISINFECTION?" max-width="max-w-md">
+        <div class="text-center py-4">
+            <p class="text-gray-700 mb-2">Mark this disinfection as completed?</p>
+            <p class="text-sm text-gray-600">This action cannot be undone.</p>
+        </div>
+
+        <x-slot name="footer">
+            <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', false)" color="white">
+                Cancel
+            </x-buttons.submit-button>
+            <x-buttons.submit-button wire:click="completeDisinfection" color="green">
+                Yes, Complete
+            </x-buttons.submit-button>
+        </x-slot>
+    </x-modals.modal-template>
+
     {{-- Attachment Modal --}}
     <x-modals.attachment show="showAttachmentModal" :file="$attachmentFile" />
 
-    {{-- Add Attachment Modal (Now just the component call) --}}
+    {{-- Add Attachment Modal --}}
     <x-modals.add-attachment show="showAddAttachmentModal" />
 
 </div>

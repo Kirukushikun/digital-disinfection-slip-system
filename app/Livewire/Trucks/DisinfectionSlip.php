@@ -20,6 +20,8 @@ class DisinfectionSlip extends Component
     public $showAddAttachmentModal = false;
     public $showCancelConfirmation = false;
     public $showDeleteConfirmation = false;
+    public $showDisinfectingConfirmation = false;
+    public $showCompleteConfirmation = false;
     public $selectedSlip = null;
     public $attachmentFile = null;
 
@@ -97,6 +99,74 @@ class DisinfectionSlip extends Component
         $this->originalValues = [];
     }
 
+    public function startDisinfecting()
+    {
+        // Check if status is 0 (pending)
+        if ($this->selectedSlip->status != 0) {
+            $this->dispatch('toast', message: 'This slip is not in pending status.', type: 'error');
+            return;
+        }
+
+        // Update status to 1 (disinfecting) and set received_guard_id
+        $this->selectedSlip->update([
+            'status' => 1,
+            'received_guard_id' => Auth::id(),
+        ]);
+
+        // Refresh the slip with relationships
+        $this->selectedSlip->refresh();
+        $this->selectedSlip->load([
+            'truck',
+            'location',
+            'destination',
+            'driver',
+            'attachment',
+            'hatcheryGuard',
+            'receivedGuard'
+        ]);
+
+        $this->showDisinfectingConfirmation = false;
+        $this->dispatch('toast', message: 'Disinfection started successfully!', type: 'success');
+        $this->dispatch('slip-updated');
+    }
+
+    public function completeDisinfection()
+    {
+        // Check if status is 1 (disinfecting)
+        if ($this->selectedSlip->status != 1) {
+            $this->dispatch('toast', message: 'This slip is not in disinfecting status.', type: 'error');
+            return;
+        }
+
+        // Authorization check - only the receiving guard can complete
+        if (Auth::id() !== $this->selectedSlip->received_guard_id) {
+            $this->dispatch('toast', message: 'Only the receiving guard can complete this disinfection.', type: 'error');
+            return;
+        }
+
+        // Update status to 2 (completed) and set completed_at timestamp
+        $this->selectedSlip->update([
+            'status' => 2,
+            'completed_at' => now(),
+        ]);
+
+        // Refresh the slip with relationships
+        $this->selectedSlip->refresh();
+        $this->selectedSlip->load([
+            'truck',
+            'location',
+            'destination',
+            'driver',
+            'attachment',
+            'hatcheryGuard',
+            'receivedGuard'
+        ]);
+
+        $this->showCompleteConfirmation = false;
+        $this->dispatch('toast', message: 'Disinfection completed successfully!', type: 'success');
+        $this->dispatch('slip-updated');
+    }
+
     public function deleteSlip()
     {
         // Authorization check - compare with hatchery_guard_id foreign key
@@ -161,6 +231,7 @@ class DisinfectionSlip extends Component
         $this->isEditing = false;
         $this->originalValues = [];
         $this->dispatch('toast', message: 'Slip updated successfully!');
+        $this->dispatch('slip-updated');
     }
 
     public function closeDetailsModal()
@@ -169,6 +240,8 @@ class DisinfectionSlip extends Component
         $this->isEditing = false;
         $this->showCancelConfirmation = false;
         $this->showDeleteConfirmation = false;
+        $this->showDisinfectingConfirmation = false;
+        $this->showCompleteConfirmation = false;
         $this->originalValues = [];
         $this->showDetailsModal = false;
         $this->js('setTimeout(() => $wire.clearSelectedSlip(), 300)');
@@ -279,20 +352,8 @@ class DisinfectionSlip extends Component
             $extension = $imageType;
             $filename = 'disinfection_slip_' . $this->selectedSlip->slip_id . '_' . time() . '_' . Str::random(8) . '.' . $extension;
             
-            // Create directory if it doesn't exist
-            $directory = storage_path('images/uploads');
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            // Full path for saving
-            $fullPath = $directory . '/' . $filename;
-            
-            // Save file to storage/images/uploads
-            if (file_put_contents($fullPath, $imageDecoded) === false) {
-                $this->dispatch('toast', message: 'Failed to save image file.', type: 'error');
-                return;
-            }
+            // Use Storage facade for consistency - save to public disk
+            Storage::disk('public')->put('images/uploads/' . $filename, $imageDecoded);
 
             // Store relative path in database
             $relativePath = 'images/uploads/' . $filename;
