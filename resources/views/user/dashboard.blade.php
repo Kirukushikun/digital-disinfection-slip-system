@@ -5,7 +5,7 @@
         </x-slot:sidebar>
     </x-navigation.navbar>
 
-    <div class="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="p-4 sm:p-6 lg:p-8 bg-linear-to-br from-gray-50 to-gray-100 min-h-screen">
 
         <div class="max-w-7xl mx-auto">
 
@@ -49,7 +49,7 @@
                         </div>
                     </div>
                     <div
-                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-green-400 to-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
                     </div>
                 </a>
 
@@ -84,13 +84,13 @@
                         </div>
                     </div>
                     <div
-                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-400 to-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-red-400 to-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left">
                     </div>
                 </a>
 
                 <!-- Create Slip Action Card -->
                 <a href="{{ route('user.outgoing-trucks', ['openCreate' => true]) }}"
-                    class="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-blue-400 hover:scale-105">
+                    class="group relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-blue-400 hover:scale-105">
                     <div class="p-6 h-full flex flex-col justify-between">
                         <div class="flex items-start justify-between mb-4">
                             <div
