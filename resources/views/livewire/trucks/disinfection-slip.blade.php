@@ -108,8 +108,13 @@
                     <div class="col-span-2">
                         @if ($selectedSlip->attachment)
                             <button wire:click="openAttachmentModal('{{ $selectedSlip->attachment->file_path }}')"
-                                class="text-orange-500 hover:text-orange-600 underline">
+                                class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
                                 See Attachment
+                            </button>
+                        @elseif ($isHatcheryAssigned && $isNotCompleted)
+                            <button wire:click="openAddAttachmentModal"
+                                class="text-blue-500 hover:text-blue-600 underline cursor-pointer">
+                                Add Attachment
                             </button>
                         @else
                             N/A
@@ -168,5 +173,8 @@
 
     {{-- Attachment Modal --}}
     <x-modals.attachment show="showAttachmentModal" :file="$attachmentFile" />
+
+    {{-- Add Attachment Modal (Now just the component call) --}}
+    <x-modals.add-attachment show="showAddAttachmentModal" />
 
 </div>

@@ -4,15 +4,20 @@ namespace App\Livewire\Trucks;
 
 use Livewire\Component;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
+use App\Models\Attachment;
 use App\Models\Truck;
 use App\Models\Location;
 use App\Models\Driver;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DisinfectionSlip extends Component
 {
     public $showDetailsModal = false;
     public $showAttachmentModal = false;
+    public $showAddAttachmentModal = false;
     public $showCancelConfirmation = false;
     public $showDeleteConfirmation = false;
     public $selectedSlip = null;
@@ -189,6 +194,130 @@ class DisinfectionSlip extends Component
     public function clearAttachment()
     {
         $this->attachmentFile = null;
+    }
+
+    public function openAddAttachmentModal()
+    {
+        $this->showAddAttachmentModal = true;
+        $this->dispatch('showAddAttachmentModal');
+    }
+
+    public function closeAddAttachmentModal()
+    {
+        $this->showAddAttachmentModal = false;
+    }
+
+    public function uploadAttachment($imageData)
+    {
+        try {
+            // Authorization check
+            if (Auth::id() !== $this->selectedSlip->hatchery_guard_id) {
+                $this->dispatch('toast', message: 'You are not authorized to add attachments to this slip.', type: 'error');
+                return;
+            }
+
+            // Check if not completed
+            if ($this->selectedSlip->status == 2) {
+                $this->dispatch('toast', message: 'Cannot add attachment to a completed slip.', type: 'error');
+                return;
+            }
+
+            // Check if attachment already exists
+            if ($this->selectedSlip->attachment_id) {
+                $this->dispatch('toast', message: 'This slip already has an attachment.', type: 'error');
+                return;
+            }
+
+            // Validate image data format
+            if (!preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData)) {
+                $this->dispatch('toast', message: 'Invalid image format. Only JPEG, PNG, GIF, and WebP are allowed.', type: 'error');
+                return;
+            }
+
+            // Extract image type
+            preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData, $matches);
+            $imageType = $matches[1];
+            
+            // Normalize jpg to jpeg
+            if ($imageType === 'jpg') {
+                $imageType = 'jpeg';
+            }
+
+            // Decode base64 image
+            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageDecoded = base64_decode($imageData);
+
+            // Validate base64 decode success
+            if ($imageDecoded === false) {
+                $this->dispatch('toast', message: 'Failed to decode image data.', type: 'error');
+                return;
+            }
+
+            // Validate file size (15MB max)
+            $fileSizeInMB = strlen($imageDecoded) / 1024 / 1024;
+            if ($fileSizeInMB > 15) {
+                $this->dispatch('toast', message: 'Image size exceeds 15MB limit.', type: 'error');
+                return;
+            }
+
+            // Validate image using getimagesizefromstring
+            $imageInfo = @getimagesizefromstring($imageDecoded);
+            if ($imageInfo === false) {
+                $this->dispatch('toast', message: 'Invalid image file. Please capture a valid image.', type: 'error');
+                return;
+            }
+
+            // Validate MIME type
+            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($imageInfo['mime'], $allowedMimeTypes)) {
+                $this->dispatch('toast', message: 'Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed.', type: 'error');
+                return;
+            }
+
+            // Generate unique filename with correct extension
+            $extension = $imageType;
+            $filename = 'disinfection_slip_' . $this->selectedSlip->slip_id . '_' . time() . '_' . Str::random(8) . '.' . $extension;
+            
+            // Create directory if it doesn't exist
+            $directory = storage_path('images/uploads');
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            // Full path for saving
+            $fullPath = $directory . '/' . $filename;
+            
+            // Save file to storage/images/uploads
+            if (file_put_contents($fullPath, $imageDecoded) === false) {
+                $this->dispatch('toast', message: 'Failed to save image file.', type: 'error');
+                return;
+            }
+
+            // Store relative path in database
+            $relativePath = 'images/uploads/' . $filename;
+
+            // Create attachment record
+            $attachment = Attachment::create([
+                'file_path' => $relativePath,
+            ]);
+
+            // Update disinfection slip with attachment_id
+            $this->selectedSlip->update([
+                'attachment_id' => $attachment->id,
+            ]);
+
+            // Refresh the slip with relationships
+            $this->selectedSlip->refresh();
+            $this->selectedSlip->load('attachment');
+
+            $this->dispatch('toast', message: 'Attachment uploaded successfully!', type: 'success');
+            $this->closeAddAttachmentModal();
+
+        } catch (\Exception $e) {
+            Log::error('Attachment upload error: ' . $e->getMessage());
+            $this->dispatch('toast', message: 'Failed to upload attachment. Please try again.', type: 'error');
+        }
     }
 
     public function render()
