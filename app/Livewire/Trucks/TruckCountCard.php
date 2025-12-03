@@ -9,7 +9,7 @@ use Livewire\Attributes\Computed;
 
 class TruckCountCard extends Component
 {
-    public $type; // 'incoming' or 'outgoing'
+    public $type; // 'incoming', 'outgoing', 'total', 'inprogress', 'completed'
 
     public function mount($type)
     {
@@ -25,13 +25,43 @@ class TruckCountCard extends Component
             return 0;
         }
 
-        $query = DisinfectionSlip::whereDate('created_at', today())
-            ->where('destination_id', $locationId);
+        // Base query for all types
+        $query = DisinfectionSlip::where(function($q) use ($locationId) {
+            $q->where('location_id', $locationId)
+              ->orWhere('destination_id', $locationId);
+        });
 
-        if ($this->type === 'incoming') {
-            $query->where('status', 0);
-        } else { // outgoing
-            $query->whereIn('status', [0, 1]);
+        // Apply filters based on type
+        switch ($this->type) {
+            case 'incoming':
+                // Incoming trucks today (pending status)
+                $query->whereDate('created_at', today())
+                      ->where('destination_id', $locationId)
+                      ->where('status', 0);
+                break;
+
+            case 'outgoing':
+                // Outgoing trucks today (pending or disinfecting)
+                $query->whereDate('created_at', today())
+                      ->where('location_id', $locationId)
+                      ->whereIn('status', [0, 1]);
+                break;
+
+            case 'total':
+                // Total slips today (all statuses)
+                $query->whereDate('created_at', today());
+                break;
+
+            case 'inprogress':
+                // Currently in progress (status 1)
+                $query->where('status', 1);
+                break;
+
+            case 'completed':
+                // Completed today (status 2)
+                $query->where('status', 2)
+                      ->whereDate('completed_at', today());
+                break;
         }
 
         return $query->count();

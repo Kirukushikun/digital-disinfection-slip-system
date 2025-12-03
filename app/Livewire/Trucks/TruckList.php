@@ -59,6 +59,11 @@ class TruckList extends Component
         $this->trucks = Truck::all();
         $this->locations = Location::all();
         $this->drivers = Driver::all();
+
+        // Check if we should open create modal from route parameter
+        if (request()->has('openCreate') && $this->type === 'outgoing') {
+            $this->showCreateModal = true;
+        }
     }
 
     public function updatedSearch()
