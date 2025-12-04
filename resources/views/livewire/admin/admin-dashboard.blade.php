@@ -12,7 +12,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <!-- Week to Date -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -45,7 +45,7 @@
                 </div>
 
                 <!-- Month to Date -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-purple-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -78,7 +78,7 @@
                 </div>
 
                 <!-- Year to Date -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-green-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -111,7 +111,7 @@
                 </div>
 
                 <!-- All Time Total -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-linear-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-orange-400 hover:scale-105">
                     <div class="p-6 h-full flex flex-col justify-between">
                         <div class="flex items-start justify-between mb-4">
@@ -151,7 +151,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <!-- Guards Count -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-cyan-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -182,7 +182,7 @@
                 </div>
 
                 <!-- Drivers Count -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-pink-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -213,7 +213,7 @@
                 </div>
 
                 <!-- Plate Numbers Count -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-amber-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
@@ -244,7 +244,7 @@
                 </div>
 
                 <!-- Locations Count -->
-                <div
+                <div wire:poll
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-teal-400">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">

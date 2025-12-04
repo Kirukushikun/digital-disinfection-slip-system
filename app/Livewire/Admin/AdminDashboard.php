@@ -31,7 +31,7 @@ class AdminDashboard extends Component
      */
     private function getWeekDisinfectedCount()
     {
-        return DisinfectionSlip::where('status', 1)
+        return DisinfectionSlip::where('status', 2)
             ->whereBetween('completed_at', [
                 Carbon::now()->startOfWeek(),
                 Carbon::now()->endOfWeek()
@@ -44,7 +44,7 @@ class AdminDashboard extends Component
      */
     private function getMonthDisinfectedCount()
     {
-        return DisinfectionSlip::where('status', 1)
+        return DisinfectionSlip::where('status', 2)
             ->whereMonth('completed_at', Carbon::now()->month)
             ->whereYear('completed_at', Carbon::now()->year)
             ->count();
@@ -55,7 +55,7 @@ class AdminDashboard extends Component
      */
     private function getYearDisinfectedCount()
     {
-        return DisinfectionSlip::where('status', 1)
+        return DisinfectionSlip::where('status', 2)
             ->whereYear('completed_at', Carbon::now()->year)
             ->count();
     }
@@ -65,7 +65,7 @@ class AdminDashboard extends Component
      */
     private function getTotalDisinfectedCount()
     {
-        return DisinfectionSlip::where('status', 1)
+        return DisinfectionSlip::where('status', 2)
             ->whereNotNull('completed_at')
             ->count();
     }
