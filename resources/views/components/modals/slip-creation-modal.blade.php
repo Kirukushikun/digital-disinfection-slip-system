@@ -39,7 +39,7 @@
 
     {{-- Reason for Disinfection --}}
     <div class="grid grid-cols-3 mb-4">
-        <div class="font-semibold text-gray-700">Reason:<span class="text-red-500">*</span></div>
+        <div class="font-semibold text-gray-700">Reason:</div>
         <div class="col-span-2">
             <textarea wire:model="reason_for_disinfection"
                 class="w-full border rounded px-2 py-1 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
@@ -62,3 +62,8 @@
     </x-slot>
 
 </x-modals.modal-template>
+
+{{-- Cancel Confirmation Modal --}}
+<x-modals.unsaved-confirmation show="showCancelCreateConfirmation" title="DISCARD CHANGES?"
+    message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelCreate"
+    confirmText="Yes, Discard Changes" cancelText="Continue Editing" />

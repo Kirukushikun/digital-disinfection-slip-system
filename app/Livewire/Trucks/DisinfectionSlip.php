@@ -22,6 +22,7 @@ class DisinfectionSlip extends Component
     public $showDeleteConfirmation = false;
     public $showDisinfectingConfirmation = false;
     public $showCompleteConfirmation = false;
+    public $showRemoveAttachmentConfirmation = false;
     public $selectedSlip = null;
     public $attachmentFile = null;
 
@@ -36,18 +37,22 @@ class DisinfectionSlip extends Component
     // Original values for cancel
     private $originalValues = [];
 
-    public $trucks;
-    public $locations;
-    public $drivers;
-
     protected $listeners = ['open-disinfection-details' => 'openDetailsModal'];
 
-    public function mount()
+    // Computed properties for dynamic dropdown data
+    public function getTrucksProperty()
     {
-        // preload dropdown data
-        $this->trucks = Truck::all();
-        $this->locations = Location::all();
-        $this->drivers = Driver::all();
+        return Truck::all();
+    }
+
+    public function getLocationsProperty()
+    {
+        return Location::all();
+    }
+
+    public function getDriversProperty()
+    {
+        return Driver::all();
     }
 
     public function openDetailsModal($id)
@@ -107,6 +112,12 @@ class DisinfectionSlip extends Component
             return;
         }
 
+        // Authorization check - cannot start if you created it (hatchery guard)
+        if (Auth::id() === $this->selectedSlip->hatchery_guard_id) {
+            $this->dispatch('toast', message: 'You cannot start disinfecting your own slip. Only the destination guard can start disinfecting.', type: 'error');
+            return;
+        }
+
         // Update status to 1 (disinfecting) and set received_guard_id
         $this->selectedSlip->update([
             'status' => 1,
@@ -141,6 +152,12 @@ class DisinfectionSlip extends Component
         // Authorization check - only the receiving guard can complete
         if (Auth::id() !== $this->selectedSlip->received_guard_id) {
             $this->dispatch('toast', message: 'Only the receiving guard can complete this disinfection.', type: 'error');
+            return;
+        }
+
+        // Additional check - cannot complete if you're the hatchery guard
+        if (Auth::id() === $this->selectedSlip->hatchery_guard_id) {
+            $this->dispatch('toast', message: 'You cannot complete your own slip. Only the destination guard can complete disinfection.', type: 'error');
             return;
         }
 
@@ -271,6 +288,18 @@ class DisinfectionSlip extends Component
 
     public function openAddAttachmentModal()
     {
+        // Authorization check - only receiving guard can add attachment
+        if (Auth::id() !== $this->selectedSlip->received_guard_id) {
+            $this->dispatch('toast', message: 'Only the receiving guard can add attachments.', type: 'error');
+            return;
+        }
+
+        // Check if slip is in disinfecting status
+        if ($this->selectedSlip->status != 1) {
+            $this->dispatch('toast', message: 'Attachments can only be added during disinfection.', type: 'error');
+            return;
+        }
+
         $this->showAddAttachmentModal = true;
         $this->dispatch('showAddAttachmentModal');
     }
@@ -280,18 +309,74 @@ class DisinfectionSlip extends Component
         $this->showAddAttachmentModal = false;
     }
 
-    public function uploadAttachment($imageData)
+    public function removeAttachment()
     {
         try {
-            // Authorization check
-            if (Auth::id() !== $this->selectedSlip->hatchery_guard_id) {
-                $this->dispatch('toast', message: 'You are not authorized to add attachments to this slip.', type: 'error');
+            // Authorization check - only receiving guard can remove
+            if (Auth::id() !== $this->selectedSlip->received_guard_id) {
+                $this->dispatch('toast', message: 'Only the receiving guard can remove attachments.', type: 'error');
                 return;
             }
 
-            // Check if not completed
-            if ($this->selectedSlip->status == 2) {
-                $this->dispatch('toast', message: 'Cannot add attachment to a completed slip.', type: 'error');
+            // Check if in disinfecting status
+            if ($this->selectedSlip->status != 1) {
+                $this->dispatch('toast', message: 'Attachments can only be removed during disinfection.', type: 'error');
+                return;
+            }
+
+            // Check if attachment exists
+            if (!$this->selectedSlip->attachment_id) {
+                $this->dispatch('toast', message: 'No attachment found to remove.', type: 'error');
+                return;
+            }
+
+            // Get the attachment record
+            $attachment = Attachment::find($this->selectedSlip->attachment_id);
+
+            if ($attachment) {
+                // Delete the physical file from storage
+                if (Storage::disk('public')->exists($attachment->file_path)) {
+                    Storage::disk('public')->delete($attachment->file_path);
+                }
+
+                // Remove attachment reference from slip
+                $this->selectedSlip->update([
+                    'attachment_id' => null,
+                ]);
+
+                // Hard delete the attachment record
+                $attachment->forceDelete();
+
+                // Refresh the slip
+                $this->selectedSlip->refresh();
+                $this->selectedSlip->load('attachment');
+
+                // Close attachment modal and confirmation
+                $this->showAttachmentModal = false;
+                $this->showRemoveAttachmentConfirmation = false;
+                $this->attachmentFile = null;
+
+                $this->dispatch('toast', message: 'Attachment removed successfully!', type: 'success');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Attachment removal error: ' . $e->getMessage());
+            $this->dispatch('toast', message: 'Failed to remove attachment. Please try again.', type: 'error');
+        }
+    }
+
+    public function uploadAttachment($imageData)
+    {
+        try {
+            // Authorization check - only receiving guard can upload
+            if (Auth::id() !== $this->selectedSlip->received_guard_id) {
+                $this->dispatch('toast', message: 'Only the receiving guard can add attachments.', type: 'error');
+                return;
+            }
+
+            // Check if in disinfecting status
+            if ($this->selectedSlip->status != 1) {
+                $this->dispatch('toast', message: 'Attachments can only be added during disinfection.', type: 'error');
                 return;
             }
 

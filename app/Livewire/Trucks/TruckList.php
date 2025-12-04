@@ -38,14 +38,11 @@ class TruckList extends Component
 
     // Create Modal
     public $showCreateModal = false;
+    public $showCancelCreateConfirmation = false;
     public $truck_id;
     public $destination_id;
     public $driver_id;
     public $reason_for_disinfection;
-
-    public $trucks;
-    public $locations;
-    public $drivers;
 
     protected $listeners = ['slip-created' => '$refresh'];
 
@@ -55,15 +52,26 @@ class TruckList extends Component
         $this->filterDateFrom = now()->format('Y-m-d');
         $this->filterDateTo = now()->format('Y-m-d');
 
-        // Load dropdown data
-        $this->trucks = Truck::all();
-        $this->locations = Location::all();
-        $this->drivers = Driver::all();
-
         // Check if we should open create modal from route parameter
         if (request()->has('openCreate') && $this->type === 'outgoing') {
             $this->showCreateModal = true;
         }
+    }
+
+    // Computed properties for dynamic dropdown data
+    public function getTrucksProperty()
+    {
+        return Truck::all();
+    }
+
+    public function getLocationsProperty()
+    {
+        return Location::all();
+    }
+
+    public function getDriversProperty()
+    {
+        return Driver::all();
     }
 
     public function updatedSearch()
@@ -113,6 +121,14 @@ class TruckList extends Component
         $this->dispatch('modal-closed');
     }
 
+    public function cancelCreate()
+    {
+        // Reset all form fields and close modals
+        $this->resetCreateForm();
+        $this->showCancelCreateConfirmation = false;
+        $this->showCreateModal = false;
+    }
+
     public function resetCreateForm()
     {
         $this->truck_id = null;
@@ -154,12 +170,25 @@ class TruckList extends Component
 
     private function generateSlipId()
     {
-        $year = now()->format('y'); // Get 2-digit year (e.g., 25, 26)
+        $year = now()->format('y'); // Last 2 digits of year
         
-        // Count slips created in the current year
-        $count = DisinfectionSlip::whereYear('created_at', now()->year)->count() + 1;
+        // Get the last slip ID for this year (including soft-deleted ones)
+        $lastSlip = DisinfectionSlip::withTrashed()
+            ->where('slip_id', 'like', $year . '-%')
+            ->orderBy('slip_id', 'desc')
+            ->first();
         
-        return "{$year}-" . str_pad($count, 5, '0', STR_PAD_LEFT);
+        if ($lastSlip) {
+            // Extract the number part and increment
+            $lastNumber = (int) substr($lastSlip->slip_id, 3);
+            $newNumber = $lastNumber + 1;
+        } else {
+            // First slip of the year
+            $newNumber = 1;
+        }
+        
+        // Format: YY-NNNNN (e.g., 25-00001)
+        return $year . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
     }
     
     public function render()
@@ -210,7 +239,10 @@ class TruckList extends Component
 
         return view('livewire.trucks.truck-list', [
             'slips' => $slips,
-            'availableStatuses' => $this->availableStatuses
+            'availableStatuses' => $this->availableStatuses,
+            'trucks' => $this->trucks,
+            'locations' => $this->locations,
+            'drivers' => $this->drivers,
         ]);
     }
 }

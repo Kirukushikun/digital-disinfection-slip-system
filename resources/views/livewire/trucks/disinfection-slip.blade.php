@@ -58,7 +58,7 @@
                 <div class="font-semibold text-gray-700">Plate No:</div>
                 <div class="col-span-2 text-gray-900">
                     @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="truck_id" :options="$trucks->pluck('plate_number', 'id')"
+                        <x-forms.searchable-dropdown wire-model="truck_id" :options="$this->trucks->pluck('plate_number', 'id')"
                             placeholder="Select plate number..." search-placeholder="Search plates..." />
                     @else
                         {{ $selectedSlip->truck->plate_number ?? 'N/A' }}
@@ -71,7 +71,7 @@
                 <div class="font-semibold text-gray-700">Destination:</div>
                 <div class="col-span-2 text-gray-900">
                     @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="destination_id" :options="$locations->pluck('location_name', 'id')"
+                        <x-forms.searchable-dropdown wire-model="destination_id" :options="$this->locations->pluck('location_name', 'id')"
                             placeholder="Select destination..." search-placeholder="Search locations..." />
                     @else
                         {{ $selectedSlip->destination->location_name ?? 'N/A' }}
@@ -84,7 +84,7 @@
                 <div class="font-semibold text-gray-700">Driver Name:</div>
                 <div class="col-span-2 text-gray-900">
                     @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="driver_id" :options="$drivers->pluck('full_name', 'id')"
+                        <x-forms.searchable-dropdown wire-model="driver_id" :options="$this->drivers->pluck('full_name', 'id')"
                             placeholder="Select driver..." search-placeholder="Search drivers..." />
                     @else
                         {{ $selectedSlip->driver?->first_name . ' ' . $selectedSlip->driver?->last_name ?? 'N/A' }}
@@ -117,7 +117,9 @@
                 <div class="grid grid-cols-3 mb-2">
                     <div class="font-semibold text-gray-700">Received By:</div>
                     <div class="col-span-2 text-gray-900">
-                        {{ $selectedSlip->receivedGuard?->first_name . ' ' . $selectedSlip->receivedGuard?->last_name ?? 'N/A' }}
+                        {{ $selectedSlip->receivedGuard?->first_name && $selectedSlip->receivedGuard?->last_name
+                            ? $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name
+                            : 'N/A' }}
                     </div>
                 </div>
 
@@ -136,7 +138,7 @@
                                 class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
                                 See Attachment
                             </button>
-                        @elseif ($isHatcheryAssigned && $status != 2)
+                        @elseif ($isReceivingGuard && $status == 1)
                             <button wire:click="openAddAttachmentModal"
                                 class="text-blue-500 hover:text-blue-600 underline cursor-pointer">
                                 Add Attachment
@@ -167,15 +169,15 @@
                         </x-buttons.submit-button>
                     @endif
 
-                    {{-- Disinfecting Button (Status 0 -> 1) --}}
-                    @if ($status == 0)
+                    {{-- Disinfecting Button (Status 0 -> 1, NOT by hatchery guard) --}}
+                    @if ($status == 0 && !$isHatcheryAssigned)
                         <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
                             Start Disinfecting
                         </x-buttons.submit-button>
                     @endif
 
-                    {{-- Complete Button (Status 1 -> 2) --}}
-                    @if ($status == 1 && $isReceivingGuard)
+                    {{-- Complete Button (Status 1 -> 2, by receiving guard only, NOT hatchery guard) --}}
+                    @if ($status == 1 && $isReceivingGuard && !$isHatcheryAssigned)
                         <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
                             Complete Disinfection
                         </x-buttons.submit-button>
@@ -247,8 +249,26 @@
         </x-slot>
     </x-modals.modal-template>
 
+    {{-- Remove Attachment Confirmation Modal --}}
+    <x-modals.modal-template show="showRemoveAttachmentConfirmation" title="REMOVE ATTACHMENT?" max-width="max-w-md">
+        <div class="text-center py-4">
+            <p class="text-gray-700 mb-2">Are you sure you want to remove this attachment?</p>
+            <p class="text-sm text-red-600 font-semibold">This action cannot be undone!</p>
+            <p class="text-sm text-gray-600">The file will be permanently deleted.</p>
+        </div>
+
+        <x-slot name="footer">
+            <x-buttons.submit-button wire:click="$set('showRemoveAttachmentConfirmation', false)" color="white">
+                Cancel
+            </x-buttons.submit-button>
+            <x-buttons.submit-button wire:click="removeAttachment" color="red">
+                Yes, Remove Attachment
+            </x-buttons.submit-button>
+        </x-slot>
+    </x-modals.modal-template>
+
     {{-- Attachment Modal --}}
-    <x-modals.attachment show="showAttachmentModal" :file="$attachmentFile" />
+    <x-modals.attachment show="showAttachmentModal" :file="$attachmentFile" :selectedSlip="$selectedSlip" />
 
     {{-- Add Attachment Modal --}}
     <x-modals.add-attachment show="showAddAttachmentModal" />

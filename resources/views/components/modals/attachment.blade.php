@@ -1,4 +1,4 @@
-@props(['show', 'file'])
+@props(['show', 'file', 'selectedSlip' => null])
 
 <x-modals.modal-template :show="$show" title="Attachment Preview" max-width="max-w-4xl">
 
@@ -6,6 +6,8 @@
         $fileUrl = Storage::url($file);
         $extension = strtolower(pathinfo($file ?? '', PATHINFO_EXTENSION));
         $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $isReceivingGuard = \Illuminate\Support\Facades\Auth::id() === $selectedSlip?->received_guard_id;
+        $status = $selectedSlip?->status ?? null;
     @endphp
 
     @if (in_array($extension, $imageExtensions))
@@ -23,9 +25,23 @@
     @endif
 
     <x-slot name="footer">
-        <x-buttons.submit-button wire:click="closeAttachmentModal" color="gray">
-            Close
-        </x-buttons.submit-button>
+        <div class="flex justify-between w-full">
+            {{-- Left side: Remove button (only if receiving guard and disinfecting) --}}
+            <div>
+                @if ($isReceivingGuard && $status == 1)
+                    <x-buttons.submit-button wire:click="$set('showRemoveAttachmentConfirmation', true)" color="red">
+                        Remove Attachment
+                    </x-buttons.submit-button>
+                @endif
+            </div>
+
+            {{-- Right side: Close button --}}
+            <div>
+                <x-buttons.submit-button wire:click="closeAttachmentModal" color="white">
+                    Close
+                </x-buttons.submit-button>
+            </div>
+        </div>
     </x-slot>
 
 </x-modals.modal-template>
