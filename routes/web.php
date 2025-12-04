@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SessionController;
@@ -32,7 +33,12 @@ Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group
 });
 
 Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guards', [AdminController::class, 'guards'])->name('guards');
+    Route::get('/drivers', [AdminController::class, 'drivers'])->name('drivers');
+    Route::get('/locations', [AdminController::class, 'locations'])->name('locations');
+    Route::get('/plate-numbers', [AdminController::class, 'plate-numbers'])->name('plate-numbers');
+    Route::get('/trucks', [AdminController::class, 'trucks'])->name('trucks');
 });
 
 Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadmin.')->group(function () {
