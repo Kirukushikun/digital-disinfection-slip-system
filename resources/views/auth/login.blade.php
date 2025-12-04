@@ -1,21 +1,21 @@
 <x-layout>
     <!-- Header -->
-    <header class="bg-[#FFDBBD] rounded-md shadow-xl p-4 fixed top-0 left-0 w-full z-10">
+    <header
+        class="bg-linear-to-r from-orange-100 via-orange-50 to-orange-100 shadow-lg p-4 sm:p-6 fixed top-0 left-0 w-full z-20">
         <div class="flex justify-between items-center">
             <!-- Logo + Header Text -->
-            <div class="flex items-center space-x-3">
+            <a href="{{ url('/') }}" class="flex items-center space-x-3">
                 <img src="{{ asset('storage\images\logo\BGC.png') }}" alt="Logo" class="h-10 w-auto">
                 <div class="font-bold text-gray-800 text-[clamp(1rem,1.8vw,1.5rem)] leading-none">
                     Digital Disinfection Slip System
                 </div>
-            </div>
+            </a>
         </div>
     </header>
 
     <!-- Content below header, full height minus header height -->
-    <div class="flex items-center justify-center px-4 min-h-screen pt-12">
+    <div class="flex items-center justify-center px-4 min-h-screen pt-12 bg-linear-to-br from-gray-50 to-gray-100">
         <div class="w-full max-w-md md:max-w-lg rounded-xl bg-white shadow-lg ring-1 ring-gray-300 p-10">
-
             <div class="flex flex-col items-center mb-6">
                 <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600" class="h-10">
                 <h2 class="mt-6 text-2xl font-semibold text-gray-900 text-center">
@@ -28,15 +28,15 @@
             </div>
 
             @if (isset($location) && $location)
-                <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="flex items-center gap-3">
+                <div class="mb-6 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <div class="flex items-center gap-2.5">
                         @if ($location->attachment_id && $location->attachment)
                             <img src="{{ asset('storage/' . $location->attachment->path) }}"
-                                alt="{{ $location->location_name }}" class="h-12 w-auto object-contain">
+                                alt="{{ $location->location_name }}" class="h-10 w-auto object-contain">
                         @endif
-                        <div>
-                            <p class="text-sm text-gray-600 font-medium">Location</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ $location->location_name }}</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs text-orange-600 font-semibold uppercase tracking-wide">Location</p>
+                            <p class="text-base font-bold text-gray-900 truncate">{{ $location->location_name }}</p>
                         </div>
                     </div>
                 </div>
@@ -48,14 +48,49 @@
                 @csrf
 
                 <div>
-                    <x-forms.input-form name="username" required :value="old('username')"
-                        placeholder="Username">Username</x-forms.input-form>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <input type="text" name="username" id="username" required value="{{ old('username') }}"
+                            placeholder="Username"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm">
+                    </div>
                     <x-forms.error name="username" />
                 </div>
 
-                <div>
-                    <x-forms.input-form type="password" name="password" required
-                        placeholder="Password">Password</x-forms.input-form>
+                <div x-data="{ showPassword: false }">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <input :type="showPassword ? 'text' : 'password'" name="password" id="password" required
+                            placeholder="Password"
+                            class="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm">
+                        <button type="button" @click="showPassword = !showPassword"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <svg x-show="!showPassword" class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg x-show="showPassword" class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
+                    </div>
                     <x-forms.error name="password" />
                 </div>
 
@@ -73,4 +108,5 @@
             </form>
         </div>
     </div>
+
 </x-layout>

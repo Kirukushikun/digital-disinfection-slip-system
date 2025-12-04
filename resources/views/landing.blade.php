@@ -1,15 +1,15 @@
 <x-layout>
     <!-- Header -->
     <header
-        class="bg-linear-to-r from-orange-100 via-orange-50 to-orange-100 shadow-lg p-4 sm:p-6 fixed top-0 left-0 w-full z-20">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+        class="bg-linear-to-r from-orange-100 via-orange-50 to-orange-100 shadow-sm p-4 sm:p-6 fixed top-0 left-0 w-full z-20">
+        <div class="flex justify-between items-center">
             <!-- Logo + Header Text -->
-            <div class="flex items-center space-x-3 sm:space-x-4">
-                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-10 sm:h-12 w-auto">
-                <div class="font-bold text-gray-800 text-sm sm:text-base md:text-lg lg:text-xl leading-tight">
-                    Digital Disinfection<br class="sm:hidden"> Slip System
+            <a href="{{ url('/') }}" class="flex items-center space-x-3">
+                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-10 w-auto">
+                <div class="font-bold text-gray-800 text-[clamp(1rem,1.8vw,1.5rem)] leading-none">
+                    Digital Disinfection Slip System
                 </div>
-            </div>
+            </a>
 
             <!-- Login / Dashboard Button -->
             <div class="whitespace-nowrap">

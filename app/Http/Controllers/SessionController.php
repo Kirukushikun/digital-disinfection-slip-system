@@ -67,10 +67,15 @@ class SessionController extends Controller
 
     public function destroy()
     {
+        // Get location from session before logout
+        $hadLocation = request()->session()->has('location_id');
+        
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-
+    
+        // If user was logged in through a location, redirect to landing
+        // Otherwise redirect to landing page for all users
         return redirect('/');
     }
 }
