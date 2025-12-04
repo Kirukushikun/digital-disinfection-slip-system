@@ -21,6 +21,48 @@
         @livewireStyles
     </head>
     <body class="h-full bg-[#FFF7F1]">
+        {{-- Global Toast Listener --}}
+        <div 
+            x-data="{
+                show: false,
+                message: '',
+                type: 'info',
+                timeout: null,
+    
+                init() {
+                    // Listen to Livewire dispatched events
+                    Livewire.on('toast', (event) => {
+                        // Handle both array and object event formats
+                        const data = Array.isArray(event) ? event[0] : event;
+                        
+                        // Only show if we actually have a message
+                        if (data && data.message) {
+                            this.message = data.message;
+                            this.type = data.type || 'info';
+                            this.show = true;
+    
+                            clearTimeout(this.timeout);
+                            this.timeout = setTimeout(() => {
+                                this.show = false;
+                            }, 2500);
+                        }
+                    });
+                }
+            }"
+            class="fixed top-20 left-1/2 -translate-x-1/2 z-9999 w-full flex justify-center px-4 pointer-events-none"
+        >
+            <div x-show="show" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="pointer-events-auto">
+                <x-forms.alerts />
+            </div>
+        </div>
+    
         {{ $slot }}
         @livewireScripts
     </body>

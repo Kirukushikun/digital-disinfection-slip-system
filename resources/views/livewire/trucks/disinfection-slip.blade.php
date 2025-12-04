@@ -126,7 +126,7 @@
                 <div class="grid grid-cols-3 mb-2">
                     <div class="font-semibold text-gray-700">Completion Date:</div>
                     <div class="col-span-2 text-gray-900">
-                        {{ $selectedSlip->completed_at ? \Carbon\Carbon::parse($selectedSlip->completed_at)->format('M d, Y h:i A') : 'N/A' }}
+                        {{ $selectedSlip->completed_at ? \Carbon\Carbon::parse($selectedSlip->completed_at)->format('M d, Y - h:i A') : 'N/A' }}
                     </div>
                 </div>
 

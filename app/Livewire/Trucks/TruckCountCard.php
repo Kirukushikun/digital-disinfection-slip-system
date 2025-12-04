@@ -37,7 +37,7 @@ class TruckCountCard extends Component
                 // Incoming trucks today (pending status)
                 $query->whereDate('created_at', today())
                       ->where('destination_id', $locationId)
-                      ->where('status', 0);
+                      ->whereIn('status', [0, 1]);
                 break;
 
             case 'outgoing':

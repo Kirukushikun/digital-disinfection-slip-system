@@ -171,7 +171,7 @@ class TruckList extends Component
             'slip_id' => $this->generateSlipId(),
         ]);
 
-        $this->dispatch('toast', message: 'Disinfection slip created successfully!', type: 'success');
+        $this->dispatch('toast', message: 'Disinfection slip created successfully!', type: 'success');        
         
         // Close modal first
         $this->showCreateModal = false;

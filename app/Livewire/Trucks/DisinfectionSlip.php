@@ -261,7 +261,7 @@ class DisinfectionSlip extends Component
 
         $this->isEditing = false;
         $this->originalValues = [];
-        $this->dispatch('toast', message: 'Slip updated successfully!');
+        $this->dispatch('toast', message: 'Slip updated successfully!', type: 'success');
         $this->dispatch('slip-updated');
     }
 
