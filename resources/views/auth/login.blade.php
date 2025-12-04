@@ -5,7 +5,7 @@
         <div class="flex justify-between items-center">
             <!-- Logo + Header Text -->
             <a href="{{ url('/') }}" class="flex items-center space-x-3">
-                <img src="{{ asset('storage\images\logo\BGC.png') }}" alt="Logo" class="h-10 w-auto">
+                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-10 w-auto">
                 <div class="font-bold text-gray-800 text-[clamp(1rem,1.8vw,1.5rem)] leading-none">
                     Digital Disinfection Slip System
                 </div>
@@ -16,9 +16,9 @@
     <!-- Content below header, full height minus header height -->
     <div class="flex items-center justify-center px-4 min-h-screen pt-12 bg-linear-to-br from-gray-50 to-gray-100">
         <div class="w-full max-w-md md:max-w-lg rounded-xl bg-white shadow-lg ring-1 ring-gray-300 p-10">
-            <div class="flex flex-col items-center mb-6">
-                <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600" class="h-10">
-                <h2 class="mt-6 text-2xl font-semibold text-gray-900 text-center">
+            <div class="flex flex-col items-center mb-4">
+                <img src="{{ asset('storage/images/logo/BGC.png') }}" class="h-15 w-auto">
+                <h2 class="mt-1 text-2xl font-semibold text-gray-900 text-center">
                     @if (isset($location) && $location)
                         Log in to your account
                     @else
@@ -31,7 +31,7 @@
                 <div class="mb-6 p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <div class="flex items-center gap-2.5">
                         @if ($location->attachment_id && $location->attachment)
-                            <img src="{{ asset('storage/' . $location->attachment->path) }}"
+                            <img src="{{ asset('storage/' . $location->attachment->file_path) }}"
                                 alt="{{ $location->location_name }}" class="h-10 w-auto object-contain">
                         @endif
                         <div class="min-w-0 flex-1">
