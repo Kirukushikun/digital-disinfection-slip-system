@@ -37,7 +37,7 @@ Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->gro
     Route::get('/guards', [AdminController::class, 'guards'])->name('guards');
     Route::get('/drivers', [AdminController::class, 'drivers'])->name('drivers');
     Route::get('/locations', [AdminController::class, 'locations'])->name('locations');
-    Route::get('/plate-numbers', [AdminController::class, 'plate-numbers'])->name('plate-numbers');
+    Route::get('/plate-numbers', [AdminController::class, 'plateNumbers'])->name('plate-numbers');
     Route::get('/trucks', [AdminController::class, 'trucks'])->name('trucks');
 });
 
