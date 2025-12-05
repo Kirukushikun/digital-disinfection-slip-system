@@ -47,25 +47,8 @@
     {{-- Filter Modal --}}
     <x-modals.filter-modal>
         <x-slot name="filters">
-            {{-- Date Range Filter --}}
-            <div class="grid grid-cols-2 gap-4">
-                {{-- From Date Input --}}
-                <div x-data="{ toDate: @entangle('filterDateTo') }">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                    <input type="date" wire:model="filterDateFrom" :max="toDate || '{{ date('Y-m-d') }}'"
-                        class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500">
-                </div>
-
-                {{-- To Date Input --}}
-                <div x-data="{ fromDate: @entangle('filterDateFrom') }">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                    <input type="date" wire:model="filterDateTo" :min="fromDate" max="{{ date('Y-m-d') }}"
-                        class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500">
-                </div>
-            </div>
-
             {{-- Status Filter --}}
-            <div class="mt-4">
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select wire:model="filterStatus"
                     class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500">
