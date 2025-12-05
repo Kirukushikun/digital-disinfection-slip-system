@@ -49,8 +49,8 @@ class TruckList extends Component
     public function mount($type = 'incoming')
     {
         $this->type = $type;
-        $this->filterDateFrom = now()->format('Y-m-d');
-        $this->filterDateTo = now()->format('Y-m-d');
+        $this->filterDateFrom = null;
+        $this->filterDateTo = null;
 
         // Check if we should open create modal from route parameter
         if (request()->has('openCreate') && $this->type === 'outgoing') {
@@ -97,16 +97,16 @@ class TruckList extends Component
             $this->filterDateTo = $this->appliedDateTo;
             $this->filterStatus = $this->appliedStatus;
         } else {
-            $this->filterDateFrom = now()->format('Y-m-d');
-            $this->filterDateTo = now()->format('Y-m-d');
+            $this->filterDateFrom = null;
+            $this->filterDateTo = null;
             $this->filterStatus = '';
         }
     }
 
     public function clearFilters()
     {
-        $this->filterDateFrom = now()->format('Y-m-d');
-        $this->filterDateTo = now()->format('Y-m-d');
+        $this->filterDateFrom = null;
+        $this->filterDateTo = null;
         $this->filterStatus = '';
     }
 

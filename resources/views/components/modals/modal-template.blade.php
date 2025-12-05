@@ -2,14 +2,27 @@
     'show' => 'showModal',
     'title' => 'Modal Title',
     'maxWidth' => 'max-w-md',
+    'backdropOpacity' => '80',
 ])
+
+@php
+    $backdropClass = match ($backdropOpacity) {
+        '40' => 'bg-black/40',
+        '50' => 'bg-black/50',
+        '60' => 'bg-black/60',
+        '70' => 'bg-black/70',
+        '80' => 'bg-black/80',
+        '90' => 'bg-black/90',
+        default => 'bg-black/80',
+    };
+@endphp
 
 <div x-data="{ show: @entangle($show) }" x-show="show" x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
     {{-- Backdrop --}}
-    <div class="fixed inset-0 bg-black/80 transition-opacity" @click="show = false"></div>
+    <div class="fixed inset-0 {{ $backdropClass }} transition-opacity" @click="show = false"></div>
 
     {{-- Modal Panel --}}
     <div class="flex min-h-full items-center justify-center p-4">

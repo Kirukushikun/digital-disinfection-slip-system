@@ -44,31 +44,104 @@
             let stream = null;
             let capturedImageData = null;
 
-            const video = document.getElementById('cameraPreview');
-            const canvas = document.getElementById('photoCanvas');
-            const capturedPhoto = document.getElementById('capturedPhoto');
-            const capturedPhotoContainer = document.getElementById('capturedPhotoContainer');
-            const captureBtn = document.getElementById('captureBtn');
-            const retakeBtn = document.getElementById('retakeBtn');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const statusMessage = document.getElementById('statusMessage');
+            // Helper function to get elements safely
+            function getElement(id) {
+                return document.getElementById(id);
+            }
 
-            // Start camera when modal opens
-            document.addEventListener('livewire:init', () => {
-                Livewire.on('showAddAttachmentModal', () => {
-                    startCamera();
+            // Initialize camera management
+            function initCameraManagement() {
+                // Start camera when modal opens via Livewire event
+                document.addEventListener('livewire:init', () => {
+                    // Listen for the event to open modal
+                    Livewire.on('showAddAttachmentModal', () => {
+                        // Wait for modal to render
+                        setTimeout(() => {
+                            startCamera();
+                        }, 300);
+                    });
+
+                    // Watch for Livewire property changes
+                    Livewire.hook('message.processed', ({
+                        component
+                    }) => {
+                        if (component) {
+                            try {
+                                const isOpen = component.get('showAddAttachmentModal');
+                                if (!isOpen && stream) {
+                                    // Modal closed, stop camera
+                                    stopCamera();
+                                    resetCamera();
+                                } else if (isOpen && !stream) {
+                                    // Modal opened, start camera
+                                    setTimeout(() => {
+                                        startCamera();
+                                    }, 300);
+                                }
+                            } catch (e) {
+                                // Component might not have the property, ignore
+                            }
+                        }
+                    });
                 });
 
-                Livewire.hook('message.processed', () => {
-                    if (!@this.showAddAttachmentModal) {
-                        stopCamera();
-                        resetCamera();
+                // Watch for modal visibility changes (handles Alpine.js closes via backdrop/X)
+                const observer = new MutationObserver(() => {
+                    const video = getElement('cameraPreview');
+                    if (video) {
+                        const modal = video.closest('[x-data]');
+                        if (modal) {
+                            // Check if modal is visible
+                            const isVisible = window.getComputedStyle(modal).display !== 'none';
+
+                            if (!isVisible && stream) {
+                                // Modal hidden, stop camera
+                                stopCamera();
+                                resetCamera();
+                            } else if (isVisible && !stream && video.offsetParent !== null) {
+                                // Modal visible and video element is in view, start camera
+                                setTimeout(() => {
+                                    startCamera();
+                                }, 300);
+                            }
+                        }
                     }
                 });
-            });
+
+                // Start observing when DOM is ready
+                if (document.body) {
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style']
+                    });
+                }
+            }
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initCameraManagement);
+            } else {
+                initCameraManagement();
+            }
 
             async function startCamera() {
+                const video = getElement('cameraPreview');
+                const statusMessage = getElement('statusMessage');
+                const capturedPhotoContainer = getElement('capturedPhotoContainer');
+
+                if (!video || !statusMessage) {
+                    console.error('Camera elements not found');
+                    return;
+                }
+
                 try {
+                    // Stop any existing stream first
+                    if (stream) {
+                        stopCamera();
+                    }
+
                     stream = await navigator.mediaDevices.getUserMedia({
                         video: {
                             facingMode: 'environment', // Back camera
@@ -82,15 +155,21 @@
                     });
 
                     video.srcObject = stream;
-                    video.parentElement.classList.remove('hidden');
-                    capturedPhotoContainer.classList.add('hidden');
+                    if (video.parentElement) {
+                        video.parentElement.classList.remove('hidden');
+                    }
+                    if (capturedPhotoContainer) {
+                        capturedPhotoContainer.classList.add('hidden');
+                    }
                     statusMessage.textContent = 'Camera ready';
                     statusMessage.classList.remove('text-red-600');
                     statusMessage.classList.add('text-gray-600');
                 } catch (error) {
-                    statusMessage.textContent = 'Error accessing camera: ' + error.message;
-                    statusMessage.classList.remove('text-gray-600');
-                    statusMessage.classList.add('text-red-600');
+                    if (statusMessage) {
+                        statusMessage.textContent = 'Error accessing camera: ' + error.message;
+                        statusMessage.classList.remove('text-gray-600');
+                        statusMessage.classList.add('text-red-600');
+                    }
                     console.error('Camera error:', error);
                 }
             }
@@ -103,6 +182,15 @@
             }
 
             function capturePhoto() {
+                const video = getElement('cameraPreview');
+                const canvas = getElement('photoCanvas');
+                const statusMessage = getElement('statusMessage');
+
+                if (!video || !canvas || !statusMessage) {
+                    console.error('Camera elements not found');
+                    return;
+                }
+
                 const context = canvas.getContext('2d');
 
                 // Set canvas to square dimensions
@@ -141,16 +229,31 @@
             }
 
             function displayCapturedPhoto(imageDataUrl, sizeMB) {
+                const video = getElement('cameraPreview');
+                const capturedPhoto = getElement('capturedPhoto');
+                const capturedPhotoContainer = getElement('capturedPhotoContainer');
+                const captureBtn = getElement('captureBtn');
+                const retakeBtn = getElement('retakeBtn');
+                const uploadBtn = getElement('uploadBtn');
+                const statusMessage = getElement('statusMessage');
+
+                if (!capturedPhoto || !capturedPhotoContainer || !statusMessage) {
+                    console.error('Display elements not found');
+                    return;
+                }
+
                 capturedPhoto.src = imageDataUrl;
 
                 // Hide camera, show captured photo
-                video.parentElement.classList.add('hidden');
+                if (video && video.parentElement) {
+                    video.parentElement.classList.add('hidden');
+                }
                 capturedPhotoContainer.classList.remove('hidden');
 
                 // Toggle buttons
-                captureBtn.classList.add('hidden');
-                retakeBtn.classList.remove('hidden');
-                uploadBtn.classList.remove('hidden');
+                if (captureBtn) captureBtn.classList.add('hidden');
+                if (retakeBtn) retakeBtn.classList.remove('hidden');
+                if (uploadBtn) uploadBtn.classList.remove('hidden');
 
                 stopCamera();
 
@@ -160,55 +263,88 @@
             }
 
             function retakePhoto() {
+                const capturedPhotoContainer = getElement('capturedPhotoContainer');
+                const retakeBtn = getElement('retakeBtn');
+                const uploadBtn = getElement('uploadBtn');
+                const captureBtn = getElement('captureBtn');
+
+                if (!capturedPhotoContainer) {
+                    console.error('Elements not found');
+                    return;
+                }
+
                 // Hide captured photo, show camera
                 capturedPhotoContainer.classList.add('hidden');
 
                 // Toggle buttons
-                retakeBtn.classList.add('hidden');
-                uploadBtn.classList.add('hidden');
-                captureBtn.classList.remove('hidden');
+                if (retakeBtn) retakeBtn.classList.add('hidden');
+                if (uploadBtn) uploadBtn.classList.add('hidden');
+                if (captureBtn) captureBtn.classList.remove('hidden');
 
                 capturedImageData = null;
                 startCamera();
             }
 
             function resetCamera() {
-                capturedPhotoContainer.classList.add('hidden');
-                retakeBtn.classList.add('hidden');
-                uploadBtn.classList.add('hidden');
-                captureBtn.classList.remove('hidden');
+                const capturedPhotoContainer = getElement('capturedPhotoContainer');
+                const retakeBtn = getElement('retakeBtn');
+                const uploadBtn = getElement('uploadBtn');
+                const captureBtn = getElement('captureBtn');
+                const statusMessage = getElement('statusMessage');
+
+                if (capturedPhotoContainer) capturedPhotoContainer.classList.add('hidden');
+                if (retakeBtn) retakeBtn.classList.add('hidden');
+                if (uploadBtn) uploadBtn.classList.add('hidden');
+                if (captureBtn) captureBtn.classList.remove('hidden');
+                if (statusMessage) statusMessage.textContent = '';
                 capturedImageData = null;
-                statusMessage.textContent = '';
             }
 
             function uploadCapturedPhoto() {
+                const uploadBtn = getElement('uploadBtn');
+                const statusMessage = getElement('statusMessage');
+
                 if (!capturedImageData) {
-                    statusMessage.textContent = 'No photo captured. Please capture a photo first.';
-                    statusMessage.classList.remove('text-gray-600');
-                    statusMessage.classList.add('text-red-600');
+                    if (statusMessage) {
+                        statusMessage.textContent = 'No photo captured. Please capture a photo first.';
+                        statusMessage.classList.remove('text-gray-600');
+                        statusMessage.classList.add('text-red-600');
+                    }
                     return;
                 }
 
                 // Disable upload button to prevent double clicks
-                uploadBtn.disabled = true;
-                statusMessage.textContent = 'Uploading...';
-                statusMessage.classList.remove('text-red-600');
-                statusMessage.classList.add('text-gray-600');
+                if (uploadBtn) uploadBtn.disabled = true;
+                if (statusMessage) {
+                    statusMessage.textContent = 'Uploading...';
+                    statusMessage.classList.remove('text-red-600');
+                    statusMessage.classList.add('text-gray-600');
+                }
+
+                // Get the Livewire component instance
+                const component = @this;
+                if (!component) {
+                    console.error('Livewire component not found');
+                    if (uploadBtn) uploadBtn.disabled = false;
+                    return;
+                }
 
                 // Send image data to Livewire
-                @this.uploadAttachment(capturedImageData)
+                component.uploadAttachment(capturedImageData)
                     .then(() => {
                         // Reset on success
                         resetCamera();
                     })
                     .catch((error) => {
                         console.error('Upload error:', error);
-                        statusMessage.textContent = 'Upload failed. Please try again.';
-                        statusMessage.classList.remove('text-gray-600');
-                        statusMessage.classList.add('text-red-600');
+                        if (statusMessage) {
+                            statusMessage.textContent = 'Upload failed. Please try again.';
+                            statusMessage.classList.remove('text-gray-600');
+                            statusMessage.classList.add('text-red-600');
+                        }
                     })
                     .finally(() => {
-                        uploadBtn.disabled = false;
+                        if (uploadBtn) uploadBtn.disabled = false;
                     });
             }
         </script>

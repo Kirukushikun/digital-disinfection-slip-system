@@ -1,6 +1,6 @@
 @props(['show', 'file', 'selectedSlip' => null])
 
-<x-modals.modal-template :show="$show" title="Attachment Preview" max-width="max-w-4xl" class="bg-black/80">
+<x-modals.modal-template :show="$show" title="Attachment Preview" max-width="max-w-2xl" backdrop-opacity="40">
 
     @php
         $fileUrl = Storage::url($file);
@@ -12,7 +12,7 @@
 
     @if (in_array($extension, $imageExtensions))
         {{-- IMAGE PREVIEW ONLY --}}
-        <img src="{{ $fileUrl }}" class="border shadow-md max-h-[80vh] object-contain mx-auto rounded-lg"
+        <img src="{{ $fileUrl }}" class="border shadow-md max-h-[60vh] max-w-full object-contain mx-auto rounded-lg"
             alt="Attachment Preview">
     @else
         {{-- NO PREVIEW — ONLY LINK --}}
