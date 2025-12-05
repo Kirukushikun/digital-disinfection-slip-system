@@ -1,7 +1,7 @@
 @props(['paginator'])
 
 @if ($paginator->lastPage() > 1)
-    <div class="pt-4">
+    <div>
 
         {{-- Wrapper responsive layout --}}
         <div class="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-3">
