@@ -5,10 +5,10 @@
     'trucks' => collect(),
 ])
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
     {{-- Status Filter (full width) --}}
-    <div class="col-span-2" x-data="{
+    <div class="md:col-span-2 lg:col-span-3" x-data="{
         open: false,
         selected: @entangle('filterStatus'),
         options: @js($availableStatuses),
@@ -129,26 +129,20 @@
             searchPlaceholder="Search destinations..." :multiple="true" />
     </div>
 
-    {{-- Date Range Label (full width) --}}
-    <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700">Date Range</label>
+    {{-- From Date Input --}}
+    <div x-data="{ toDate: @entangle('filterCreatedTo') }">
+        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+        <input type="date" wire:model="filterCreatedFrom" :max="toDate || '{{ date('Y-m-d') }}'"
+            class="pb-2 px-3 block w-full border-gray-300 shadow-sm rounded-lg text-sm 
+               focus:border-blue-500 focus:ring-blue-500">
     </div>
 
     {{-- To Date Input --}}
     <div x-data="{ fromDate: @entangle('filterCreatedFrom') }">
-        <label class="block text-xs text-gray-500 mb-1">To</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
         <input type="date" wire:model="filterCreatedTo" :min="fromDate" max="{{ date('Y-m-d') }}"
             class="pb-2 px-3 block w-full border-gray-300 shadow-sm rounded-lg text-sm 
                focus:border-blue-500 focus:ring-blue-500">
     </div>
-
-    {{-- From Date Input --}}
-    <div x-data="{ fromDate: @entangle('filterCreatedFrom') }">
-        <label class="block text-xs text-gray-500 mb-1">From</label>
-        <input type="date" wire:model="filterCreatedFrom" x-model="fromDate" max="{{ date('Y-m-d') }}"
-            class="pb-2 px-3 block w-full border-gray-300 shadow-sm rounded-lg text-sm 
-               focus:border-blue-500 focus:ring-blue-500">
-    </div>
-
 
 </div>
