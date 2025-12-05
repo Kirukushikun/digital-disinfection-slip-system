@@ -16,17 +16,19 @@ class Trucks extends Component
     
     // Filter fields
     public $filterStatus = '';
-    public $filterOrigin = '';
-    public $filterDestination = '';
-    public $filterDriver = '';
+    public $filterOrigin = [];
+    public $filterDestination = [];
+    public $filterDriver = [];
+    public $filterPlateNumber = [];
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters (stored separately)
     public $appliedStatus = '';
-    public $appliedOrigin = '';
-    public $appliedDestination = '';
-    public $appliedDriver = '';
+    public $appliedOrigin = [];
+    public $appliedDestination = [];
+    public $appliedDriver = [];
+    public $appliedPlateNumber = [];
     public $appliedCreatedFrom = null;
     public $appliedCreatedTo = null;
     
@@ -40,7 +42,15 @@ class Trucks extends Component
 
     public function mount()
     {
-        // Don't initialize date filters - let them be null by default
+        // Initialize array filters
+        $this->filterOrigin = [];
+        $this->filterDestination = [];
+        $this->filterDriver = [];
+        $this->filterPlateNumber = [];
+        $this->appliedOrigin = [];
+        $this->appliedDestination = [];
+        $this->appliedDriver = [];
+        $this->appliedPlateNumber = [];
     }
 
     // Computed property for locations
@@ -55,6 +65,12 @@ class Trucks extends Component
         return \App\Models\Driver::orderBy('first_name')->get();
     }
 
+    // Computed property for trucks
+    public function getTrucksProperty()
+    {
+        return \App\Models\Truck::orderBy('plate_number')->get();
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -66,6 +82,7 @@ class Trucks extends Component
         $this->appliedOrigin = $this->filterOrigin;
         $this->appliedDestination = $this->filterDestination;
         $this->appliedDriver = $this->filterDriver;
+        $this->appliedPlateNumber = $this->filterPlateNumber;
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
         
@@ -84,16 +101,20 @@ class Trucks extends Component
                 $this->filterStatus = '';
                 break;
             case 'origin':
-                $this->appliedOrigin = '';
-                $this->filterOrigin = '';
+                $this->appliedOrigin = [];
+                $this->filterOrigin = [];
                 break;
             case 'destination':
-                $this->appliedDestination = '';
-                $this->filterDestination = '';
+                $this->appliedDestination = [];
+                $this->filterDestination = [];
                 break;
             case 'driver':
-                $this->appliedDriver = '';
-                $this->filterDriver = '';
+                $this->appliedDriver = [];
+                $this->filterDriver = [];
+                break;
+            case 'plateNumber':
+                $this->appliedPlateNumber = [];
+                $this->filterPlateNumber = [];
                 break;
             case 'createdFrom':
                 $this->appliedCreatedFrom = null;
@@ -109,14 +130,48 @@ class Trucks extends Component
         $this->resetPage();
     }
 
+    public function removeSpecificFilter($filterType, $valueToRemove)
+    {
+        switch($filterType) {
+            case 'origin':
+                $this->appliedOrigin = array_values(array_filter($this->appliedOrigin, function($id) use ($valueToRemove) {
+                    return $id != $valueToRemove;
+                }));
+                $this->filterOrigin = $this->appliedOrigin;
+                break;
+            case 'destination':
+                $this->appliedDestination = array_values(array_filter($this->appliedDestination, function($id) use ($valueToRemove) {
+                    return $id != $valueToRemove;
+                }));
+                $this->filterDestination = $this->appliedDestination;
+                break;
+            case 'driver':
+                $this->appliedDriver = array_values(array_filter($this->appliedDriver, function($id) use ($valueToRemove) {
+                    return $id != $valueToRemove;
+                }));
+                $this->filterDriver = $this->appliedDriver;
+                break;
+            case 'plateNumber':
+                $this->appliedPlateNumber = array_values(array_filter($this->appliedPlateNumber, function($id) use ($valueToRemove) {
+                    return $id != $valueToRemove;
+                }));
+                $this->filterPlateNumber = $this->appliedPlateNumber;
+                break;
+        }
+        
+        $this->updateFiltersActive();
+        $this->resetPage();
+    }
+
     public function updateFiltersActive()
     {
         // Check if any filters are actually applied
         $this->filtersActive = 
             $this->appliedStatus !== '' ||
-            $this->appliedOrigin ||
-            $this->appliedDestination ||
-            $this->appliedDriver ||
+            !empty($this->appliedOrigin) ||
+            !empty($this->appliedDestination) ||
+            !empty($this->appliedDriver) ||
+            !empty($this->appliedPlateNumber) ||
             $this->appliedCreatedFrom ||
             $this->appliedCreatedTo;
     }
@@ -129,16 +184,18 @@ class Trucks extends Component
     public function clearFilters()
     {
         $this->filterStatus = '';
-        $this->filterOrigin = '';
-        $this->filterDestination = '';
-        $this->filterDriver = '';
+        $this->filterOrigin = [];
+        $this->filterDestination = [];
+        $this->filterDriver = [];
+        $this->filterPlateNumber = [];
         $this->filterCreatedFrom = null;
         $this->filterCreatedTo = null;
         
         $this->appliedStatus = '';
-        $this->appliedOrigin = '';
-        $this->appliedDestination = '';
-        $this->appliedDriver = '';
+        $this->appliedOrigin = [];
+        $this->appliedDestination = [];
+        $this->appliedDriver = [];
+        $this->appliedPlateNumber = [];
         $this->appliedCreatedFrom = null;
         $this->appliedCreatedTo = null;
         
@@ -171,16 +228,20 @@ class Trucks extends Component
                 $query->where('status', $this->appliedStatus);
             })
             // Origin filter
-            ->when($this->filtersActive && $this->appliedOrigin, function($query) {
-                $query->where('location_id', $this->appliedOrigin);
+            ->when($this->filtersActive && !empty($this->appliedOrigin), function($query) {
+                $query->whereIn('location_id', $this->appliedOrigin);
             })
             // Destination filter
-            ->when($this->filtersActive && $this->appliedDestination, function($query) {
-                $query->where('destination_id', $this->appliedDestination);
+            ->when($this->filtersActive && !empty($this->appliedDestination), function($query) {
+                $query->whereIn('destination_id', $this->appliedDestination);
             })
             // Driver filter
-            ->when($this->filtersActive && $this->appliedDriver, function($query) {
-                $query->where('driver_id', $this->appliedDriver);
+            ->when($this->filtersActive && !empty($this->appliedDriver), function($query) {
+                $query->whereIn('driver_id', $this->appliedDriver);
+            })
+            // Plate number filter
+            ->when($this->filtersActive && !empty($this->appliedPlateNumber), function($query) {
+                $query->whereIn('truck_id', $this->appliedPlateNumber);
             })
             // Created date range filter
             ->when($this->filtersActive && $this->appliedCreatedFrom, function($query) {
@@ -196,6 +257,7 @@ class Trucks extends Component
             'slips' => $slips,
             'locations' => $this->locations,
             'drivers' => $this->drivers,
+            'trucks' => $this->trucks,
             'availableStatuses' => $this->availableStatuses,
         ]);
     }

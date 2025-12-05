@@ -9,13 +9,15 @@
     'multiple' => false,
 ])
 
-<div class="w-full" x-data="{
+<div class="w-full" 
+    x-data="{
     open: false,
     search: '',
     selected: @entangle($wireModel),
     options: @js($options),
     placeholder: '{{ $placeholder }}',
     multiple: {{ $multiple ? 'true' : 'false' }},
+    dropdownId: 'dropdown_' + Math.random().toString(36).substr(2, 9),
     get displayText() {
         if (this.multiple) {
             if (Array.isArray(this.selected) && this.selected.length > 0) {
@@ -64,6 +66,20 @@
             this.open = false;
         }
     },
+    toggleDropdown() {
+        if (this.open) {
+            // If already open, just close it
+            this.closeDropdown();
+        } else {
+            // If closed, close others and open this one
+            this.$dispatch('close-all-dropdowns', { except: this.dropdownId });
+            this.open = true;
+        }
+    },
+    closeDropdown() {
+        this.open = false;
+        this.search = '';
+    },
     init() {
         this.$watch('open', value => {
             if (value) {
@@ -80,7 +96,9 @@
             this.selected = this.selected ? [this.selected] : [];
         }
     }
-}">
+}"
+@close-all-dropdowns.window="if ($event.detail.except !== dropdownId) { closeDropdown() }"
+@focusin.window="if (!$el.contains($event.target)) { closeDropdown() }">
     @if ($label)
         <label class="block text-sm font-medium text-gray-700 mb-1">
             {{ $label }}
@@ -89,7 +107,7 @@
 
     <div class="relative">
         <!-- Dropdown Button -->
-        <button type="button" @click="open = !open" :disabled="{{ $disabled ? 'true' : 'false' }}"
+        <button type="button" @click="toggleDropdown()" :disabled="{{ $disabled ? 'true' : 'false' }}"
             class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             :class="{ 'ring-2 ring-blue-500': open }">
             <span x-text="displayText" :class="{ 'text-gray-400': multiple ? (!selected || selected.length === 0) : !selected }"></span>
@@ -102,7 +120,7 @@
         </button>
 
         <!-- Dropdown Menu -->
-        <div x-show="open" @click.outside="open = false" x-transition:enter="transition ease-out duration-100"
+        <div x-show="open" @click.outside="closeDropdown()" x-transition:enter="transition ease-out duration-100"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
@@ -110,7 +128,7 @@
             style="display: none;">
 
             <!-- Search Input -->
-            <input x-ref="searchInput" x-model="search" @keydown.escape="open = false"
+            <input x-ref="searchInput" x-model="search" @keydown.escape="closeDropdown()"
                 class="block w-full px-4 py-2 text-gray-800 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 type="text" :placeholder="'{{ $searchPlaceholder }}'" autocomplete="off">
 
