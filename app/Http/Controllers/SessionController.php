@@ -12,9 +12,18 @@ class SessionController extends Controller
 {
     public function create(Request $request, $location = null)
     {
-        // If user is already logged in, redirect to home
+        // If user is already logged in, redirect to home with flash message
         if (Auth::check()) {
-            return redirect('/');
+            $user = Auth::user();
+            $locationName = $request->session()->get('location_name');
+            
+            if ($locationName) {
+                $message = "You are already logged in at {$locationName}.";
+            } else {
+                $message = "You are already logged in.";
+            }
+            
+            return redirect('/')->with('status', $message);
         }
         
         $locationModel = null;

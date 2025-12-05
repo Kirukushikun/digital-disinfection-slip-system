@@ -30,7 +30,7 @@
             </div>
         </x-buttons.submit-button>
 
-        {{-- Add Button (Only for Outgoing) --}}
+        {{-- Create Button (Only for Outgoing) --}}
         @if ($type === 'outgoing')
             <x-buttons.submit-button wire:click="openCreateModal" color="blue">
                 <div class="flex items-center gap-2">
@@ -38,7 +38,7 @@
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>Add</span>
+                    <span>Create</span>
                 </div>
             </x-buttons.submit-button>
         @endif
@@ -53,13 +53,15 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">From</label>
-                        <input type="date" wire:model.live="filterDateFrom" x-model="fromDate" max="{{ date('Y-m-d') }}"
+                        <input type="date" wire:model.live="filterDateFrom" x-model="fromDate"
+                            max="{{ date('Y-m-d') }}"
                             class="py-2 px-3 block w-full border-gray-300 shadow-sm rounded-lg text-sm 
                                     focus:border-orange-500 focus:ring-orange-500">
                     </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">To</label>
-                        <input type="date" wire:model.live="filterDateTo" :min="fromDate" max="{{ date('Y-m-d') }}"
+                        <input type="date" wire:model.live="filterDateTo" :min="fromDate"
+                            max="{{ date('Y-m-d') }}"
                             class="py-2 px-3 block w-full border-gray-300 shadow-sm rounded-lg text-sm 
                                     focus:border-orange-500 focus:ring-orange-500">
                     </div>
