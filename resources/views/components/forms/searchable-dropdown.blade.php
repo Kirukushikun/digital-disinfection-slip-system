@@ -6,6 +6,7 @@
     'label' => null,
     'error' => null,
     'disabled' => false,
+    'multiple' => false,
 ])
 
 <div class="w-full" x-data="{
@@ -14,11 +15,22 @@
     selected: @entangle($wireModel),
     options: @js($options),
     placeholder: '{{ $placeholder }}',
+    multiple: {{ $multiple ? 'true' : 'false' }},
     get displayText() {
-        if (this.selected && this.options[this.selected]) {
-            return this.options[this.selected];
+        if (this.multiple) {
+            if (Array.isArray(this.selected) && this.selected.length > 0) {
+                if (this.selected.length === 1) {
+                    return this.options[this.selected[0]] || this.placeholder;
+                }
+                return this.selected.length + ' selected';
+            }
+            return this.placeholder;
+        } else {
+            if (this.selected && this.options[this.selected]) {
+                return this.options[this.selected];
+            }
+            return this.placeholder;
         }
-        return this.placeholder;
     },
     get filteredOptions() {
         if (!this.search) {
@@ -28,10 +40,29 @@
             label.toLowerCase().includes(this.search.toLowerCase())
         );
     },
-    selectOption(value, label) {
-        this.selected = value;
-        this.search = '';
-        this.open = false;
+    isSelected(value) {
+        if (this.multiple) {
+            return Array.isArray(this.selected) && this.selected.includes(parseInt(value));
+        }
+        return this.selected == value;
+    },
+    toggleOption(value) {
+        if (this.multiple) {
+            if (!Array.isArray(this.selected)) {
+                this.selected = [];
+            }
+            const numValue = parseInt(value);
+            const index = this.selected.indexOf(numValue);
+            if (index > -1) {
+                this.selected.splice(index, 1);
+            } else {
+                this.selected.push(numValue);
+            }
+        } else {
+            this.selected = value;
+            this.search = '';
+            this.open = false;
+        }
     },
     init() {
         this.$watch('open', value => {
@@ -43,6 +74,11 @@
                 this.search = '';
             }
         });
+        
+        // Ensure selected is array for multiple, keep as-is for single
+        if (this.multiple && !Array.isArray(this.selected)) {
+            this.selected = this.selected ? [this.selected] : [];
+        }
     }
 }">
     @if ($label)
@@ -56,7 +92,7 @@
         <button type="button" @click="open = !open" :disabled="{{ $disabled ? 'true' : 'false' }}"
             class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             :class="{ 'ring-2 ring-blue-500': open }">
-            <span x-text="displayText" :class="{ 'text-gray-400': !selected }"></span>
+            <span x-text="displayText" :class="{ 'text-gray-400': multiple ? (!selected || selected.length === 0) : !selected }"></span>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-2 -mr-1 transition-transform"
                 :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd"
@@ -81,10 +117,17 @@
             <!-- Options List -->
             <div class="max-h-60 overflow-y-auto">
                 <template x-for="[value, label] in filteredOptions" :key="value">
-                    <a href="#" @click.prevent="selectOption(value, label)"
+                    <a href="#" @click.prevent="toggleOption(value)"
                         class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md"
-                        :class="{ 'bg-blue-50 text-blue-700': selected === value }">
-                        <span x-text="label"></span>
+                        :class="{ 'bg-blue-50 text-blue-700': isSelected(value) }">
+                        <div class="flex items-center justify-between">
+                            <span x-text="label"></span>
+                            <template x-if="multiple && isSelected(value)">
+                                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </template>
+                        </div>
                     </a>
                 </template>
 
