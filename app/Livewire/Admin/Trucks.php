@@ -90,9 +90,7 @@ class Trucks extends Component
     public $searchDetailsDestination = '';
     public $searchDetailsDriver = '';
     
-    // Store filtered options as properties for reactivity
-    public $availableOriginsOptions = [];
-    public $availableDestinationsOptions = [];
+    // Note: availableOriginsOptions and availableDestinationsOptions are now computed properties
     
     // Cached collections to avoid duplicate queries
     private $cachedLocations = null;
@@ -112,8 +110,7 @@ class Trucks extends Component
         $this->appliedDriver = [];
         $this->appliedPlateNumber = [];
         
-        // Initialize filtered options
-        $this->updateFilteredOptions();
+        // Options are now computed properties, no initialization needed
     }
     
     // Helper methods to get cached collections
@@ -419,12 +416,12 @@ class Trucks extends Component
         return $options->toArray();
     }
     
-    // Update filtered options when form fields change
-    private function updateFilteredOptions()
+    // Computed properties for available origins and destinations (reactive)
+    public function getAvailableOriginsOptionsProperty()
     {
         $locations = $this->getCachedLocations();
         
-        // Update origins (exclude selected destination, filter by search)
+        // Exclude selected destination from origins
         $originOptions = $locations;
         if ($this->destination_id) {
             $originOptions = $originOptions->where('id', '!=', $this->destination_id);
@@ -437,11 +434,21 @@ class Trucks extends Component
             $originOptions = $originOptions->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included (if it's not the destination)
+            if ($this->location_id && $this->location_id != $this->destination_id) {
+                $allOptions = $locations->pluck('location_name', 'id');
+                $originOptions = $this->ensureSelectedInOptions($originOptions, $this->location_id, $allOptions);
+            }
         }
         
-        $this->availableOriginsOptions = $originOptions->toArray();
+        return $originOptions->toArray();
+    }
+    
+    public function getAvailableDestinationsOptionsProperty()
+    {
+        $locations = $this->getCachedLocations();
         
-        // Update destinations (exclude selected origin, filter by search)
+        // Exclude selected origin from destinations
         $destinationOptions = $locations;
         if ($this->location_id) {
             $destinationOptions = $destinationOptions->where('id', '!=', $this->location_id);
@@ -454,20 +461,14 @@ class Trucks extends Component
             $destinationOptions = $destinationOptions->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included (if it's not the origin)
+            if ($this->destination_id && $this->destination_id != $this->location_id) {
+                $allOptions = $locations->pluck('location_name', 'id');
+                $destinationOptions = $this->ensureSelectedInOptions($destinationOptions, $this->destination_id, $allOptions);
+            }
         }
         
-        $this->availableDestinationsOptions = $destinationOptions->toArray();
-    }
-    
-    // Watch for search changes
-    public function updatedSearchOrigin()
-    {
-        $this->updateFilteredOptions();
-    }
-    
-    public function updatedSearchDestination()
-    {
-        $this->updateFilteredOptions();
+        return $destinationOptions->toArray();
     }
 
     public function updatingSearch()
@@ -795,7 +796,6 @@ class Trucks extends Component
     public function openCreateModal()
     {
         $this->resetCreateForm();
-        $this->updateFilteredOptions();
         $this->showCreateModal = true;
     }
 
@@ -830,7 +830,6 @@ class Trucks extends Component
         $this->searchTruck = '';
         $this->searchDriver = '';
         $this->searchHatcheryGuard = '';
-        $this->updateFilteredOptions();
         $this->resetErrorBag();
     }
 
@@ -869,6 +868,13 @@ class Trucks extends Component
             'driver_id' => 'required|exists:drivers,id',
             'hatchery_guard_id' => 'required|exists:users,id',
             'reason_for_disinfection' => 'nullable|string|max:1000',
+        ], [], [
+            'location_id' => 'Origin',
+            'destination_id' => 'Destination',
+            'truck_id' => 'Truck',
+            'driver_id' => 'Driver',
+            'hatchery_guard_id' => 'Hatchery Guard',
+            'reason_for_disinfection' => 'Reason for Disinfection',
         ]);
 
         $slip = DisinfectionSlipModel::create([
@@ -889,15 +895,16 @@ class Trucks extends Component
         $this->resetPage();
     }
 
-    // Watch for changes to location_id or destination_id to update available options
+    // Watch for changes to location_id or destination_id to prevent same selection
     public function updatedLocationId()
     {
         // If destination is the same as origin, clear it
         if ($this->destination_id == $this->location_id) {
             $this->destination_id = null;
         }
-        // Update filtered options
-        $this->updateFilteredOptions();
+        // Clear search when selection changes to show all options
+        $this->searchOrigin = '';
+        $this->searchDestination = '';
     }
 
     public function updatedDestinationId()
@@ -906,8 +913,9 @@ class Trucks extends Component
         if ($this->location_id == $this->destination_id) {
             $this->location_id = null;
         }
-        // Update filtered options
-        $this->updateFilteredOptions();
+        // Clear search when selection changes to show all options
+        $this->searchOrigin = '';
+        $this->searchDestination = '';
     }
 
     public function openAttachmentModal($file)
