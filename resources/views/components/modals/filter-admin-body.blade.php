@@ -68,11 +68,11 @@
     </div>
 
     {{-- Plate Number Filter --}}
-    <div>
+    <div x-data="{ filterValue: @entangle('filterPlateNumber') }">
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">Plate Number</label>
             <button type="button" wire:click="$set('filterPlateNumber', [])"
-                @if (empty($filterPlateNumber)) style="display: none;" @endif
+                x-show="filterValue && filterValue.length > 0"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
@@ -83,11 +83,10 @@
     </div>
 
     {{-- Driver Filter --}}
-    <div>
+    <div x-data="{ filterValue: @entangle('filterDriver') }">
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">Driver</label>
-            <button type="button" wire:click="$set('filterDriver', [])"
-                @if (empty($filterDriver)) style="display: none;" @endif
+            <button type="button" wire:click="$set('filterDriver', [])" x-show="filterValue && filterValue.length > 0"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
@@ -97,11 +96,10 @@
     </div>
 
     {{-- Origin Filter --}}
-    <div>
+    <div x-data="{ filterValue: @entangle('filterOrigin') }">
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">Origin</label>
-            <button type="button" wire:click="$set('filterOrigin', [])"
-                @if (empty($filterOrigin)) style="display: none;" @endif
+            <button type="button" wire:click="$set('filterOrigin', [])" x-show="filterValue && filterValue.length > 0"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
@@ -111,11 +109,11 @@
     </div>
 
     {{-- Destination Filter --}}
-    <div>
+    <div x-data="{ filterValue: @entangle('filterDestination') }">
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">Destination</label>
             <button type="button" wire:click="$set('filterDestination', [])"
-                @if (empty($filterDestination)) style="display: none;" @endif
+                x-show="filterValue && filterValue.length > 0"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
@@ -126,15 +124,27 @@
     </div>
 
     {{-- From Date Input --}}
-    <div x-data="{ toDate: @entangle('filterCreatedTo') }">
-        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+    <div x-data="{ toDate: @entangle('filterCreatedTo'), fromDate: @entangle('filterCreatedFrom') }">
+        <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700">From Date</label>
+            <button type="button" wire:click="$set('filterCreatedFrom', null)" x-show="fromDate"
+                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                Clear
+            </button>
+        </div>
         <input type="date" wire:model="filterCreatedFrom" :max="toDate || '{{ date('Y-m-d') }}'"
             class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
     </div>
 
     {{-- To Date Input --}}
-    <div x-data="{ fromDate: @entangle('filterCreatedFrom') }">
-        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+    <div x-data="{ fromDate: @entangle('filterCreatedFrom'), toDate: @entangle('filterCreatedTo') }">
+        <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700">To Date</label>
+            <button type="button" wire:click="$set('filterCreatedTo', null)" x-show="toDate"
+                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                Clear
+            </button>
+        </div>
         <input type="date" wire:model="filterCreatedTo" :min="fromDate" max="{{ date('Y-m-d') }}"
             class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
     </div>

@@ -93,6 +93,12 @@ class Trucks extends Component
     // Store filtered options as properties for reactivity
     public $availableOriginsOptions = [];
     public $availableDestinationsOptions = [];
+    
+    // Cached collections to avoid duplicate queries
+    private $cachedLocations = null;
+    private $cachedDrivers = null;
+    private $cachedTrucks = null;
+    private $cachedGuards = null;
 
     public function mount()
     {
@@ -109,30 +115,96 @@ class Trucks extends Component
         // Initialize filtered options
         $this->updateFilteredOptions();
     }
+    
+    // Helper methods to get cached collections
+    private function getCachedLocations()
+    {
+        if ($this->cachedLocations === null) {
+            $this->cachedLocations = Location::orderBy('location_name')->get();
+        }
+        return $this->cachedLocations;
+    }
+    
+    private function getCachedDrivers()
+    {
+        if ($this->cachedDrivers === null) {
+            $this->cachedDrivers = Driver::orderBy('first_name')->get();
+        }
+        return $this->cachedDrivers;
+    }
+    
+    private function getCachedTrucks()
+    {
+        if ($this->cachedTrucks === null) {
+            $this->cachedTrucks = Truck::orderBy('plate_number')->get();
+        }
+        return $this->cachedTrucks;
+    }
+    
+    private function getCachedGuards()
+    {
+        if ($this->cachedGuards === null) {
+            $this->cachedGuards = User::orderBy('first_name')
+                ->orderBy('last_name')
+                ->get()
+                ->mapWithKeys(function ($user) {
+                    $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
+                    return [$user->id => $name];
+                });
+        }
+        return $this->cachedGuards;
+    }
 
     // Computed property for locations
     public function getLocationsProperty()
     {
-        return Location::orderBy('location_name')->get();
+        return $this->getCachedLocations();
     }
 
     // Computed property for drivers
     public function getDriversProperty()
     {
-        return Driver::orderBy('first_name')->get();
+        return $this->getCachedDrivers();
     }
 
     // Computed property for trucks
     public function getTrucksProperty()
     {
-        return Truck::orderBy('plate_number')->get();
+        return $this->getCachedTrucks();
+    }
+    
+    // Helper method to ensure selected values are always included in filtered options
+    private function ensureSelectedInOptions($options, $selectedValues, $allOptions = null)
+    {
+        if (empty($selectedValues)) {
+            return $options;
+        }
+        
+        // If allOptions not provided, use options as the source
+        if ($allOptions === null) {
+            $allOptions = $options;
+        }
+        
+        $selectedArray = is_array($selectedValues) ? $selectedValues : [$selectedValues];
+        $allOptionsArray = is_array($allOptions) ? $allOptions : $allOptions->toArray();
+        $optionsArray = is_array($options) ? $options : $options->toArray();
+        
+        // Add any selected values that aren't already in the filtered options
+        foreach ($selectedArray as $selectedId) {
+            if (isset($allOptionsArray[$selectedId]) && !isset($optionsArray[$selectedId])) {
+                $optionsArray[$selectedId] = $allOptionsArray[$selectedId];
+            }
+        }
+        
+        return is_array($options) ? $optionsArray : collect($optionsArray);
     }
     
     // Computed properties for filtered filter options
     public function getFilterTruckOptionsProperty()
     {
-        $trucks = Truck::orderBy('plate_number')->get();
-        $options = $trucks->pluck('plate_number', 'id');
+        $trucks = $this->getCachedTrucks();
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
         
         // Apply search filter
         if (!empty($this->searchFilterPlateNumber)) {
@@ -140,6 +212,8 @@ class Trucks extends Component
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected values are always included
+            $options = $this->ensureSelectedInOptions($options, $this->filterPlateNumber, $allOptions);
         }
         
         return $options->toArray();
@@ -147,10 +221,9 @@ class Trucks extends Component
     
     public function getFilterDriverOptionsProperty()
     {
-        $drivers = Driver::orderBy('first_name')->get();
-        $options = $drivers->mapWithKeys(function ($driver) {
-            return [$driver->id => $driver->first_name . ' ' . $driver->last_name];
-        });
+        $drivers = $this->getCachedDrivers();
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
         
         // Apply search filter
         if (!empty($this->searchFilterDriver)) {
@@ -158,6 +231,8 @@ class Trucks extends Component
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected values are always included
+            $options = $this->ensureSelectedInOptions($options, $this->filterDriver, $allOptions);
         }
         
         return $options->toArray();
@@ -165,8 +240,9 @@ class Trucks extends Component
     
     public function getFilterOriginOptionsProperty()
     {
-        $locations = Location::orderBy('location_name')->get();
-        $options = $locations->pluck('location_name', 'id');
+        $locations = $this->getCachedLocations();
+        $allOptions = $locations->pluck('location_name', 'id');
+        $options = $allOptions;
         
         // Apply search filter
         if (!empty($this->searchFilterOrigin)) {
@@ -174,6 +250,8 @@ class Trucks extends Component
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected values are always included
+            $options = $this->ensureSelectedInOptions($options, $this->filterOrigin, $allOptions);
         }
         
         return $options->toArray();
@@ -181,8 +259,9 @@ class Trucks extends Component
     
     public function getFilterDestinationOptionsProperty()
     {
-        $locations = Location::orderBy('location_name')->get();
-        $options = $locations->pluck('location_name', 'id');
+        $locations = $this->getCachedLocations();
+        $allOptions = $locations->pluck('location_name', 'id');
+        $options = $allOptions;
         
         // Apply search filter
         if (!empty($this->searchFilterDestination)) {
@@ -190,6 +269,8 @@ class Trucks extends Component
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected values are always included
+            $options = $this->ensureSelectedInOptions($options, $this->filterDestination, $allOptions);
         }
         
         return $options->toArray();
@@ -198,19 +279,13 @@ class Trucks extends Component
     // Computed property for guards (users)
     public function getGuardsProperty()
     {
-        return User::orderBy('first_name')
-            ->orderBy('last_name')
-            ->get()
-            ->mapWithKeys(function ($user) {
-                $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
-                return [$user->id => $name];
-            });
+        return $this->getCachedGuards();
     }
 
     // Computed property for available origins (excludes selected destination)
     public function getAvailableOriginsProperty()
     {
-        $locations = Location::orderBy('location_name')->get();
+        $locations = $this->getCachedLocations();
         
         if ($this->destination_id) {
             return $locations->where('id', '!=', $this->destination_id)
@@ -224,7 +299,7 @@ class Trucks extends Component
     // Computed property for available destinations (excludes selected origin)
     public function getAvailableDestinationsProperty()
     {
-        $locations = Location::orderBy('location_name')->get();
+        $locations = $this->getCachedLocations();
         
         if ($this->location_id) {
             return $locations->where('id', '!=', $this->location_id)
@@ -238,14 +313,17 @@ class Trucks extends Component
     // Computed properties for create modal filtered options
     public function getCreateTruckOptionsProperty()
     {
-        $trucks = Truck::orderBy('plate_number')->get();
-        $options = $trucks->pluck('plate_number', 'id');
+        $trucks = $this->getCachedTrucks();
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchTruck)) {
             $searchTerm = strtolower($this->searchTruck);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
         }
         
         return $options->toArray();
@@ -253,14 +331,17 @@ class Trucks extends Component
     
     public function getCreateDriverOptionsProperty()
     {
-        $drivers = Driver::orderBy('first_name')->get();
-        $options = $drivers->pluck('full_name', 'id');
+        $drivers = $this->getCachedDrivers();
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDriver)) {
             $searchTerm = strtolower($this->searchDriver);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
         }
         
         return $options->toArray();
@@ -268,19 +349,16 @@ class Trucks extends Component
     
     public function getCreateGuardOptionsProperty()
     {
-        $guards = User::orderBy('first_name')
-            ->orderBy('last_name')
-            ->get()
-            ->mapWithKeys(function ($user) {
-                $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
-                return [$user->id => $name];
-            });
+        $guards = $this->getCachedGuards();
+        $allOptions = $guards;
         
         if (!empty($this->searchHatcheryGuard)) {
             $searchTerm = strtolower($this->searchHatcheryGuard);
             $guards = $guards->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $guards = $this->ensureSelectedInOptions($guards, $this->hatchery_guard_id, $allOptions);
         }
         
         return $guards->toArray();
@@ -289,14 +367,17 @@ class Trucks extends Component
     // Computed properties for details modal filtered options
     public function getDetailsTruckOptionsProperty()
     {
-        $trucks = Truck::orderBy('plate_number')->get();
-        $options = $trucks->pluck('plate_number', 'id');
+        $trucks = $this->getCachedTrucks();
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDetailsTruck)) {
             $searchTerm = strtolower($this->searchDetailsTruck);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
         }
         
         return $options->toArray();
@@ -304,14 +385,17 @@ class Trucks extends Component
     
     public function getDetailsLocationOptionsProperty()
     {
-        $locations = Location::orderBy('location_name')->get();
-        $options = $locations->pluck('location_name', 'id');
+        $locations = $this->getCachedLocations();
+        $allOptions = $locations->pluck('location_name', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDetailsDestination)) {
             $searchTerm = strtolower($this->searchDetailsDestination);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->destination_id, $allOptions);
         }
         
         return $options->toArray();
@@ -319,14 +403,17 @@ class Trucks extends Component
     
     public function getDetailsDriverOptionsProperty()
     {
-        $drivers = Driver::orderBy('first_name')->get();
-        $options = $drivers->pluck('full_name', 'id');
+        $drivers = $this->getCachedDrivers();
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDetailsDriver)) {
             $searchTerm = strtolower($this->searchDetailsDriver);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
         }
         
         return $options->toArray();
@@ -335,7 +422,7 @@ class Trucks extends Component
     // Update filtered options when form fields change
     private function updateFilteredOptions()
     {
-        $locations = Location::orderBy('location_name')->get();
+        $locations = $this->getCachedLocations();
         
         // Update origins (exclude selected destination, filter by search)
         $originOptions = $locations;

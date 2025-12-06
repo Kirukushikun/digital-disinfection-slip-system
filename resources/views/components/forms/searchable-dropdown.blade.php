@@ -1,6 +1,7 @@
 @props([
     'wireModel' => null,
     'options' => [],
+    'allOptions' => null, // Unfiltered options for display (falls back to options if not provided)
     'searchProperty' => null,
     'placeholder' => 'Select an option...',
     'searchPlaceholder' => 'Search...',
@@ -19,6 +20,8 @@ $wireModel = $wireModel ?? $attributes->get('wire-model');
 $searchProperty = $searchProperty ?? $attributes->get('search-property');
 $searchPlaceholder = $searchPlaceholder ?? ($attributes->get('search-placeholder') ?? 'Search...');
 $maxShown = $maxShown ?? $attributes->get('max-shown', 5);
+// Use allOptions if provided (for display), otherwise fall back to options
+$allOptions = $allOptions ?? ($attributes->get('all-options') ?? $options);
 
 if (!$wireModel) {
     throw new \Exception('wireModel or wire-model attribute is required for searchable-dropdown component');
@@ -32,20 +35,25 @@ if (!$wireModel) {
     get displayText() {
         const selected = $wire.get('{{ $wireModel }}');
         if (!selected) return '{{ $placeholder }}';
-        const options = @js($options);
+        // Use allOptions (unfiltered) for display to ensure selected value is always found
+        // This fixes the issue where selected values disappear from display when they don't match search
+        const allOptions = @js($allOptions);
+        const filteredOptions = @js($options);
 
         if (this.multiple) {
             // Multiple selection mode
             if (Array.isArray(selected) && selected.length > 0) {
                 if (selected.length === 1) {
-                    return options[selected[0]] || '{{ $placeholder }}';
+                    // Use allOptions first to find the label even if it's filtered out
+                    return allOptions[selected[0]] || filteredOptions[selected[0]] || '{{ $placeholder }}';
                 }
                 return selected.length + ' selected';
             }
             return '{{ $placeholder }}';
         } else {
-            // Single selection mode
-            return options[selected] || '{{ $placeholder }}';
+            // Single selection mode - use allOptions first to ensure selected value is always found
+            // This prevents the placeholder from showing when a selected value is filtered out
+            return allOptions[selected] || filteredOptions[selected] || '{{ $placeholder }}';
         }
     },
     toggleDropdown() {
@@ -109,12 +117,12 @@ if (!$wireModel) {
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50"
-            style="display: none;">
+            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1"
+            style="display: none; z-index: 9999;" x-cloak>
 
             <!-- Search Input -->
             @if ($searchProperty)
-                <input data-search-input type="text" wire:model.live.debounce.300ms="{{ $searchProperty }}"
+                <input data-search-input type="text" wire:model.live="{{ $searchProperty }}"
                     @keydown.escape="closeDropdown()"
                     class="block w-full px-4 py-2 text-gray-800 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="{{ $searchPlaceholder }}" autocomplete="off">

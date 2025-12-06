@@ -81,51 +81,78 @@ class TruckList extends Component
         return Driver::all();
     }
     
+    // Helper method to ensure selected values are always included in filtered options
+    private function ensureSelectedInOptions($options, $selectedValue, $allOptions)
+    {
+        if (empty($selectedValue)) {
+            return $options;
+        }
+        
+        $allOptionsArray = is_array($allOptions) ? $allOptions : $allOptions->toArray();
+        $optionsArray = is_array($options) ? $options : $options->toArray();
+        
+        // Add selected value if it's not already in the filtered options
+        if (isset($allOptionsArray[$selectedValue]) && !isset($optionsArray[$selectedValue])) {
+            $optionsArray[$selectedValue] = $allOptionsArray[$selectedValue];
+        }
+        
+        return $optionsArray;
+    }
+    
     // Computed properties for filtered options with search
     public function getTruckOptionsProperty()
     {
         $trucks = Truck::orderBy('plate_number')->get();
-        $options = $trucks->pluck('plate_number', 'id');
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchTruck)) {
             $searchTerm = strtolower($this->searchTruck);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
         }
         
-        return $options->toArray();
+        return is_array($options) ? $options : $options->toArray();
     }
     
     public function getLocationOptionsProperty()
     {
         $currentLocationId = Session::get('location_id');
         $locations = Location::where('id', '!=', $currentLocationId)->orderBy('location_name')->get();
-        $options = $locations->pluck('location_name', 'id');
+        $allOptions = $locations->pluck('location_name', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDestination)) {
             $searchTerm = strtolower($this->searchDestination);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->destination_id, $allOptions);
         }
         
-        return $options->toArray();
+        return is_array($options) ? $options : $options->toArray();
     }
     
     public function getDriverOptionsProperty()
     {
         $drivers = Driver::orderBy('first_name')->get();
-        $options = $drivers->pluck('full_name', 'id');
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
         
         if (!empty($this->searchDriver)) {
             $searchTerm = strtolower($this->searchDriver);
             $options = $options->filter(function ($label) use ($searchTerm) {
                 return str_contains(strtolower($label), $searchTerm);
             });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
         }
         
-        return $options->toArray();
+        return is_array($options) ? $options : $options->toArray();
     }
 
     public function updatedSearch()
@@ -189,6 +216,9 @@ class TruckList extends Component
         $this->destination_id = null;
         $this->driver_id = null;
         $this->reason_for_disinfection = null;
+        $this->searchTruck = '';
+        $this->searchDestination = '';
+        $this->searchDriver = '';
         $this->resetErrorBag();
     }
 
