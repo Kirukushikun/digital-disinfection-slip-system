@@ -176,7 +176,9 @@ class Trucks extends Component
     private function getCachedGuards()
     {
         if ($this->cachedGuards === null) {
-            $this->cachedGuards = User::orderBy('first_name')
+            $this->cachedGuards = User::where('user_type', 0)
+                ->where('disabled', false)
+                ->orderBy('first_name')
                 ->orderBy('last_name')
                 ->get()
                 ->mapWithKeys(function ($user) {
@@ -992,13 +994,45 @@ class Trucks extends Component
                     }
                 },
             ];
-            $rules['editHatcheryGuardId'] = 'required|exists:users,id';
+            $rules['editHatcheryGuardId'] = [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected hatchery guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected hatchery guard has been disabled.');
+                    }
+                },
+            ];
             $rules['editReceivedGuardId'] = [
                 'nullable',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
                     if ($value && $value == $this->editHatcheryGuardId) {
                         $fail('The receiving guard cannot be the same as the hatchery guard.');
+                        return;
+                    }
+                    if ($value) {
+                        $guard = User::find($value);
+                        if (!$guard) {
+                            $fail('The selected receiving guard does not exist.');
+                            return;
+                        }
+                        if ($guard->user_type !== 0) {
+                            $fail('The selected user is not a guard.');
+                            return;
+                        }
+                        if ($guard->disabled) {
+                            $fail('The selected receiving guard has been disabled.');
+                        }
                     }
                 },
             ];
@@ -1015,13 +1049,43 @@ class Trucks extends Component
                     }
                 },
             ];
-            $rules['editHatcheryGuardId'] = 'required|exists:users,id';
+            $rules['editHatcheryGuardId'] = [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected hatchery guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected hatchery guard has been disabled.');
+                    }
+                },
+            ];
             $rules['editReceivedGuardId'] = [
                 'required',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
                     if ($value && $value == $this->editHatcheryGuardId) {
                         $fail('The receiving guard cannot be the same as the hatchery guard.');
+                        return;
+                    }
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected receiving guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected receiving guard has been disabled.');
                     }
                 },
             ];
@@ -1198,13 +1262,45 @@ class Trucks extends Component
                 },
             ],
             'driver_id' => 'required|exists:drivers,id',
-            'hatchery_guard_id' => 'required|exists:users,id',
+            'hatchery_guard_id' => [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected hatchery guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected hatchery guard has been disabled.');
+                    }
+                },
+            ],
             'received_guard_id' => [
                 'nullable',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
                     if ($value && $value == $this->hatchery_guard_id) {
                         $fail('The receiving guard cannot be the same as the hatchery guard.');
+                        return;
+                    }
+                    if ($value) {
+                        $guard = User::find($value);
+                        if (!$guard) {
+                            $fail('The selected receiving guard does not exist.');
+                            return;
+                        }
+                        if ($guard->user_type !== 0) {
+                            $fail('The selected user is not a guard.');
+                            return;
+                        }
+                        if ($guard->disabled) {
+                            $fail('The selected receiving guard has been disabled.');
+                        }
                     }
                 },
             ],

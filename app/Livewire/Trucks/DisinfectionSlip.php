@@ -173,9 +173,18 @@ class DisinfectionSlip extends Component
         $this->showDetailsModal = true;
     }
 
+    /**
+     * Check if the current user is disabled
+     */
+    private function isUserDisabled()
+    {
+        $user = Auth::user();
+        return $user && $user->disabled;
+    }
+
     public function canEdit()
     {
-        if (!$this->selectedSlip) {
+        if (!$this->selectedSlip || $this->isUserDisabled()) {
             return false;
         }
 
@@ -188,7 +197,7 @@ class DisinfectionSlip extends Component
 
     public function canStartDisinfecting()
     {
-        if (!$this->selectedSlip) {
+        if (!$this->selectedSlip || $this->isUserDisabled()) {
             return false;
         }
 
@@ -203,7 +212,7 @@ class DisinfectionSlip extends Component
 
     public function canComplete()
     {
-        if (!$this->selectedSlip) {
+        if (!$this->selectedSlip || $this->isUserDisabled()) {
             return false;
         }
 
@@ -219,7 +228,7 @@ class DisinfectionSlip extends Component
 
     public function canDelete()
     {
-        if (!$this->selectedSlip) {
+        if (!$this->selectedSlip || $this->isUserDisabled()) {
             return false;
         }
 
@@ -232,7 +241,7 @@ class DisinfectionSlip extends Component
 
     public function canManageAttachment()
     {
-        if (!$this->selectedSlip) {
+        if (!$this->selectedSlip || $this->isUserDisabled()) {
             return false;
         }
 

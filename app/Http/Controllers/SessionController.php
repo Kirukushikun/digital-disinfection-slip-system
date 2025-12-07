@@ -52,6 +52,15 @@ class SessionController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        // Check if user is disabled
+        if ($user->disabled) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'username' => 'Your account has been disabled. Please contact an administrator.',
+                'password' => '',
+            ]);
+        }
+
         // If location login is being used, only allow regular users (type 0)
         if ($location && $user->user_type !== 0) {
             Auth::logout();

@@ -222,8 +222,23 @@ class TruckList extends Component
         $this->resetErrorBag();
     }
 
+    /**
+     * Check if the current user is disabled
+     */
+    private function isUserDisabled()
+    {
+        $user = Auth::user();
+        return $user && $user->disabled;
+    }
+
     public function createSlip()
     {
+        // Check if user is disabled
+        if ($this->isUserDisabled()) {
+            $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
+            return;
+        }
+
         // Get current location to validate against
         $currentLocationId = Session::get('location_id');
         
