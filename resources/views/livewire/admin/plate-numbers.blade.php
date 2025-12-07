@@ -43,34 +43,17 @@
                     </button>
 
                     {{-- Create Button (Primary action - Icon + Text) --}}
-                    <button wire:click="openCreateModal"
-                        class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
+                        :fullWidth="false">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
                         </svg>
                         Create Plate Number
-                    </button>
+                    </x-buttons.submit-button>
 
-                    {{-- Export CSV Button (Icon only with tooltip) --}}
-                    <button wire:click="exportCSV" title="Export as CSV"
-                        class="inline-flex items-center justify-center w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                    </button>
-
-                    {{-- Print Button (Icon only with tooltip) --}}
-                    <button wire:click="openPrintView" title="Print / PDF"
-                        class="inline-flex items-center justify-center w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                            </path>
-                        </svg>
-                    </button>
+                    {{-- Download Button (Icon only with dropdown) --}}
+                    <x-buttons.export-button />
                 </div>
             </div>
 
@@ -253,8 +236,8 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button wire:click="openEditModal({{ $truck->id }})"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <x-buttons.submit-button wire:click="openEditModal({{ $truck->id }})"
+                                            color="blue" size="sm" :fullWidth="false">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -262,10 +245,10 @@
                                                 </path>
                                             </svg>
                                             Edit
-                                        </button>
+                                        </x-buttons.submit-button>
                                         @if ($truck->disabled)
-                                            <button wire:click="openDisableModal({{ $truck->id }})"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                            <x-buttons.submit-button wire:click="openDisableModal({{ $truck->id }})"
+                                                color="green" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -274,10 +257,10 @@
                                                     </path>
                                                 </svg>
                                                 Enable
-                                            </button>
+                                            </x-buttons.submit-button>
                                         @else
-                                            <button wire:click="openDisableModal({{ $truck->id }})"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            <x-buttons.submit-button wire:click="openDisableModal({{ $truck->id }})"
+                                                color="orange" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -286,7 +269,7 @@
                                                     </path>
                                                 </svg>
                                                 Disable
-                                            </button>
+                                            </x-buttons.submit-button>
                                         @endif
                                     </div>
                                 </td>
