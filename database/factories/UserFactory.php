@@ -14,11 +14,12 @@ class UserFactory extends Factory
     {
         return [
             'first_name' => fake()->firstName(),
-            'middle_name' => fake()->optional()->firstName(),
+            'middle_name' => fake()->optional(0.4)->firstName(), // 40% chance of having middle name
             'last_name' => fake()->lastName(),
             'username' => fake()->unique()->userName(), // Temporary, will be replaced in afterCreating
-            'user_type' => fake()->randomElement([0,1,2]),
+            'user_type' => fake()->randomElement([0, 1, 2]), // 0: Guard, 1: Admin, 2: SuperAdmin
             'password' => static::$password ??= Hash::make('brookside25'),
+            'disabled' => false, // Default to enabled
         ];
     }
 
@@ -108,5 +109,17 @@ class UserFactory extends Factory
         return $this->state([
             'user_type' => 2,
         ]);
+    }
+
+    /**
+     * Indicate that the user is disabled.
+     */
+    public function disabled()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'disabled' => true,
+            ];
+        });
     }
 }

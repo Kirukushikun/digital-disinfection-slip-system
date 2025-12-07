@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\DB;
 use App\Models\DisinfectionSlip;
 use App\Models\Truck;
 use App\Models\Driver;
@@ -17,16 +16,69 @@ class DisinfectionSlipFactory extends Factory
 
     public function definition()
     {
+        // Generate status: 0=Pending, 1=Disinfecting, 2=Completed
+        $status = $this->faker->randomElement([0, 1, 2]);
+        
+        // Set completed_at only when status is 2 (Completed)
+        $completedAt = ($status === 2) 
+            ? $this->faker->dateTimeBetween('-1 month', 'now')
+            : null;
+
+        // Generate optional fields
+        $hasAttachment = $this->faker->boolean(60); // 60% chance
+        $hasReceivedGuard = $this->faker->boolean(80); // 80% chance
+        
         return [
             'truck_id' => Truck::factory(),
             'location_id' => Location::factory(),
             'destination_id' => Location::factory(),
             'driver_id' => Driver::factory(),
-            'reason_for_disinfection' => $this->faker->optional()->paragraph(),
-            'attachment_id' => Attachment::factory(),
-            'hatchery_guard_id' => User::factory()->state(['user_type' => 0]),
-            'received_guard_id' => User::factory()->state(['user_type' => 0]),
-            'status' => $this->faker->numberBetween(0, 2),
+            'reason_for_disinfection' => $this->faker->optional(0.7)->sentence(),
+            'attachment_id' => $hasAttachment ? Attachment::factory() : null,
+            'hatchery_guard_id' => User::factory()->guard(),
+            'received_guard_id' => $hasReceivedGuard ? User::factory()->guard() : null,
+            'status' => $status,
+            'completed_at' => $completedAt,
         ];
+    }
+
+    /**
+     * Indicate that the slip is pending (status 0).
+     */
+    public function pending()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 0,
+                'completed_at' => null,
+                'received_guard_id' => null,
+            ];
+        });
+    }
+
+    /**
+     * Indicate that the slip is disinfecting (status 1).
+     */
+    public function disinfecting()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 1,
+                'completed_at' => null,
+            ];
+        });
+    }
+
+    /**
+     * Indicate that the slip is completed (status 2).
+     */
+    public function completed()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 2,
+                'completed_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
+            ];
+        });
     }
 }
