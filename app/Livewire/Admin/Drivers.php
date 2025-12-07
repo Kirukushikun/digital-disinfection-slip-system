@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Driver;
+use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
@@ -195,6 +196,10 @@ class Drivers extends Component
         $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
         $driver = Driver::findOrFail($this->selectedDriverId);
+        
+        // Capture old values for logging
+        $oldValues = $driver->only(['first_name', 'middle_name', 'last_name']);
+        
         $driver->update([
             'first_name' => $firstName,
             'middle_name' => $middleName,
@@ -204,6 +209,16 @@ class Drivers extends Component
         // Refresh driver to get updated name
         $driver->refresh();
         $driverName = $this->getDriverFullName($driver);
+        
+        // Log the update
+        $newValues = $driver->only(['first_name', 'middle_name', 'last_name']);
+        Logger::update(
+            Driver::class,
+            $driver->id,
+            "Updated driver {$driverName}",
+            $oldValues,
+            $newValues
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedDriverId', 'first_name', 'middle_name', 'last_name']);
@@ -237,6 +252,15 @@ class Drivers extends Component
         
         $driverName = $this->getDriverFullName($driver);
         $message = !$wasDisabled ? "{$driverName} has been disabled." : "{$driverName} has been enabled.";
+        
+        // Log the status change
+        Logger::custom(
+            !$wasDisabled ? 'disable' : 'enable',
+            !$wasDisabled ? "Disabled driver {$driverName}" : "Enabled driver {$driverName}",
+            Driver::class,
+            $driver->id,
+            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+        );
 
         $this->showDisableModal = false;
         $this->reset(['selectedDriverId', 'selectedDriverDisabled']);
@@ -338,6 +362,15 @@ class Drivers extends Component
         ]);
 
         $driverName = $this->getDriverFullName($driver);
+        
+        // Log the creation
+        $newValues = $driver->only(['first_name', 'middle_name', 'last_name', 'disabled']);
+        Logger::create(
+            Driver::class,
+            $driver->id,
+            "Created driver {$driverName}",
+            $newValues
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);

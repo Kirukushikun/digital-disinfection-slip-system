@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use App\Services\Logger;
 
 class Drivers extends Component
 {
@@ -198,6 +199,10 @@ class Drivers extends Component
         $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
         $driver = Driver::findOrFail($this->selectedDriverId);
+        
+        // Capture old values for logging
+        $oldValues = $driver->only(['first_name', 'middle_name', 'last_name']);
+        
         $driver->update([
             'first_name' => $firstName,
             'middle_name' => $middleName,
@@ -207,6 +212,15 @@ class Drivers extends Component
         // Refresh driver to get updated name
         $driver->refresh();
         $driverName = $this->getDriverFullName($driver);
+        
+        // Log the update action
+        Logger::update(
+            Driver::class,
+            $driver->id,
+            "Updated driver {$driverName}",
+            $oldValues,
+            ['first_name' => $firstName, 'middle_name' => $middleName, 'last_name' => $lastName]
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedDriverId', 'first_name', 'middle_name', 'last_name']);
@@ -231,14 +245,28 @@ class Drivers extends Component
         $driver = Driver::findOrFail($this->selectedDriverId);
         $wasDisabled = $driver->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        $action = $newStatus ? 'disabled' : 'enabled';
+        $driverName = $this->getDriverFullName($driver);
+        
+        // Capture old values for logging
+        $oldValues = ['disabled' => $wasDisabled];
+        
         $driver->update([
             'disabled' => $newStatus
         ]);
+        
+        // Log the status change
+        Logger::update(
+            Driver::class,
+            $driver->id,
+            "{$action} driver {$driverName}",
+            $oldValues,
+            ['disabled' => $newStatus]
+        );
 
         // Always reset to first page to avoid pagination issues when driver disappears/appears from filtered results
         $this->resetPage();
         
-        $driverName = $this->getDriverFullName($driver);
         $message = !$wasDisabled ? "{$driverName} has been disabled." : "{$driverName} has been enabled.";
 
         $this->showDisableModal = false;
@@ -272,10 +300,22 @@ class Drivers extends Component
         }
 
         $driver = Driver::findOrFail($this->selectedDriverId);
+        $driverIdForLog = $driver->id;
         $driverName = $this->getDriverFullName($driver);
+        
+        // Capture old values for logging
+        $oldValues = $driver->only(['first_name', 'middle_name', 'last_name', 'disabled']);
         
         // Soft delete the driver
         $driver->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            Driver::class,
+            $driverIdForLog,
+            "Deleted driver {$driverName}",
+            $oldValues
+        );
 
         $this->showDeleteModal = false;
         $this->reset(['selectedDriverId', 'selectedDriverName']);
@@ -369,6 +409,14 @@ class Drivers extends Component
         ]);
 
         $driverName = $this->getDriverFullName($driver);
+        
+        // Log the create action
+        Logger::create(
+            Driver::class,
+            $driver->id,
+            "Created driver {$driverName}",
+            $driver->only(['first_name', 'middle_name', 'last_name', 'disabled'])
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);

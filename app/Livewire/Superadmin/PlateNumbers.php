@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use App\Services\Logger;
 
 class PlateNumbers extends Component
 {
@@ -175,9 +176,22 @@ class PlateNumbers extends Component
         $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number);
 
         $truck = Truck::findOrFail($this->selectedTruckId);
+        
+        // Capture old values for logging
+        $oldValues = $truck->only(['plate_number', 'disabled']);
+        
         $truck->update([
             'plate_number' => $plateNumber,
         ]);
+        
+        // Log the update action
+        Logger::update(
+            Truck::class,
+            $truck->id,
+            "Updated plate number {$plateNumber}",
+            $oldValues,
+            ['plate_number' => $plateNumber]
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedTruckId', 'plate_number']);
@@ -290,6 +304,14 @@ class PlateNumbers extends Component
             'plate_number' => $plateNumber,
             'disabled' => false,
         ]);
+        
+        // Log the create action
+        Logger::create(
+            Truck::class,
+            $truck->id,
+            "Created plate number {$plateNumber}",
+            $truck->only(['plate_number', 'disabled'])
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_plate_number']);

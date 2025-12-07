@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\User;
 use App\Models\Setting;
+use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
@@ -208,6 +209,9 @@ class Guards extends Component
 
         $user = User::findOrFail($this->selectedUserId);
         
+        // Capture old values for logging
+        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
+        
         // Check if first name or last name changed (these affect username)
         $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
         
@@ -229,6 +233,16 @@ class Guards extends Component
         // Refresh user to get updated name
         $user->refresh();
         $guardName = $this->getGuardFullName($user);
+        
+        // Log the update
+        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
+        Logger::update(
+            User::class,
+            $user->id,
+            "Updated guard {$guardName}",
+            $oldValues,
+            $newValues
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name']);
@@ -253,6 +267,10 @@ class Guards extends Component
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        
+        $oldValues = ['disabled' => $wasDisabled];
+        $newValues = ['disabled' => $newStatus];
+        
         $user->update([
             'disabled' => $newStatus
         ]);
@@ -262,6 +280,15 @@ class Guards extends Component
         
         $guardName = $this->getGuardFullName($user);
         $message = !$wasDisabled ? "{$guardName} has been disabled." : "{$guardName} has been enabled.";
+        
+        // Log the status change
+        Logger::custom(
+            !$wasDisabled ? 'disable' : 'enable',
+            !$wasDisabled ? "Disabled guard {$guardName}" : "Enabled guard {$guardName}",
+            User::class,
+            $user->id,
+            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+        );
 
         $this->showDisableModal = false;
         $this->reset(['selectedUserId', 'selectedUserDisabled']);
@@ -288,6 +315,14 @@ class Guards extends Component
         ]);
 
         $guardName = $this->getGuardFullName($user);
+        
+        // Log the password reset
+        Logger::custom(
+            'password_reset',
+            "Reset password for guard {$guardName}",
+            User::class,
+            $user->id
+        );
 
         $this->showResetPasswordModal = false;
         $this->reset('selectedUserId');
@@ -456,6 +491,15 @@ class Guards extends Component
         ]);
 
         $guardName = $this->getGuardFullName($user);
+        
+        // Log the creation
+        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'user_type']);
+        Logger::create(
+            User::class,
+            $user->id,
+            "Created guard {$guardName}",
+            $newValues
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);

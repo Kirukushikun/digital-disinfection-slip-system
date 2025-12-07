@@ -40,6 +40,7 @@ Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->gro
     Route::get('/locations', [AdminController::class, 'locations'])->name('locations');
     Route::get('/plate-numbers', [AdminController::class, 'plateNumbers'])->name('plate-numbers');
     Route::get('/trucks', [AdminController::class, 'trucks'])->name('trucks');
+    Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit-trail');
     Route::get('/print/guards', [AdminController::class, 'printGuards'])->name('print.guards');
     Route::get('/print/drivers', [AdminController::class, 'printDrivers'])->name('print.drivers');
     Route::get('/print/locations', [AdminController::class, 'printLocations'])->name('print.locations');
@@ -55,6 +56,7 @@ Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadm
     Route::get('/locations', [SuperAdminController::class, 'locations'])->name('locations');
     Route::get('/plate-numbers', [SuperAdminController::class, 'plateNumbers'])->name('plate-numbers');
     Route::get('/trucks', [SuperAdminController::class, 'trucks'])->name('trucks');
+    Route::get('/audit-trail', [SuperAdminController::class, 'auditTrail'])->name('audit-trail');
     Route::get('/settings', [SuperAdminController::class, 'settings'])->name('settings');
     Route::get('/print/guards', [SuperAdminController::class, 'printGuards'])->name('print.guards');
     Route::get('/print/admins', [SuperAdminController::class, 'printAdmins'])->name('print.admins');

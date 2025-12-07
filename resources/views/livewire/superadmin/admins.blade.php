@@ -270,73 +270,97 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}
+                                        @if ($showDeleted)
+                                            {{ \Carbon\Carbon::parse($user->deleted_at)->format('M d, Y') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}
+                                        @endif
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
-                                        {{ \Carbon\Carbon::parse($user->created_at)->format('h:i A') }}
+                                        @if ($showDeleted)
+                                            {{ \Carbon\Carbon::parse($user->deleted_at)->format('h:i A') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($user->created_at)->format('h:i A') }}
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <x-buttons.submit-button wire:click="openEditModal({{ $user->id }})"
-                                            color="blue" size="sm" :fullWidth="false">
+                                    @if ($showDeleted)
+                                        <x-buttons.submit-button wire:click="openRestoreModal({{ $user->id }})"
+                                            color="orange" size="sm" :fullWidth="false">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                                 </path>
                                             </svg>
-                                            Edit
+                                            Restore
                                         </x-buttons.submit-button>
-                                        <x-buttons.submit-button
-                                            wire:click="openResetPasswordModal({{ $user->id }})" color="gray"
-                                            size="sm" :fullWidth="false">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
-                                                </path>
-                                            </svg>
-                                            Reset Password
-                                        </x-buttons.submit-button>
-                                        @if ($user->disabled)
-                                            <x-buttons.submit-button
-                                                wire:click="openDisableModal({{ $user->id }})" color="green"
-                                                size="sm" :fullWidth="false">
+                                    @else
+                                        <div class="flex items-center justify-center gap-2">
+                                            <x-buttons.submit-button wire:click="openEditModal({{ $user->id }})"
+                                                color="blue" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                                     </path>
                                                 </svg>
-                                                Enable
+                                                Edit
                                             </x-buttons.submit-button>
-                                        @else
                                             <x-buttons.submit-button
-                                                wire:click="openDisableModal({{ $user->id }})" color="orange"
-                                                size="sm" :fullWidth="false">
+                                                wire:click="openResetPasswordModal({{ $user->id }})"
+                                                color="gray" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                                                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
                                                     </path>
                                                 </svg>
-                                                Disable
+                                                Reset Password
                                             </x-buttons.submit-button>
-                                        @endif
-                                        <x-buttons.submit-button wire:click="openDeleteModal({{ $user->id }})"
-                                            color="red" size="sm" :fullWidth="false">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                </path>
-                                            </svg>
-                                            Delete
-                                        </x-buttons.submit-button>
-                                    </div>
+                                            @if ($user->disabled)
+                                                <x-buttons.submit-button
+                                                    wire:click="openDisableModal({{ $user->id }})" color="green"
+                                                    size="sm" :fullWidth="false">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                        </path>
+                                                    </svg>
+                                                    Enable
+                                                </x-buttons.submit-button>
+                                            @else
+                                                <x-buttons.submit-button
+                                                    wire:click="openDisableModal({{ $user->id }})" color="orange"
+                                                    size="sm" :fullWidth="false">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                                                        </path>
+                                                    </svg>
+                                                    Disable
+                                                </x-buttons.submit-button>
+                                            @endif
+                                            <x-buttons.submit-button wire:click="openDeleteModal({{ $user->id }})"
+                                                color="red" size="sm" :fullWidth="false">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                    </path>
+                                                </svg>
+                                                Delete
+                                            </x-buttons.submit-button>
+                                        </div>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -641,6 +665,54 @@
         {{-- Delete Confirmation Modal --}}
         <x-modals.delete-modal :show="$showDeleteModal" title="Delete Admin" :name="$selectedUserName" onConfirm="deleteUser"
             confirmText="Delete Admin" />
+
+        {{-- Restore Confirmation Modal --}}
+        @if ($showRestoreModal)
+            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+                aria-modal="true">
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
+
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                        <div class="px-6 py-4 bg-white border-b border-gray-200">
+                            <div class="flex items-center">
+                                <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
+                                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Admin</h3>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            <p class="text-sm text-gray-600">
+                                Are you sure you want to restore <span
+                                    class="font-medium text-gray-900">{{ $selectedUserName }}</span>?
+                                The admin will be able to access the system again.
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                            <button wire:click="closeModal"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                Cancel
+                            </button>
+                            <button wire:click="restoreUser"
+                                class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                                Restore Admin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 

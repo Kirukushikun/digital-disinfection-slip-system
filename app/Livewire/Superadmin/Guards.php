@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use App\Services\Logger;
 
 class Guards extends Component
 {
@@ -214,6 +215,9 @@ class Guards extends Component
 
         $user = User::findOrFail($this->selectedUserId);
         
+        // Capture old values for logging
+        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
+        
         // Check if first name or last name changed (these affect username)
         $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
         
@@ -235,6 +239,15 @@ class Guards extends Component
         // Refresh user to get updated name
         $user->refresh();
         $guardName = $this->getGuardFullName($user);
+        
+        // Log the update action
+        Logger::update(
+            User::class,
+            $user->id,
+            "Updated guard {$guardName}",
+            $oldValues,
+            $updateData
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name']);
@@ -259,9 +272,24 @@ class Guards extends Component
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        $action = $newStatus ? 'disabled' : 'enabled';
+        $guardName = $this->getGuardFullName($user);
+        
+        // Capture old values for logging
+        $oldValues = ['disabled' => $wasDisabled];
+        
         $user->update([
             'disabled' => $newStatus
         ]);
+        
+        // Log the status change
+        Logger::update(
+            User::class,
+            $user->id,
+            "{$action} guard {$guardName}",
+            $oldValues,
+            ['disabled' => $newStatus]
+        );
 
         // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
         $this->resetPage();
@@ -327,10 +355,29 @@ class Guards extends Component
         }
 
         $user = User::findOrFail($this->selectedUserId);
+        $userIdForLog = $user->id;
         $guardName = $this->getGuardFullName($user);
+        
+        // Capture old values for logging
+        $oldValues = $user->only([
+            'first_name',
+            'middle_name',
+            'last_name',
+            'username',
+            'user_type',
+            'disabled'
+        ]);
         
         // Soft delete the user
         $user->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            User::class,
+            $userIdForLog,
+            "Deleted guard {$guardName}",
+            $oldValues
+        );
 
         $this->showDeleteModal = false;
         $this->reset(['selectedUserId', 'selectedUserName']);
@@ -355,6 +402,15 @@ class Guards extends Component
         
         if ($user && $user->user_type === 0) {
             $user->restore();
+            $guardName = $this->getGuardFullName($user);
+            
+            // Log the restore action
+            Logger::restore(
+                User::class,
+                $user->id,
+                "Restored guard {$guardName}"
+            );
+            
             $this->dispatch('toast', message: 'Guard restored successfully.', type: 'success');
         }
     }
@@ -512,6 +568,20 @@ class Guards extends Component
         ]);
 
         $guardName = $this->getGuardFullName($user);
+        
+        // Log the create action
+        Logger::create(
+            User::class,
+            $user->id,
+            "Created guard {$guardName}",
+            $user->only([
+                'first_name',
+                'middle_name',
+                'last_name',
+                'username',
+                'user_type'
+            ])
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);

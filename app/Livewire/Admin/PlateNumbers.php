@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Truck;
+use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
@@ -209,6 +210,15 @@ class PlateNumbers extends Component
         
         $plateNumber = $truck->plate_number;
         $message = !$wasDisabled ? "Plate number {$plateNumber} has been disabled." : "Plate number {$plateNumber} has been enabled.";
+        
+        // Log the status change
+        Logger::custom(
+            !$wasDisabled ? 'disable' : 'enable',
+            !$wasDisabled ? "Disabled plate number {$plateNumber}" : "Enabled plate number {$plateNumber}",
+            Truck::class,
+            $truck->id,
+            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+        );
 
         $this->showDisableModal = false;
         $this->reset(['selectedTruckId', 'selectedTruckDisabled']);
@@ -288,6 +298,15 @@ class PlateNumbers extends Component
             'plate_number' => $plateNumber,
             'disabled' => false,
         ]);
+        
+        // Log the creation
+        $newValues = $truck->only(['plate_number', 'disabled']);
+        Logger::create(
+            Truck::class,
+            $truck->id,
+            "Created plate number {$plateNumber}",
+            $newValues
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_plate_number']);

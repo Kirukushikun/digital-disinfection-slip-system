@@ -42,6 +42,11 @@ class SuperAdminController extends Controller
         return view('superadmin.admins');
     }
     
+    public function auditTrail()
+    {
+        return view('superadmin.audit-trail');
+    }
+
     public function settings()
     {
         return view('superadmin.settings');

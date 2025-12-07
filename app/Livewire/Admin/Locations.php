@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Location;
 use App\Models\Attachment;
 use App\Models\Setting;
+use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -187,6 +188,9 @@ class Locations extends Component
         
         $location = Location::findOrFail($this->selectedLocationId);
         
+        // Capture old values for logging
+        $oldValues = $location->only(['location_name', 'attachment_id']);
+        
         // Handle logo update/removal
         $attachmentId = $location->attachment_id;
         
@@ -236,6 +240,17 @@ class Locations extends Component
             'location_name' => $locationName,
             'attachment_id' => $attachmentId,
         ]);
+        
+        // Log the update
+        $location->refresh();
+        $newValues = $location->only(['location_name', 'attachment_id']);
+        Logger::update(
+            Location::class,
+            $location->id,
+            "Updated location {$locationName}",
+            $oldValues,
+            $newValues
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'remove_logo']);
@@ -289,6 +304,15 @@ class Locations extends Component
         
         $locationName = $location->location_name;
         $message = !$wasDisabled ? "{$locationName} has been disabled." : "{$locationName} has been enabled.";
+        
+        // Log the status change
+        Logger::custom(
+            !$wasDisabled ? 'disable' : 'enable',
+            !$wasDisabled ? "Disabled location {$locationName}" : "Enabled location {$locationName}",
+            Location::class,
+            $location->id,
+            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+        );
 
         $this->showDisableModal = false;
         $this->reset(['selectedLocationId', 'selectedLocationDisabled']);
@@ -377,6 +401,15 @@ class Locations extends Component
             'attachment_id' => $attachmentId,
             'disabled' => false,
         ]);
+        
+        // Log the creation
+        $newValues = $location->only(['location_name', 'attachment_id', 'disabled']);
+        Logger::create(
+            Location::class,
+            $location->id,
+            "Created location {$locationName}",
+            $newValues
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_location_name', 'create_logo']);

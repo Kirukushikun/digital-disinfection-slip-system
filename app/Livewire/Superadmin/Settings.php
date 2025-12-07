@@ -7,6 +7,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Logger;
 
 class Settings extends Component
 {
@@ -67,6 +68,13 @@ class Settings extends Component
             'default_logo_file.max' => 'The default logo must not be larger than 2MB.',
         ]);
 
+        // Capture old values for logging
+        $oldSettings = [
+            'attachment_retention_days' => Setting::where('setting_name', 'attachment_retention_days')->value('value'),
+            'default_guard_password' => Setting::where('setting_name', 'default_guard_password')->value('value'),
+            'default_location_logo' => Setting::where('setting_name', 'default_location_logo')->value('value'),
+        ];
+        
         // Update or create settings
         Setting::updateOrCreate(
             ['setting_name' => 'attachment_retention_days'],
@@ -96,6 +104,21 @@ class Settings extends Component
         Setting::updateOrCreate(
             ['setting_name' => 'default_location_logo'],
             ['value' => $this->default_location_logo]
+        );
+        
+        // Log the settings update
+        $newSettings = [
+            'attachment_retention_days' => (string)$this->attachment_retention_days,
+            'default_guard_password' => $this->default_guard_password,
+            'default_location_logo' => $this->default_location_logo,
+        ];
+        
+        Logger::update(
+            Setting::class,
+            null,
+            "Updated system settings",
+            $oldSettings,
+            $newSettings
         );
 
         $this->dispatch('toast', message: 'Settings have been updated successfully.', type: 'success');

@@ -9,9 +9,10 @@ use App\Models\Truck;
 use App\Models\Location;
 use App\Models\Driver;
 use App\Models\User;
+use App\Services\Logger;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -1241,6 +1242,12 @@ class Trucks extends Component
         // Sanitize reason_for_disinfection
         $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);
 
+        // Capture old values for logging
+        $oldValues = $this->selectedSlip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection'
+        ]);
+
         // Build update data based on status
         $updateData = [
             'truck_id' => $this->editTruckId,
@@ -1279,6 +1286,19 @@ class Trucks extends Component
 
         $slipId = $this->selectedSlip->slip_id;
         
+        // Log the update
+        $newValues = $this->selectedSlip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection'
+        ]);
+        Logger::update(
+            DisinfectionSlipModel::class,
+            $this->selectedSlip->id,
+            "Updated disinfection slip {$slipId}",
+            $oldValues,
+            $newValues
+        );
+        
         $this->resetEditForm();
         $this->showEditModal = false;
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
@@ -1292,9 +1312,24 @@ class Trucks extends Component
         }
 
         $slipId = $this->selectedSlip->slip_id;
+        $slipIdForLog = $this->selectedSlip->id;
+        
+        // Capture old values for logging
+        $oldValues = $this->selectedSlip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+        ]);
         
         // Soft delete the slip
         $this->selectedSlip->delete();
+        
+        // Log the delete
+        Logger::delete(
+            DisinfectionSlipModel::class,
+            $slipIdForLog,
+            "Deleted disinfection slip {$slipId}",
+            $oldValues
+        );
         
         // Close all modals
         $this->showDeleteConfirmation = false;
@@ -1469,6 +1504,19 @@ class Trucks extends Component
         ]);
 
         $slipId = $slip->slip_id;
+        
+        // Log the creation
+        $newValues = $slip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+        ]);
+        Logger::create(
+            DisinfectionSlipModel::class,
+            $slip->id,
+            "Created disinfection slip {$slipId}",
+            $newValues
+        );
+        
         $this->dispatch('toast', message: "{$slipId} has been created.", type: 'success');
         
         // Close modal and reset form
@@ -1631,7 +1679,7 @@ class Trucks extends Component
             }
 
         } catch (\Exception $e) {
-            Log::error('Attachment removal error: ' . $e->getMessage());
+            FacadesLog::error('Attachment removal error: ' . $e->getMessage());
             $this->dispatch('toast', message: 'Failed to remove attachment. Please try again.', type: 'error');
         }
     }

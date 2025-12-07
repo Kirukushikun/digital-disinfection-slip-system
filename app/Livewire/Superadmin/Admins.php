@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use App\Services\Logger;
 
 class Admins extends Component
 {
@@ -62,6 +63,7 @@ class Admins extends Component
     public $selectedUserId;
     public $selectedUserDisabled = false;
     public $selectedUserName = '';
+    public $showRestoreModal = false;
     public $showEditModal = false;
     public $showDisableModal = false;
     public $showResetPasswordModal = false;
@@ -211,6 +213,9 @@ class Admins extends Component
 
         $user = User::findOrFail($this->selectedUserId);
         
+        // Capture old values for logging
+        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
+        
         // Check if first name or last name changed (these affect username)
         $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
         
@@ -232,6 +237,15 @@ class Admins extends Component
         // Refresh user to get updated name
         $user->refresh();
         $adminName = $this->getAdminFullName($user);
+        
+        // Log the update action
+        Logger::update(
+            User::class,
+            $user->id,
+            "Updated admin {$adminName}",
+            $oldValues,
+            $updateData
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name']);
@@ -256,14 +270,28 @@ class Admins extends Component
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        $action = $newStatus ? 'disabled' : 'enabled';
+        $adminName = $this->getAdminFullName($user);
+        
+        // Capture old values for logging
+        $oldValues = ['disabled' => $wasDisabled];
+        
         $user->update([
             'disabled' => $newStatus
         ]);
+        
+        // Log the status change
+        Logger::update(
+            User::class,
+            $user->id,
+            "{$action} admin {$adminName}",
+            $oldValues,
+            ['disabled' => $newStatus]
+        );
 
         // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
         $this->resetPage();
         
-        $adminName = $this->getAdminFullName($user);
         $message = !$wasDisabled ? "{$adminName} has been disabled." : "{$adminName} has been enabled.";
 
         $this->showDisableModal = false;
@@ -304,6 +332,7 @@ class Admins extends Component
         $this->showResetPasswordModal = false;
         $this->showCreateModal = false;
         $this->showDeleteModal = false;
+        $this->showRestoreModal = false;
         $this->reset(['selectedUserId', 'selectedUserDisabled', 'selectedUserName', 'first_name', 'middle_name', 'last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
@@ -324,10 +353,29 @@ class Admins extends Component
         }
 
         $user = User::findOrFail($this->selectedUserId);
+        $userIdForLog = $user->id;
         $adminName = $this->getAdminFullName($user);
+        
+        // Capture old values for logging
+        $oldValues = $user->only([
+            'first_name',
+            'middle_name',
+            'last_name',
+            'username',
+            'user_type',
+            'disabled'
+        ]);
         
         // Soft delete the user
         $user->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            User::class,
+            $userIdForLog,
+            "Deleted admin {$adminName}",
+            $oldValues
+        );
 
         $this->showDeleteModal = false;
         $this->reset(['selectedUserId', 'selectedUserName']);
@@ -341,20 +389,59 @@ class Admins extends Component
         $this->resetPage();
     }
 
-    public function restoreUser($userId)
+    public function openRestoreModal($userId)
+    {
+        $user = User::onlyTrashed()->findOrFail($userId);
+        $this->selectedUserId = $userId;
+        $this->selectedUserName = $this->getAdminFullName($user);
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreUser()
     {
         // Authorization check
         if (Auth::user()->user_type < 2) {
             abort(403, 'Unauthorized action.');
         }
 
-        $user = User::onlyTrashed()->findOrFail($userId);
-        
-        if ($user && $user->user_type === 1) {
-            $user->restore();
-            $this->dispatch('toast', message: 'Admin restored successfully.', type: 'success');
-            $this->resetPage();
+        if (!$this->selectedUserId) {
+            return;
         }
+
+        $user = User::onlyTrashed()->findOrFail($this->selectedUserId);
+        
+        // Verify the user is an admin (user_type = 1)
+        if ($user->user_type !== 1) {
+            $this->showRestoreModal = false;
+            $this->reset(['selectedUserId', 'selectedUserName']);
+            $this->dispatch('toast', message: 'Cannot restore this user.', type: 'error');
+            return;
+        }
+
+        $oldValues = [
+            'first_name' => $user->first_name,
+            'middle_name' => $user->middle_name,
+            'last_name' => $user->last_name,
+            'username' => $user->username,
+            'user_type' => $user->user_type,
+            'deleted_at' => $user->deleted_at,
+        ];
+
+        $adminName = $this->getAdminFullName($user);
+        
+        $user->restore();
+        
+        // Log the restore action
+        Logger::restore(
+            User::class,
+            $user->id,
+            "Restored admin {$adminName}",
+        );
+        
+        $this->showRestoreModal = false;
+        $this->reset(['selectedUserId', 'selectedUserName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: 'Admin restored successfully.', type: 'success');
     }
 
     public function openCreateModal()
@@ -509,6 +596,20 @@ class Admins extends Component
         ]);
 
         $adminName = $this->getAdminFullName($user);
+        
+        // Log the create action
+        Logger::create(
+            User::class,
+            $user->id,
+            "Created admin {$adminName}",
+            $user->only([
+                'first_name',
+                'middle_name',
+                'last_name',
+                'username',
+                'user_type'
+            ])
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
@@ -518,7 +619,13 @@ class Admins extends Component
 
     public function render()
     {
-        $users = User::where('user_type', 1)->whereNull('deleted_at')
+        $users = User::where('user_type', 1)
+            ->when(!$this->showDeleted, function ($query) {
+                $query->whereNull('deleted_at');
+            })
+            ->when($this->showDeleted, function ($query) {
+                $query->onlyTrashed();
+            })
             ->when($this->search, function ($query) {
                 $searchTerm = $this->search;
                 

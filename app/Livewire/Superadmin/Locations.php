@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use App\Services\Logger;
 
 class Locations extends Component
 {
@@ -189,6 +190,9 @@ class Locations extends Component
         
         $location = Location::findOrFail($this->selectedLocationId);
         
+        // Capture old values for logging
+        $oldValues = $location->only(['location_name', 'attachment_id', 'disabled']);
+        
         // Handle logo update/removal
         $attachmentId = $location->attachment_id;
         
@@ -238,6 +242,15 @@ class Locations extends Component
             'location_name' => $locationName,
             'attachment_id' => $attachmentId,
         ]);
+        
+        // Log the update action
+        Logger::update(
+            Location::class,
+            $location->id,
+            "Updated location {$locationName}",
+            $oldValues,
+            ['location_name' => $locationName, 'attachment_id' => $attachmentId]
+        );
 
         $this->showEditModal = false;
         $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'remove_logo']);
@@ -399,6 +412,14 @@ class Locations extends Component
             'attachment_id' => $attachmentId,
             'disabled' => false,
         ]);
+        
+        // Log the create action
+        Logger::create(
+            Location::class,
+            $location->id,
+            "Created location {$locationName}",
+            $location->only(['location_name', 'attachment_id', 'disabled'])
+        );
 
         $this->showCreateModal = false;
         $this->reset(['create_location_name', 'create_logo']);

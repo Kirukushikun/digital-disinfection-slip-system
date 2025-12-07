@@ -1,5 +1,5 @@
 <div class="min-h-screen bg-gray-50 p-6" wire:poll>
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         {{-- Header --}}
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
@@ -7,6 +7,7 @@
         </div>
 
         {{-- Settings Form Card --}}
+        <div class="max-w-4xl">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <form wire:submit.prevent="updateSettings">
                 <div class="p-6 space-y-6">
@@ -121,6 +122,7 @@
                     </button>
                 </div>
             </form>
+        </div>
         </div>
     </div>
 </div>

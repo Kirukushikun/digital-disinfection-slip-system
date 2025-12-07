@@ -33,6 +33,11 @@ class AdminController extends Controller
         return view('admin.trucks');
     }
 
+    public function auditTrail()
+    {
+        return view('admin.audit-trail');
+    }
+
     public function printGuards(Request $request)
     {
         $data = collect();

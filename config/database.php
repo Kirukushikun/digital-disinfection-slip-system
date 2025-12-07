@@ -113,6 +113,26 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'logs' => [
+            'driver' => 'mysql',
+            'url' => env('LOGS_DB_URL'),
+            'host' => env('LOGS_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('LOGS_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('LOGS_DB_DATABASE', 'digital_disinfection_logs'),
+            'username' => env('LOGS_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('LOGS_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('LOGS_DB_SOCKET', env('DB_SOCKET', '')),
+            'charset' => env('LOGS_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('LOGS_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
     ],
 
     /*
