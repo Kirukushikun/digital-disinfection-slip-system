@@ -18,15 +18,19 @@ class AuditTrail extends Component
     public $sortColumns = ['created_at' => 'desc']; // Default sort by created_at descending
     
     // Filter properties
-    public $filterAction = null;
-    public $filterModelType = null;
+    public $filterAction = [];
+    public $filterModelType = [];
     public $filterUserType = null;
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
+    // Search properties for filters
+    public $searchFilterAction = '';
+    public $searchFilterModelType = '';
+    
     // Applied filters
-    public $appliedAction = null;
-    public $appliedModelType = null;
+    public $appliedAction = [];
+    public $appliedModelType = [];
     public $appliedUserType = null;
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
@@ -56,6 +60,15 @@ class AuditTrail extends Component
     ];
     
     protected $queryString = ['search'];
+    
+    public function mount()
+    {
+        // Initialize array filters
+        $this->filterAction = [];
+        $this->filterModelType = [];
+        $this->appliedAction = [];
+        $this->appliedModelType = [];
+    }
     
     public function applySort($column)
     {
@@ -98,7 +111,7 @@ class AuditTrail extends Component
         
         $this->filtersActive = !empty($this->appliedAction) || 
                                !empty($this->appliedModelType) || 
-                               !empty($this->appliedUserType) || 
+                               !is_null($this->appliedUserType) || 
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -110,12 +123,12 @@ class AuditTrail extends Component
     {
         switch ($filterName) {
             case 'action':
-                $this->appliedAction = null;
-                $this->filterAction = null;
+                $this->appliedAction = [];
+                $this->filterAction = [];
                 break;
             case 'model_type':
-                $this->appliedModelType = null;
-                $this->filterModelType = null;
+                $this->appliedModelType = [];
+                $this->filterModelType = [];
                 break;
             case 'user_type':
                 $this->appliedUserType = null;
@@ -133,7 +146,29 @@ class AuditTrail extends Component
         
         $this->filtersActive = !empty($this->appliedAction) || 
                                !empty($this->appliedModelType) || 
-                               !empty($this->appliedUserType) || 
+                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedCreatedFrom) || 
+                               !empty($this->appliedCreatedTo);
+        
+        $this->resetPage();
+    }
+    
+    public function removeSpecificFilter($filterName, $value)
+    {
+        switch ($filterName) {
+            case 'action':
+                $this->appliedAction = array_values(array_filter($this->appliedAction, fn($v) => $v !== $value));
+                $this->filterAction = array_values(array_filter($this->filterAction, fn($v) => $v !== $value));
+                break;
+            case 'model_type':
+                $this->appliedModelType = array_values(array_filter($this->appliedModelType, fn($v) => $v !== $value));
+                $this->filterModelType = array_values(array_filter($this->filterModelType, fn($v) => $v !== $value));
+                break;
+        }
+        
+        $this->filtersActive = !empty($this->appliedAction) || 
+                               !empty($this->appliedModelType) || 
+                               !is_null($this->appliedUserType) || 
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -142,20 +177,86 @@ class AuditTrail extends Component
     
     public function clearFilters()
     {
-        $this->filterAction = null;
-        $this->filterModelType = null;
+        $this->filterAction = [];
+        $this->filterModelType = [];
         $this->filterUserType = null;
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
+        $this->searchFilterAction = '';
+        $this->searchFilterModelType = '';
         
-        $this->appliedAction = null;
-        $this->appliedModelType = null;
+        $this->appliedAction = [];
+        $this->appliedModelType = [];
         $this->appliedUserType = null;
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         
         $this->filtersActive = false;
         $this->resetPage();
+    }
+    
+    // Computed properties for filtered options with search
+    public function getFilterActionOptionsProperty()
+    {
+        $allOptions = $this->availableActions;
+        $options = $allOptions;
+        
+        if (!empty($this->searchFilterAction)) {
+            $searchTerm = strtolower($this->searchFilterAction);
+            $options = array_filter($options, function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            }, ARRAY_FILTER_USE_BOTH);
+            
+            // Ensure selected values are always included
+            foreach ($this->filterAction as $selectedValue) {
+                if (isset($allOptions[$selectedValue]) && !isset($options[$selectedValue])) {
+                    $options[$selectedValue] = $allOptions[$selectedValue];
+                }
+            }
+        }
+        
+        return $options;
+    }
+    
+    public function getFilterModelTypeOptionsProperty()
+    {
+        $allOptions = $this->availableModelTypes;
+        $options = $allOptions;
+        
+        if (!empty($this->searchFilterModelType)) {
+            $searchTerm = strtolower($this->searchFilterModelType);
+            $options = array_filter($options, function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            }, ARRAY_FILTER_USE_BOTH);
+            
+            // Ensure selected values are always included
+            foreach ($this->filterModelType as $selectedValue) {
+                if (isset($allOptions[$selectedValue]) && !isset($options[$selectedValue])) {
+                    $options[$selectedValue] = $allOptions[$selectedValue];
+                }
+            }
+        }
+        
+        return $options;
+    }
+    
+    // Helper method to ensure selected values are always included in filtered options
+    private function ensureSelectedInOptions($options, $selectedValues, $allOptions)
+    {
+        if (empty($selectedValues)) {
+            return $options;
+        }
+        
+        $optionsArray = is_array($options) ? $options : $options->toArray();
+        
+        // Add selected values if they're not already in the filtered options
+        foreach ($selectedValues as $selectedValue) {
+            if (isset($allOptions[$selectedValue]) && !isset($optionsArray[$selectedValue])) {
+                $optionsArray[$selectedValue] = $allOptions[$selectedValue];
+            }
+        }
+        
+        return $optionsArray;
     }
     
     public function exportCSV()
@@ -233,11 +334,11 @@ class AuditTrail extends Component
         
         // Filters
         if (!empty($this->appliedAction)) {
-            $query->where('action', $this->appliedAction);
+            $query->whereIn('action', $this->appliedAction);
         }
         
         if (!empty($this->appliedModelType)) {
-            $query->where('model_type', $this->appliedModelType);
+            $query->whereIn('model_type', $this->appliedModelType);
         }
         
         if (!is_null($this->appliedUserType)) {
@@ -266,6 +367,8 @@ class AuditTrail extends Component
         
         return view('livewire.superadmin.audit-trail', [
             'logs' => $logs,
+            'filterActionOptions' => $this->filterActionOptions,
+            'filterModelTypeOptions' => $this->filterModelTypeOptions,
         ]);
     }
 }

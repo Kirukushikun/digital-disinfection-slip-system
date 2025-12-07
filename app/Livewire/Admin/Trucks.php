@@ -999,8 +999,9 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin can edit any slip, including completed ones
-        return true;
+        // Admin cannot edit completed slips (status == 2 or completed_at is set)
+        // Only SuperAdmins can edit completed slips
+        return $this->selectedSlip->status != 2 && $this->selectedSlip->completed_at === null;
     }
 
     public function canDelete()
@@ -1019,7 +1020,12 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin can remove attachment from any slip, including completed ones
+        // Admin cannot remove attachment from completed slips (status == 2 or completed_at is set)
+        // Only SuperAdmins can remove attachments from completed slips
+        if ($this->selectedSlip->status == 2 || $this->selectedSlip->completed_at !== null) {
+            return false;
+        }
+
         return $this->selectedSlip->attachment_id !== null;
     }
 
@@ -1108,6 +1114,12 @@ class Trucks extends Component
 
     public function saveEdit()
     {
+        // Authorization check - Admins cannot edit completed slips
+        if (!$this->canEdit()) {
+            $this->dispatch('toast', message: 'You are not authorized to edit completed slips.', type: 'error');
+            return;
+        }
+
         $status = $this->selectedSlip->status;
         
         // Build validation rules based on status
