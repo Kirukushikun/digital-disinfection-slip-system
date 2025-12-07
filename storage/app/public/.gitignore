@@ -1,2 +1,7 @@
 *
 !.gitignore
+!images/
+images/*
+!images/logo/
+images/logo/*
+!images/logo/BGC.png

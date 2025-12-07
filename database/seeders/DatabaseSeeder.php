@@ -25,16 +25,24 @@ class DatabaseSeeder extends Seeder
             'user_type' => '1',
         ]);
 
-        // Create default setting for attachment retention
-        Setting::factory()->create([
-            'setting_name' => 'attachment_retention_days',
-            'value' => '30',
-        ]);
+        // Create default settings
+        $defaultSettings = [
+            [
+                'setting_name' => 'attachment_retention_days',
+                'value' => '30',
+            ],
+            [
+                'setting_name' => 'default_guard_password',
+                'value' => 'brookside25',
+            ],
+            [
+                'setting_name' => 'default_location_logo',
+                'value' => 'images/logo/BGC.png',
+            ],
+        ];
 
-        // Create default setting for guard password
-        Setting::factory()->create([
-            'setting_name' => 'default_guard_password',
-            'value' => 'brookside25',
-        ]);
+        foreach ($defaultSettings as $setting) {
+            Setting::factory()->create($setting);
+        }
     }
 }

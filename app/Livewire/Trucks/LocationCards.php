@@ -5,6 +5,7 @@ namespace App\Livewire\Trucks;
 use Livewire\Component;
 use App\Models\Location;
 use App\Models\DisinfectionSlip;
+use App\Models\Setting;
 
 class LocationCards extends Component
 {
@@ -39,9 +40,14 @@ class LocationCards extends Component
             $location->ongoing_count = $ongoingCounts->get($location->id, 0);
             return $location;
         });
+
+        // Get default logo path from settings
+        $setting = Setting::where('setting_name', 'default_location_logo')->first();
+        $defaultLogoPath = $setting && !empty($setting->value) ? $setting->value : 'images/logo/BGC.png';
     
         return view('livewire.trucks.location-cards', [
-            'locations' => $locationsWithCounts
+            'locations' => $locationsWithCounts,
+            'defaultLogoPath' => $defaultLogoPath,
         ]);
     }    
 }
