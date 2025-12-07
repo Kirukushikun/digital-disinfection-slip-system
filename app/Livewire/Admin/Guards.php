@@ -27,6 +27,7 @@ class Guards extends Component
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $showResetPasswordModal = false;
+    public $showCreateModal = false;
 
     // Edit form fields
     public $first_name;
@@ -37,6 +38,11 @@ class Guards extends Component
     // Reset password fields
     public $new_password;
     public $confirm_password;
+
+    // Create form fields
+    public $create_first_name;
+    public $create_middle_name;
+    public $create_last_name;
 
     protected $queryString = ['search'];
 
@@ -104,7 +110,7 @@ class Guards extends Component
 
         $this->showEditModal = false;
         $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'username']);
-        session()->flash('message', 'Guard updated successfully.');
+        $this->dispatch('toast', message: 'Guard updated successfully!', type: 'success');
     }
 
     public function openDeleteModal($userId)
@@ -120,7 +126,7 @@ class Guards extends Component
 
         $this->showDeleteModal = false;
         $this->reset('selectedUserId');
-        session()->flash('message', 'Guard deleted successfully.');
+        $this->dispatch('toast', message: 'Guard deleted successfully!', type: 'success');
     }
 
     public function openResetPasswordModal($userId)
@@ -143,7 +149,7 @@ class Guards extends Component
 
         $this->showResetPasswordModal = false;
         $this->reset(['selectedUserId', 'new_password', 'confirm_password']);
-        session()->flash('message', 'Password reset successfully.');
+        $this->dispatch('toast', message: 'Password reset successfully!', type: 'success');
     }
 
     public function closeModal()
@@ -151,8 +157,83 @@ class Guards extends Component
         $this->showEditModal = false;
         $this->showDeleteModal = false;
         $this->showResetPasswordModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'username', 'new_password', 'confirm_password']);
+        $this->showCreateModal = false;
+        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'username', 'new_password', 'confirm_password', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
+    }
+
+    public function openCreateModal()
+    {
+        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
+        $this->resetValidation();
+        $this->showCreateModal = true;
+    }
+
+    /**
+     * Generate unique username based on first name and last name
+     * Format: First letter of first name + Full last name
+     * If exists, append increment: JDoe, JDoe1, JDoe2, etc.
+     */
+    private function generateUsername($firstName, $lastName)
+    {
+        // Trim whitespace from names
+        $firstName = trim($firstName);
+        $lastName = trim($lastName);
+
+        // Get first letter of first name (uppercase) and full last name
+        if (empty($firstName) || empty($lastName)) {
+            return '';
+        }
+
+        $firstLetter = strtoupper(substr($firstName, 0, 1));
+        $username = $firstLetter . $lastName;
+
+        // Check if username exists
+        $counter = 0;
+        $baseUsername = $username;
+
+        while (User::where('username', $username)->exists()) {
+            $counter++;
+            $username = $baseUsername . $counter;
+        }
+
+        return $username;
+    }
+
+    public function createGuard()
+    {
+        $this->validate([
+            'create_first_name' => 'required|string|max:255',
+            'create_middle_name' => 'nullable|string|max:255',
+            'create_last_name' => 'required|string|max:255',
+        ], [], [
+            'create_first_name' => 'First Name',
+            'create_middle_name' => 'Middle Name',
+            'create_last_name' => 'Last Name',
+        ]);
+
+        // Trim inputs
+        $firstName = trim($this->create_first_name);
+        $middleName = !empty($this->create_middle_name) ? trim($this->create_middle_name) : null;
+        $lastName = trim($this->create_last_name);
+
+        // Generate unique username
+        $username = $this->generateUsername($firstName, $lastName);
+
+        // Create guard with default password
+        User::create([
+            'first_name' => $firstName,
+            'middle_name' => $middleName,
+            'last_name' => $lastName,
+            'username' => $username,
+            'user_type' => 0, // Guard
+            'password' => Hash::make('brookside25'), // Default password
+        ]);
+
+        $this->showCreateModal = false;
+        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
+        $this->dispatch('toast', message: 'Guard created successfully!', type: 'success');
+        $this->resetPage();
     }
 
     public function render()
