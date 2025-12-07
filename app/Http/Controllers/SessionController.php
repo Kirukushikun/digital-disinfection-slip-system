@@ -7,6 +7,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use App\Models\Location;
+use App\Models\Setting;
 
 class SessionController extends Controller
 {
@@ -31,8 +32,13 @@ class SessionController extends Controller
             $locationModel = Location::findOrFail($location);
         }
         
+        // Get default logo path from settings
+        $setting = Setting::where('setting_name', 'default_location_logo')->first();
+        $defaultLogoPath = $setting && !empty($setting->value) ? $setting->value : 'images/logo/BGC.png';
+        
         return view('auth.login', [
-            'location' => $locationModel
+            'location' => $locationModel,
+            'defaultLogoPath' => $defaultLogoPath,
         ]);
     }
 

@@ -33,6 +33,9 @@
                         @if ($location->attachment_id && $location->attachment)
                             <img src="{{ asset('storage/' . $location->attachment->file_path) }}"
                                 alt="{{ $location->location_name }}" class="h-10 w-auto object-contain">
+                        @else
+                            <img src="{{ asset('storage/' . $defaultLogoPath) }}"
+                                alt="{{ $location->location_name }}" class="h-10 w-auto object-contain">
                         @endif
                         <div class="min-w-0 flex-1">
                             <p class="text-xs text-orange-600 font-semibold uppercase tracking-wide">Location</p>
