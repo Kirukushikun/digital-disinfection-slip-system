@@ -187,6 +187,11 @@ class TruckList extends Component
         $this->filterDateFrom = null;
         $this->filterDateTo = null;
         $this->filterStatus = '';
+        $this->appliedDateFrom = null;
+        $this->appliedDateTo = null;
+        $this->appliedStatus = '';
+        $this->filtersActive = false;
+        $this->resetPage();
     }
 
     public function openCreateModal()
