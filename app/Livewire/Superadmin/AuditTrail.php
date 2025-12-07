@@ -20,7 +20,7 @@ class AuditTrail extends Component
     // Filter properties
     public $filterAction = [];
     public $filterModelType = [];
-    public $filterUserType = null;
+    public $filterUserType = [];
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
@@ -31,7 +31,7 @@ class AuditTrail extends Component
     // Applied filters
     public $appliedAction = [];
     public $appliedModelType = [];
-    public $appliedUserType = null;
+    public $appliedUserType = [];
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
@@ -56,7 +56,7 @@ class AuditTrail extends Component
     public $availableUserTypes = [
         0 => 'Guard',
         1 => 'Admin',
-        2 => 'SuperAdmin',
+        2 => 'Super Admin',
     ];
     
     protected $queryString = ['search'];
@@ -66,8 +66,10 @@ class AuditTrail extends Component
         // Initialize array filters
         $this->filterAction = [];
         $this->filterModelType = [];
+        $this->filterUserType = [];
         $this->appliedAction = [];
         $this->appliedModelType = [];
+        $this->appliedUserType = [];
     }
     
     public function applySort($column)
@@ -111,7 +113,7 @@ class AuditTrail extends Component
         
         $this->filtersActive = !empty($this->appliedAction) || 
                                !empty($this->appliedModelType) || 
-                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedUserType) || 
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -131,8 +133,8 @@ class AuditTrail extends Component
                 $this->filterModelType = [];
                 break;
             case 'user_type':
-                $this->appliedUserType = null;
-                $this->filterUserType = null;
+                $this->appliedUserType = [];
+                $this->filterUserType = [];
                 break;
             case 'created_from':
                 $this->appliedCreatedFrom = '';
@@ -164,11 +166,15 @@ class AuditTrail extends Component
                 $this->appliedModelType = array_values(array_filter($this->appliedModelType, fn($v) => $v !== $value));
                 $this->filterModelType = array_values(array_filter($this->filterModelType, fn($v) => $v !== $value));
                 break;
+            case 'user_type':
+                $this->appliedUserType = array_values(array_filter($this->appliedUserType, fn($v) => $v != $value)); // Use != to handle string/int conversion
+                $this->filterUserType = array_values(array_filter($this->filterUserType, fn($v) => $v != $value));
+                break;
         }
         
         $this->filtersActive = !empty($this->appliedAction) || 
                                !empty($this->appliedModelType) || 
-                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedUserType) || 
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -179,7 +185,7 @@ class AuditTrail extends Component
     {
         $this->filterAction = [];
         $this->filterModelType = [];
-        $this->filterUserType = null;
+        $this->filterUserType = [];
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         $this->searchFilterAction = '';
@@ -187,7 +193,7 @@ class AuditTrail extends Component
         
         $this->appliedAction = [];
         $this->appliedModelType = [];
-        $this->appliedUserType = null;
+        $this->appliedUserType = [];
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         
@@ -341,8 +347,8 @@ class AuditTrail extends Component
             $query->whereIn('model_type', $this->appliedModelType);
         }
         
-        if (!is_null($this->appliedUserType)) {
-            $query->where('user_type', $this->appliedUserType);
+        if (!empty($this->appliedUserType)) {
+            $query->whereIn('user_type', $this->appliedUserType);
         }
         
         if (!empty($this->appliedCreatedFrom)) {
