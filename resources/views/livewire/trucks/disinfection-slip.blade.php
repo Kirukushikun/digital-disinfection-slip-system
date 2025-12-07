@@ -67,6 +67,14 @@
                 </div>
             </div>
 
+            {{-- Origin --}}
+            <div class="grid grid-cols-3 mb-2">
+                <div class="font-semibold text-gray-700">Origin:</div>
+                <div class="col-span-2 text-gray-900">
+                    {{ $selectedSlip->location->location_name ?? 'N/A' }}
+                </div>
+            </div>
+
             {{-- Destination --}}
             <div class="grid grid-cols-3 mb-2">
                 <div class="font-semibold text-gray-700">Destination:</div>

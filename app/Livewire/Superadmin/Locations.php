@@ -63,6 +63,7 @@ class Locations extends Component
     
     public $selectedLocationId;
     public $selectedLocationDisabled = false;
+    public $selectedLocationName = '';
     public $showEditModal = false;
     public $showDisableModal = false;
     public $showCreateModal = false;
@@ -343,12 +344,56 @@ class Locations extends Component
         $this->dispatch('toast', message: $message, type: 'success');
     }
 
+    public function openDeleteModal($locationId)
+    {
+        $location = Location::findOrFail($locationId);
+        $this->selectedLocationId = $locationId;
+        $this->selectedLocationName = $location->location_name;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteLocation()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $location = Location::findOrFail($this->selectedLocationId);
+        $locationIdForLog = $location->id;
+        $locationName = $location->location_name;
+        
+        // Capture old values for logging
+        $oldValues = $location->only([
+            'location_name',
+            'attachment_id',
+            'disabled'
+        ]);
+        
+        // Soft delete the location
+        $location->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            Location::class,
+            $locationIdForLog,
+            "Deleted location {$locationName}",
+            $oldValues
+        );
+
+        $this->showDeleteModal = false;
+        $this->reset(['selectedLocationId', 'selectedLocationName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: "{$locationName} has been deleted.", type: 'success');
+    }
+
     public function closeModal()
     {
         $this->showEditModal = false;
         $this->showDisableModal = false;
+        $this->showDeleteModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedLocationId', 'selectedLocationDisabled', 'location_name', 'edit_logo', 'remove_logo', 'create_location_name', 'create_logo']);
+        $this->reset(['selectedLocationId', 'selectedLocationDisabled', 'selectedLocationName', 'location_name', 'edit_logo', 'remove_logo', 'original_location_name', 'original_attachment_id', 'create_location_name', 'create_logo']);
         $this->resetValidation();
     }
 

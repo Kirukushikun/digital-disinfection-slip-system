@@ -1,4 +1,4 @@
-@props(['color' => 'orange', 'size' => 'default', 'fullWidth' => null])
+@props(['color' => 'orange', 'size' => 'default', 'fullWidth' => null, 'disabled' => false])
 
 @php
     // Auto-detect full width based on size if not explicitly set
@@ -46,13 +46,15 @@
     $baseClasses = $fullWidth
         ? 'rounded-lg focus:ring-2 transition-all duration-200 hover:cursor-pointer cursor-pointer'
         : 'inline-flex items-center gap-1.5 rounded-lg focus:ring-2 focus:ring-offset-2 transition-colors duration-150 hover:cursor-pointer cursor-pointer';
+    $disabledClasses = $disabled ? 'opacity-50 cursor-not-allowed' : '';
 @endphp
 
 @if ($fullWidth)
     <div>
         <button
             {{ $attributes->merge([
-                'class' => "$widthClass $baseClasses $sizeClass $preset",
+                'class' => "$widthClass $baseClasses $sizeClass $preset $disabledClasses",
+                'disabled' => $disabled,
             ]) }}>
             {{ $slot }}
         </button>
@@ -60,7 +62,8 @@
 @else
     <button
         {{ $attributes->merge([
-            'class' => "$baseClasses $sizeClass $preset hover:cursor-pointer",
+            'class' => "$baseClasses $sizeClass $preset hover:cursor-pointer $disabledClasses",
+            'disabled' => $disabled,
         ]) }}>
         {{ $slot }}
     </button>

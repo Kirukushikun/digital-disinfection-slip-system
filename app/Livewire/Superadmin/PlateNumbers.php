@@ -59,6 +59,7 @@ class PlateNumbers extends Component
     
     public $selectedTruckId;
     public $selectedTruckDisabled = false;
+    public $selectedTruckName = '';
     public $showEditModal = false;
     public $showDisableModal = false;
     public $showCreateModal = false;
@@ -254,12 +255,55 @@ class PlateNumbers extends Component
         $this->dispatch('toast', message: $message, type: 'success');
     }
 
+    public function openDeleteModal($truckId)
+    {
+        $truck = Truck::findOrFail($truckId);
+        $this->selectedTruckId = $truckId;
+        $this->selectedTruckName = $truck->plate_number;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteTruck()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $truck = Truck::findOrFail($this->selectedTruckId);
+        $truckIdForLog = $truck->id;
+        $plateNumber = $truck->plate_number;
+        
+        // Capture old values for logging
+        $oldValues = $truck->only([
+            'plate_number',
+            'disabled'
+        ]);
+        
+        // Soft delete the truck
+        $truck->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            Truck::class,
+            $truckIdForLog,
+            "Deleted plate number {$plateNumber}",
+            $oldValues
+        );
+
+        $this->showDeleteModal = false;
+        $this->reset(['selectedTruckId', 'selectedTruckName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: "Plate number {$plateNumber} has been deleted.", type: 'success');
+    }
+
     public function closeModal()
     {
         $this->showEditModal = false;
         $this->showDisableModal = false;
+        $this->showDeleteModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'plate_number', 'create_plate_number']);
+        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'selectedTruckName', 'plate_number', 'original_plate_number', 'create_plate_number']);
         $this->resetValidation();
     }
 
