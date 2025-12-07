@@ -145,12 +145,29 @@ class PlateNumbers extends Component
         $this->resetPage();
     }
 
+    public $original_plate_number;
+
     public function openEditModal($truckId)
     {
         $truck = Truck::findOrFail($truckId);
         $this->selectedTruckId = $truckId;
         $this->plate_number = $truck->plate_number;
+        
+        // Store original value for change detection
+        $this->original_plate_number = $truck->plate_number;
+        
         $this->showEditModal = true;
+    }
+
+    public function getHasChangesProperty()
+    {
+        if (!$this->selectedTruckId) {
+            return false;
+        }
+
+        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number ?? '');
+
+        return $this->original_plate_number !== $plateNumber;
     }
 
     public function updateTruck()
@@ -174,12 +191,19 @@ class PlateNumbers extends Component
         $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number);
 
         $truck = Truck::findOrFail($this->selectedTruckId);
+        
+        // Check if there are any changes
+        if ($truck->plate_number === $plateNumber) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
+        
         $truck->update([
             'plate_number' => $plateNumber,
         ]);
 
         $this->showEditModal = false;
-        $this->reset(['selectedTruckId', 'plate_number']);
+        $this->reset(['selectedTruckId', 'plate_number', 'original_plate_number']);
         $this->dispatch('toast', message: "Plate number {$plateNumber} has been updated.", type: 'success');
     }
 
@@ -230,7 +254,7 @@ class PlateNumbers extends Component
         $this->showEditModal = false;
         $this->showDisableModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'plate_number', 'create_plate_number']);
+        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'plate_number', 'original_plate_number', 'create_plate_number']);
         $this->resetValidation();
     }
 

@@ -23,6 +23,11 @@ class Settings extends Component
     public $default_logo_file;
     public $current_logo_path;
 
+    // Original values for change detection
+    public $original_attachment_retention_days;
+    public $original_default_guard_password;
+    public $original_log_retention_months;
+
     public function mount()
     {
         // Load current settings
@@ -41,12 +46,29 @@ class Settings extends Component
         $this->default_location_logo = $defaultLogo ? $defaultLogo->value : 'images/logo/BGC.png';
         $this->log_retention_months = $logRetention ? $logRetention->value : '6';
         $this->current_logo_path = $this->default_location_logo;
+        
+        // Store original values for change detection
+        $this->original_attachment_retention_days = $this->attachment_retention_days;
+        $this->original_default_guard_password = $this->default_guard_password;
+        $this->original_log_retention_months = $this->log_retention_months;
+    }
+
+    public function getHasChangesProperty()
+    {
+        $attachmentChanged = (string)$this->original_attachment_retention_days !== (string)$this->attachment_retention_days;
+        $passwordChanged = $this->original_default_guard_password !== $this->default_guard_password;
+        $logRetentionChanged = (string)$this->original_log_retention_months !== (string)$this->log_retention_months;
+        $logoChanged = $this->default_logo_file !== null;
+
+        return $attachmentChanged || $passwordChanged || $logRetentionChanged || $logoChanged;
     }
     
     public function clearLogo()
     {
         $this->default_logo_file = null;
         $this->resetValidation('default_logo_file');
+        // Update original to current path so change detection works correctly
+        $this->original_default_guard_password = $this->default_guard_password;
     }
 
     public function updateSettings()
@@ -75,6 +97,17 @@ class Settings extends Component
             'default_logo_file.image' => 'The default logo must be an image file.',
             'default_logo_file.max' => 'The default logo must not be larger than 2MB.',
         ]);
+
+        // Check if there are any changes (excluding logo file which is handled separately)
+        $attachmentChanged = (string)$this->original_attachment_retention_days !== (string)$this->attachment_retention_days;
+        $passwordChanged = $this->original_default_guard_password !== $this->default_guard_password;
+        $logRetentionChanged = (string)$this->original_log_retention_months !== (string)$this->log_retention_months;
+        $logoChanged = $this->default_logo_file !== null;
+
+        if (!$attachmentChanged && !$passwordChanged && !$logRetentionChanged && !$logoChanged) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
 
         // Capture old values for logging
         $oldSettings = [
@@ -136,6 +169,11 @@ class Settings extends Component
             $newSettings
         );
 
+        // Update original values after successful save
+        $this->original_attachment_retention_days = (string)$this->attachment_retention_days;
+        $this->original_default_guard_password = $this->default_guard_password;
+        $this->original_log_retention_months = (string)$this->log_retention_months;
+        
         $this->dispatch('toast', message: 'Settings have been updated successfully.', type: 'success');
     }
     

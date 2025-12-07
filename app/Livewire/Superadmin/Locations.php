@@ -154,6 +154,9 @@ class Locations extends Component
         $this->resetPage();
     }
 
+    public $original_location_name;
+    public $original_attachment_id;
+
     public function openEditModal($locationId)
     {
         $location = Location::findOrFail($locationId);
@@ -161,7 +164,25 @@ class Locations extends Component
         $this->location_name = $location->location_name;
         $this->edit_logo = null;
         $this->remove_logo = false;
+        
+        // Store original values for change detection
+        $this->original_location_name = $location->location_name;
+        $this->original_attachment_id = $location->attachment_id;
+        
         $this->showEditModal = true;
+    }
+
+    public function getHasChangesProperty()
+    {
+        if (!$this->selectedLocationId) {
+            return false;
+        }
+
+        $locationName = trim($this->location_name ?? '');
+        $nameChanged = $this->original_location_name !== $locationName;
+        $logoChanged = $this->edit_logo !== null || $this->remove_logo === true;
+
+        return $nameChanged || $logoChanged;
     }
 
     public function updateLocation()
@@ -190,10 +211,7 @@ class Locations extends Component
         
         $location = Location::findOrFail($this->selectedLocationId);
         
-        // Capture old values for logging
-        $oldValues = $location->only(['location_name', 'attachment_id', 'disabled']);
-        
-        // Handle logo update/removal
+        // Handle logo update/removal first to determine new attachment_id
         $attachmentId = $location->attachment_id;
         
         if ($this->remove_logo) {
@@ -238,6 +256,21 @@ class Locations extends Component
             $attachmentId = $attachment->id;
         }
         
+        // Check if there are any changes
+        $nameChanged = $location->location_name !== $locationName;
+        $attachmentChanged = $location->attachment_id !== $attachmentId;
+        
+        if (!$nameChanged && !$attachmentChanged) {
+            // Reset logo fields if no changes
+            $this->edit_logo = null;
+            $this->remove_logo = false;
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
+        
+        // Capture old values for logging
+        $oldValues = $location->only(['location_name', 'attachment_id', 'disabled']);
+        
         $location->update([
             'location_name' => $locationName,
             'attachment_id' => $attachmentId,
@@ -253,7 +286,7 @@ class Locations extends Component
         );
 
         $this->showEditModal = false;
-        $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'remove_logo']);
+        $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'remove_logo', 'original_location_name', 'original_attachment_id']);
         $this->dispatch('toast', message: "{$locationName} has been updated.", type: 'success');
     }
 

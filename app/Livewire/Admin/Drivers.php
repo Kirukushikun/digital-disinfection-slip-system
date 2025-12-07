@@ -159,6 +159,10 @@ class Drivers extends Component
         $this->resetPage();
     }
 
+    public $original_first_name;
+    public $original_middle_name;
+    public $original_last_name;
+
     public function openEditModal($driverId)
     {
         $driver = Driver::findOrFail($driverId);
@@ -166,7 +170,28 @@ class Drivers extends Component
         $this->first_name = $driver->first_name;
         $this->middle_name = $driver->middle_name;
         $this->last_name = $driver->last_name;
+        
+        // Store original values for change detection
+        $this->original_first_name = $driver->first_name;
+        $this->original_middle_name = $driver->middle_name;
+        $this->original_last_name = $driver->last_name;
+        
         $this->showEditModal = true;
+    }
+
+    public function getHasChangesProperty()
+    {
+        if (!$this->selectedDriverId) {
+            return false;
+        }
+
+        $firstName = $this->sanitizeAndCapitalizeName($this->first_name ?? '');
+        $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
+        $lastName = $this->sanitizeAndCapitalizeName($this->last_name ?? '');
+
+        return ($this->original_first_name !== $firstName) ||
+               ($this->original_middle_name !== $middleName) ||
+               ($this->original_last_name !== $lastName);
     }
 
     public function updateDriver()
@@ -197,6 +222,16 @@ class Drivers extends Component
 
         $driver = Driver::findOrFail($this->selectedDriverId);
         
+        // Check if there are any changes
+        $hasChanges = ($driver->first_name !== $firstName) ||
+                      ($driver->middle_name !== $middleName) ||
+                      ($driver->last_name !== $lastName);
+        
+        if (!$hasChanges) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
+        
         // Capture old values for logging
         $oldValues = $driver->only(['first_name', 'middle_name', 'last_name']);
         
@@ -221,7 +256,7 @@ class Drivers extends Component
         );
 
         $this->showEditModal = false;
-        $this->reset(['selectedDriverId', 'first_name', 'middle_name', 'last_name']);
+        $this->reset(['selectedDriverId', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name']);
         $this->dispatch('toast', message: "{$driverName} has been updated.", type: 'success');
     }
 
@@ -272,7 +307,7 @@ class Drivers extends Component
         $this->showEditModal = false;
         $this->showDisableModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedDriverId', 'selectedDriverDisabled', 'first_name', 'middle_name', 'last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
+        $this->reset(['selectedDriverId', 'selectedDriverDisabled', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
 

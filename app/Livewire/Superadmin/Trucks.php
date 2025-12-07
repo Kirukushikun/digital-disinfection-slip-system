@@ -1098,6 +1098,11 @@ class Trucks extends Component
                $this->editReasonForDisinfection != $this->selectedSlip->reason_for_disinfection;
     }
 
+    public function getHasChangesProperty()
+    {
+        return $this->hasEditUnsavedChanges();
+    }
+
     public function confirmDeleteSlip()
     {
         $this->showDeleteConfirmation = true;
@@ -1245,6 +1250,12 @@ class Trucks extends Component
             'editReceivedGuardId' => 'Receiving Guard',
             'editReasonForDisinfection' => 'Reason for Disinfection',
         ]);
+
+        // Check if there are any changes
+        if (!$this->hasEditUnsavedChanges()) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
 
         // Sanitize reason_for_disinfection
         $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);

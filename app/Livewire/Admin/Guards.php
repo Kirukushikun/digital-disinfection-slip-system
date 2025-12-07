@@ -171,6 +171,10 @@ class Guards extends Component
         $this->resetPage();
     }
 
+    public $original_first_name;
+    public $original_middle_name;
+    public $original_last_name;
+
     public function openEditModal($userId)
     {
         $user = User::findOrFail($userId);
@@ -178,7 +182,28 @@ class Guards extends Component
         $this->first_name = $user->first_name;
         $this->middle_name = $user->middle_name;
         $this->last_name = $user->last_name;
+        
+        // Store original values for change detection
+        $this->original_first_name = $user->first_name;
+        $this->original_middle_name = $user->middle_name;
+        $this->original_last_name = $user->last_name;
+        
         $this->showEditModal = true;
+    }
+
+    public function getHasChangesProperty()
+    {
+        if (!$this->selectedUserId) {
+            return false;
+        }
+
+        $firstName = $this->sanitizeAndCapitalizeName($this->first_name ?? '');
+        $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
+        $lastName = $this->sanitizeAndCapitalizeName($this->last_name ?? '');
+
+        return ($this->original_first_name !== $firstName) ||
+               ($this->original_middle_name !== $middleName) ||
+               ($this->original_last_name !== $lastName);
     }
 
     public function updateUser()
@@ -208,6 +233,16 @@ class Guards extends Component
         $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
         $user = User::findOrFail($this->selectedUserId);
+        
+        // Check if there are any changes
+        $hasChanges = ($user->first_name !== $firstName) ||
+                      ($user->middle_name !== $middleName) ||
+                      ($user->last_name !== $lastName);
+        
+        if (!$hasChanges) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
         
         // Capture old values for logging
         $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
@@ -245,7 +280,7 @@ class Guards extends Component
         );
 
         $this->showEditModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name']);
+        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name']);
         $this->dispatch('toast', message: "{$guardName} has been updated.", type: 'success');
     }
 
@@ -335,7 +370,7 @@ class Guards extends Component
         $this->showDisableModal = false;
         $this->showResetPasswordModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled', 'first_name', 'middle_name', 'last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
+        $this->reset(['selectedUserId', 'selectedUserDisabled', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
 

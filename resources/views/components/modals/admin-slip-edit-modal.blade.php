@@ -317,7 +317,8 @@
                     Cancel
                 </x-buttons.submit-button>
 
-                <x-buttons.submit-button wire:click="saveEdit" color="green">
+                <x-buttons.submit-button wire:click="saveEdit" color="green" wire:loading.attr="disabled"
+                    @if(!$this->hasChanges) disabled @endif>
                     Save Changes
                 </x-buttons.submit-button>
             </div>
