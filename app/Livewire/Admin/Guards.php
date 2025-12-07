@@ -3,10 +3,12 @@
 namespace App\Livewire\Admin;
 
 use App\Models\User;
+use App\Models\Setting;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class Guards extends Component
 {
@@ -24,8 +26,9 @@ class Guards extends Component
     public $appliedCreatedTo = '';
     
     public $selectedUserId;
+    public $selectedUserDisabled = false;
     public $showEditModal = false;
-    public $showDeleteModal = false;
+    public $showDisableModal = false;
     public $showResetPasswordModal = false;
     public $showCreateModal = false;
 
@@ -33,11 +36,6 @@ class Guards extends Component
     public $first_name;
     public $middle_name;
     public $last_name;
-    public $username;
-
-    // Reset password fields
-    public $new_password;
-    public $confirm_password;
 
     // Create form fields
     public $create_first_name;
@@ -45,6 +43,14 @@ class Guards extends Component
     public $create_last_name;
 
     protected $queryString = ['search'];
+
+    /**
+     * Get the default guard password (for display in views)
+     */
+    public function getDefaultPasswordProperty()
+    {
+        return $this->getDefaultGuardPassword();
+    }
 
     public function updatingSearch()
     {
@@ -87,46 +93,85 @@ class Guards extends Component
         $this->first_name = $user->first_name;
         $this->middle_name = $user->middle_name;
         $this->last_name = $user->last_name;
-        $this->username = $user->username;
         $this->showEditModal = true;
     }
 
     public function updateUser()
     {
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $this->validate([
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $this->selectedUserId,
+            'first_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+        ], [
+            'first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
+            'middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
+            'last_name.regex' => 'Last name can only contain letters, spaces, hyphens, and apostrophes.',
+        ], [
+            'first_name' => 'First Name',
+            'middle_name' => 'Middle Name',
+            'last_name' => 'Last Name',
         ]);
+
+        // Sanitize and capitalize inputs
+        $firstName = $this->sanitizeAndCapitalizeName($this->first_name);
+        $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
+        $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
         $user = User::findOrFail($this->selectedUserId);
-        $user->update([
-            'first_name' => $this->first_name,
-            'middle_name' => $this->middle_name,
-            'last_name' => $this->last_name,
-            'username' => $this->username,
-        ]);
+        
+        // Check if first name or last name changed (these affect username)
+        $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
+        
+        // Prepare update data
+        $updateData = [
+            'first_name' => $firstName,
+            'middle_name' => $middleName,
+            'last_name' => $lastName,
+        ];
+        
+        // Regenerate username if name changed
+        if ($nameChanged) {
+            $newUsername = $this->generateUsername($firstName, $lastName, $this->selectedUserId);
+            $updateData['username'] = $newUsername;
+        }
+        
+        $user->update($updateData);
 
         $this->showEditModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'username']);
+        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name']);
         $this->dispatch('toast', message: 'Guard updated successfully!', type: 'success');
     }
 
-    public function openDeleteModal($userId)
+    public function openDisableModal($userId)
     {
+        $user = User::findOrFail($userId);
         $this->selectedUserId = $userId;
-        $this->showDeleteModal = true;
+        $this->selectedUserDisabled = $user->disabled;
+        $this->showDisableModal = true;
     }
 
-    public function deleteUser()
+    public function toggleUserStatus()
     {
-        $user = User::findOrFail($this->selectedUserId);
-        $user->delete();
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
-        $this->showDeleteModal = false;
-        $this->reset('selectedUserId');
-        $this->dispatch('toast', message: 'Guard deleted successfully!', type: 'success');
+        $user = User::findOrFail($this->selectedUserId);
+        $wasDisabled = $user->disabled;
+        $user->update([
+            'disabled' => !$wasDisabled
+        ]);
+
+        $this->showDisableModal = false;
+        $this->reset(['selectedUserId', 'selectedUserDisabled']);
+        $message = !$wasDisabled ? 'Guard disabled successfully!' : 'Guard enabled successfully!';
+        $this->dispatch('toast', message: $message, type: 'success');
     }
 
     public function openResetPasswordModal($userId)
@@ -137,28 +182,29 @@ class Guards extends Component
 
     public function resetPassword()
     {
-        $this->validate([
-            'new_password' => 'required|min:8',
-            'confirm_password' => 'required|same:new_password',
-        ]);
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $user = User::findOrFail($this->selectedUserId);
+        $defaultPassword = $this->getDefaultGuardPassword();
         $user->update([
-            'password' => Hash::make($this->new_password),
+            'password' => Hash::make($defaultPassword),
         ]);
 
         $this->showResetPasswordModal = false;
-        $this->reset(['selectedUserId', 'new_password', 'confirm_password']);
-        $this->dispatch('toast', message: 'Password reset successfully!', type: 'success');
+        $this->reset('selectedUserId');
+        $this->dispatch('toast', message: 'Password reset successfully to default password!', type: 'success');
     }
 
     public function closeModal()
     {
         $this->showEditModal = false;
-        $this->showDeleteModal = false;
+        $this->showDisableModal = false;
         $this->showResetPasswordModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'username', 'new_password', 'confirm_password', 'create_first_name', 'create_middle_name', 'create_last_name']);
+        $this->reset(['selectedUserId', 'selectedUserDisabled', 'first_name', 'middle_name', 'last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
 
@@ -170,11 +216,66 @@ class Guards extends Component
     }
 
     /**
+     * Get default guard password from settings table
+     * Falls back to config or hardcoded value if setting doesn't exist
+     * 
+     * @return string
+     */
+    private function getDefaultGuardPassword()
+    {
+        $setting = Setting::where('setting_name', 'default_guard_password')->first();
+        
+        if ($setting && !empty($setting->value)) {
+            return $setting->value;
+        }
+        
+        // Fallback to config or default
+        return config('app.default_guard_password', 'brookside25');
+    }
+
+    /**
+     * Sanitize and capitalize name (Title Case)
+     * Removes HTML tags, decodes HTML entities, and converts to proper title case
+     * 
+     * @param string $name
+     * @return string
+     */
+    private function sanitizeAndCapitalizeName($name)
+    {
+        if (empty($name)) {
+            return '';
+        }
+
+        // Remove HTML tags and trim whitespace
+        $name = strip_tags(trim($name));
+        
+        // Decode HTML entities (e.g., &amp; becomes &, &#39; becomes ')
+        $name = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Remove any null bytes and other control characters (except newlines/spaces)
+        $name = preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/u', '', $name);
+        
+        // Normalize whitespace (replace multiple spaces with single space)
+        $name = preg_replace('/\s+/', ' ', $name);
+        
+        // Trim again after normalization
+        $name = trim($name);
+        
+        // Convert to title case (handles multiple words correctly, including hyphens and apostrophes)
+        return mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
      * Generate unique username based on first name and last name
      * Format: First letter of first name + Full last name
      * If exists, append increment: JDoe, JDoe1, JDoe2, etc.
+     * 
+     * @param string $firstName
+     * @param string $lastName
+     * @param int|null $excludeUserId User ID to exclude from uniqueness check (for updates)
+     * @return string
      */
-    private function generateUsername($firstName, $lastName)
+    private function generateUsername($firstName, $lastName, $excludeUserId = null)
     {
         // Trim whitespace from names
         $firstName = trim($firstName);
@@ -188,11 +289,15 @@ class Guards extends Component
         $firstLetter = strtoupper(substr($firstName, 0, 1));
         $username = $firstLetter . $lastName;
 
-        // Check if username exists
+        // Check if username exists (excluding current user if updating)
         $counter = 0;
         $baseUsername = $username;
 
-        while (User::where('username', $username)->exists()) {
+        while (User::where('username', $username)
+            ->when($excludeUserId, function ($query) use ($excludeUserId) {
+                $query->where('id', '!=', $excludeUserId);
+            })
+            ->exists()) {
             $counter++;
             $username = $baseUsername . $counter;
         }
@@ -202,23 +307,35 @@ class Guards extends Component
 
     public function createGuard()
     {
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $this->validate([
-            'create_first_name' => 'required|string|max:255',
-            'create_middle_name' => 'nullable|string|max:255',
-            'create_last_name' => 'required|string|max:255',
-        ], [], [
+            'create_first_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'create_middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'create_last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+        ], [
+            'create_first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
+            'create_middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
+            'create_last_name.regex' => 'Last name can only contain letters, spaces, hyphens, and apostrophes.',
+        ], [
             'create_first_name' => 'First Name',
             'create_middle_name' => 'Middle Name',
             'create_last_name' => 'Last Name',
         ]);
 
-        // Trim inputs
-        $firstName = trim($this->create_first_name);
-        $middleName = !empty($this->create_middle_name) ? trim($this->create_middle_name) : null;
-        $lastName = trim($this->create_last_name);
+        // Sanitize and capitalize inputs
+        $firstName = $this->sanitizeAndCapitalizeName($this->create_first_name);
+        $middleName = !empty($this->create_middle_name) ? $this->sanitizeAndCapitalizeName($this->create_middle_name) : null;
+        $lastName = $this->sanitizeAndCapitalizeName($this->create_last_name);
 
         // Generate unique username
         $username = $this->generateUsername($firstName, $lastName);
+
+        // Get default password from settings table
+        $defaultPassword = $this->getDefaultGuardPassword();
 
         // Create guard with default password
         User::create([
@@ -227,7 +344,7 @@ class Guards extends Component
             'last_name' => $lastName,
             'username' => $username,
             'user_type' => 0, // Guard
-            'password' => Hash::make('brookside25'), // Default password
+            'password' => Hash::make($defaultPassword),
         ]);
 
         $this->showCreateModal = false;
@@ -242,19 +359,32 @@ class Guards extends Component
             ->when($this->search, function ($query) {
                 $searchTerm = $this->search;
                 
+                // Sanitize search term to prevent SQL injection
+                $searchTerm = trim($searchTerm);
+                $searchTerm = preg_replace('/[%_]/', '', $searchTerm); // Remove LIKE wildcards for safety
+                
+                if (empty($searchTerm)) {
+                    return;
+                }
+                
+                // Escape special characters for LIKE
+                $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
+                
                 // Check if search term starts with @
                 if (str_starts_with($searchTerm, '@')) {
                     // Search only username (remove @ symbol)
                     $cleanedSearchTerm = ltrim($searchTerm, '@');
-                    $query->where('username', 'like', '%' . $cleanedSearchTerm . '%');
+                    $escapedCleanedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $cleanedSearchTerm);
+                    $query->where('username', 'like', '%' . $escapedCleanedSearchTerm . '%');
                 } else {
                     // Search only names (first, middle, last, and combinations)
-                    $query->where(function ($q) use ($searchTerm) {
-                        $q->where('first_name', 'like', '%' . $searchTerm . '%')
-                          ->orWhere('middle_name', 'like', '%' . $searchTerm . '%')
-                          ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
-                          ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', '%' . $searchTerm . '%')
-                          ->orWhere(DB::raw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name)"), 'like', '%' . $searchTerm . '%');
+                    // Use parameterized CONCAT to prevent SQL injection
+                    $query->where(function ($q) use ($escapedSearchTerm) {
+                        $q->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                          ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                          ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                          ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                          ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
                     });
                 }
             })

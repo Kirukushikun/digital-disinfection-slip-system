@@ -242,11 +242,14 @@ class TruckList extends Component
             'reason_for_disinfection' => 'nullable|string|max:1000',
         ]);
 
+        // Sanitize reason_for_disinfection
+        $sanitizedReason = $this->sanitizeText($this->reason_for_disinfection);
+
         $slip = DisinfectionSlip::create([
             'truck_id' => $this->truck_id,
             'destination_id' => $this->destination_id,
             'driver_id' => $this->driver_id,
-            'reason_for_disinfection' => $this->reason_for_disinfection,
+            'reason_for_disinfection' => $sanitizedReason,
             'location_id' => $currentLocationId,
             'hatchery_guard_id' => Auth::id(),
             'status' => 0, // Ongoing
@@ -284,6 +287,44 @@ class TruckList extends Component
         
         // Format: YY-NNNNN (e.g., 25-00001)
         return $year . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Sanitize text input (for textarea fields like reason_for_disinfection)
+     * Removes HTML tags, decodes entities, removes control characters
+     * Preserves newlines and normalizes whitespace
+     * 
+     * @param string|null $text
+     * @return string|null
+     */
+    private function sanitizeText($text)
+    {
+        if (empty($text)) {
+            return null;
+        }
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+        
+        // Decode HTML entities
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Remove control characters (but preserve newlines \n and carriage returns \r)
+        $text = preg_replace('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/u', '', $text);
+        
+        // Normalize line endings to \n
+        $text = preg_replace('/\r\n|\r/', "\n", $text);
+        
+        // Normalize multiple spaces to single space (but preserve newlines)
+        $text = preg_replace('/[ \t]+/', ' ', $text);
+        
+        // Remove trailing whitespace from each line
+        $lines = explode("\n", $text);
+        $lines = array_map('rtrim', $lines);
+        $text = implode("\n", $lines);
+        
+        // Trim the entire text
+        return trim($text) ?: null;
     }
     
     public function render()

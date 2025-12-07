@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->integer('user_type')->default(0); // 0: user, 1: admin, 2: superadmin
             $table->string('password');
+            $table->boolean('disabled')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });

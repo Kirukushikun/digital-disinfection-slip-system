@@ -1037,12 +1037,15 @@ class Trucks extends Component
             'editReasonForDisinfection' => 'Reason for Disinfection',
         ]);
 
+        // Sanitize reason_for_disinfection
+        $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);
+
         // Build update data based on status
         $updateData = [
             'truck_id' => $this->editTruckId,
             'destination_id' => $this->editDestinationId,
             'driver_id' => $this->editDriverId,
-            'reason_for_disinfection' => $this->editReasonForDisinfection,
+            'reason_for_disinfection' => $sanitizedReason,
         ];
 
         // Status 0: Update origin and hatchery guard
@@ -1216,6 +1219,9 @@ class Trucks extends Component
             'reason_for_disinfection' => 'Reason for Disinfection',
         ]);
 
+        // Sanitize reason_for_disinfection
+        $sanitizedReason = $this->sanitizeText($this->reason_for_disinfection);
+
         $slip = DisinfectionSlipModel::create([
             'truck_id' => $this->truck_id,
             'location_id' => $this->location_id,
@@ -1223,7 +1229,7 @@ class Trucks extends Component
             'driver_id' => $this->driver_id,
             'hatchery_guard_id' => $this->hatchery_guard_id,
             'received_guard_id' => $this->received_guard_id,
-            'reason_for_disinfection' => $this->reason_for_disinfection,
+            'reason_for_disinfection' => $sanitizedReason,
             'status' => 0, // Ongoing
         ]);
 
@@ -1391,6 +1397,44 @@ class Trucks extends Component
             Log::error('Attachment removal error: ' . $e->getMessage());
             $this->dispatch('toast', message: 'Failed to remove attachment. Please try again.', type: 'error');
         }
+    }
+
+    /**
+     * Sanitize text input (for textarea fields like reason_for_disinfection)
+     * Removes HTML tags, decodes entities, removes control characters
+     * Preserves newlines and normalizes whitespace
+     * 
+     * @param string|null $text
+     * @return string|null
+     */
+    private function sanitizeText($text)
+    {
+        if (empty($text)) {
+            return null;
+        }
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+        
+        // Decode HTML entities
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Remove control characters (but preserve newlines \n and carriage returns \r)
+        $text = preg_replace('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/u', '', $text);
+        
+        // Normalize line endings to \n
+        $text = preg_replace('/\r\n|\r/', "\n", $text);
+        
+        // Normalize multiple spaces to single space (but preserve newlines)
+        $text = preg_replace('/[ \t]+/', ' ', $text);
+        
+        // Remove trailing whitespace from each line
+        $lines = explode("\n", $text);
+        $lines = array_map('rtrim', $lines);
+        $text = implode("\n", $lines);
+        
+        // Trim the entire text
+        return trim($text) ?: null;
     }
 
     public function render()

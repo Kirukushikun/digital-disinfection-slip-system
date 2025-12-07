@@ -30,5 +30,11 @@ class DatabaseSeeder extends Seeder
             'setting_name' => 'attachment_retention_days',
             'value' => '30',
         ]);
+
+        // Create default setting for guard password
+        Setting::factory()->create([
+            'setting_name' => 'default_guard_password',
+            'value' => 'brookside25',
+        ]);
     }
 }

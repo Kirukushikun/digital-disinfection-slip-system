@@ -167,16 +167,31 @@
                                             </svg>
                                             Reset Password
                                         </button>
-                                        <button wire:click="openDeleteModal({{ $user->id }})"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                </path>
-                                            </svg>
-                                            Delete
-                                        </button>
+                                        @if ($user->disabled)
+                                            <button wire:click="openDisableModal({{ $user->id }})"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                    </path>
+                                                </svg>
+                                                Enable
+                                            </button>
+                                        @else
+                                            <button wire:click="openDisableModal({{ $user->id }})"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                                                    </path>
+                                                </svg>
+                                                Disable
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -230,12 +245,13 @@
         @if ($showEditModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
-                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" wire:click="closeModal">
-                    </div>
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
 
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
                     <div
-                        class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900">Edit Guard</h3>
                         </div>
@@ -243,9 +259,11 @@
                         <div class="px-6 py-4">
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
+                                            class="text-red-500">*</span></label>
                                     <input type="text" wire:model="first_name"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter first name">
                                     @error('first_name')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
@@ -255,26 +273,20 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Middle Name <span
                                             class="text-gray-400">(Optional)</span></label>
                                     <input type="text" wire:model="middle_name"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter middle name">
                                     @error('middle_name')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name <span
+                                            class="text-red-500">*</span></label>
                                     <input type="text" wire:model="last_name"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter last name">
                                     @error('last_name')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                    <input type="text" wire:model="username"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    @error('username')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
@@ -296,34 +308,53 @@
             </div>
         @endif
 
-        {{-- Delete Confirmation Modal --}}
-        @if ($showDeleteModal)
+        {{-- Disable/Enable Confirmation Modal --}}
+        @if ($showDisableModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
-                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" wire:click="closeModal">
-                    </div>
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
 
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
                     <div
-                        class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <div class="flex items-center">
-                                <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
-                                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                        </path>
-                                    </svg>
-                                </div>
-                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Delete Guard</h3>
+                                @if ($selectedUserDisabled)
+                                    <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Guard</h3>
+                                @else
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
+                                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Guard</h3>
+                                @endif
                             </div>
                         </div>
 
                         <div class="px-6 py-4">
-                            <p class="text-sm text-gray-600">Are you sure you want to delete this guard? This
-                                action
-                                cannot be undone.</p>
+                            <p class="text-sm text-gray-600">
+                                @if ($selectedUserDisabled)
+                                    Are you sure you want to enable this guard? The guard will be able to access the
+                                    system again.
+                                @else
+                                    Are you sure you want to disable this guard? The guard will not be able to access
+                                    the system.
+                                @endif
+                            </p>
                         </div>
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
@@ -331,10 +362,17 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
                             </button>
-                            <button wire:click="deleteUser"
-                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Delete Guard
-                            </button>
+                            @if ($selectedUserDisabled)
+                                <button wire:click="toggleUserStatus"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Enable Guard
+                                </button>
+                            @else
+                                <button wire:click="toggleUserStatus"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    Disable Guard
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -345,43 +383,36 @@
         @if ($showResetPasswordModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
-                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" wire:click="closeModal">
-                    </div>
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
 
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
                     <div
-                        class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Reset Password</h3>
-                        </div>
-
-                        <div class="px-6 py-4">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">New
-                                        Password</label>
-                                    <input type="password" wire:model="new_password"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Enter new password">
-                                    @error('new_password')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
+                            <div class="flex items-center">
+                                <div class="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full">
+                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                        </path>
+                                    </svg>
                                 </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm
-                                        Password</label>
-                                    <input type="password" wire:model="confirm_password"
-                                        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Confirm new password">
-                                    @error('confirm_password')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Reset Password</h3>
                             </div>
                         </div>
 
-                        <div class="px-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                        <div class="px-6 py-4">
+                            <p class="text-sm text-gray-600">
+                                Are you sure you want to reset this guard's password? The password will be reset to the
+                                default password "<span
+                                    class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                             <button wire:click="closeModal"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
