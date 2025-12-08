@@ -46,6 +46,7 @@ Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->gro
     Route::get('/print/locations', [AdminController::class, 'printLocations'])->name('print.locations');
     Route::get('/print/plate-numbers', [AdminController::class, 'printPlateNumbers'])->name('print.plate-numbers');
     Route::get('/print/trucks', [AdminController::class, 'printTrucks'])->name('print.trucks');
+    Route::get('/print/slip', [AdminController::class, 'printSlip'])->name('print.slip');
 });
 
 Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadmin.')->group(function () {
@@ -64,5 +65,6 @@ Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadm
     Route::get('/print/locations', [SuperAdminController::class, 'printLocations'])->name('print.locations');
     Route::get('/print/plate-numbers', [SuperAdminController::class, 'printPlateNumbers'])->name('print.plate-numbers');
     Route::get('/print/trucks', [SuperAdminController::class, 'printTrucks'])->name('print.trucks');
+    Route::get('/print/slip', [SuperAdminController::class, 'printSlip'])->name('print.slip');
 });
 

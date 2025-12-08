@@ -187,4 +187,32 @@ class AdminController extends Controller
             'sorting' => $sorting
         ]);
     }
+
+    public function printSlip(Request $request)
+    {
+        $slip = null;
+        
+        if ($request->has('token')) {
+            $token = $request->token;
+            $sessionKey = "print_slip_{$token}";
+            $expiresKey = "print_slip_{$token}_expires";
+            
+            if (Session::has($sessionKey) && Session::has($expiresKey)) {
+                if (now()->lt(Session::get($expiresKey))) {
+                    $slipId = Session::get($sessionKey);
+                    $slip = \App\Models\DisinfectionSlip::with(['truck', 'location', 'destination', 'driver', 'hatcheryGuard', 'receivedGuard'])
+                        ->find($slipId);
+                    Session::forget([$sessionKey, $expiresKey]);
+                }
+            }
+        }
+        
+        if (!$slip) {
+            abort(404, 'Slip not found or expired');
+        }
+        
+        return view('livewire.admin.print-slip', [
+            'slip' => $slip
+        ]);
+    }
 }

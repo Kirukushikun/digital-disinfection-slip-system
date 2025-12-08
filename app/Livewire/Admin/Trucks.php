@@ -2042,4 +2042,15 @@ class Trucks extends Component
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }
+
+    public function printSlip($slipId)
+    {
+        $token = Str::random(32);
+        Session::put("print_slip_{$token}", $slipId);
+        Session::put("print_slip_{$token}_expires", now()->addMinutes(10));
+        
+        $printUrl = route('admin.print.slip', ['token' => $token]);
+        
+        $this->dispatch('open-print-window', ['url' => $printUrl]);
+    }
 }
