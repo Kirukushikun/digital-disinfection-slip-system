@@ -566,9 +566,11 @@ class DisinfectionSlip extends Component
             $attachment = Attachment::find($this->selectedSlip->attachment_id);
 
             if ($attachment) {
-                // Delete the physical file from storage
-                if (Storage::disk('public')->exists($attachment->file_path)) {
-                    Storage::disk('public')->delete($attachment->file_path);
+                // Delete the physical file from storage (except BGC.png logo)
+                if ($attachment->file_path !== 'images/logo/BGC.png') {
+                    if (Storage::disk('public')->exists($attachment->file_path)) {
+                        Storage::disk('public')->delete($attachment->file_path);
+                    }
                 }
 
                 // Remove attachment reference from slip
@@ -576,8 +578,10 @@ class DisinfectionSlip extends Component
                     'attachment_id' => null,
                 ]);
 
-                // Hard delete the attachment record
-                $attachment->forceDelete();
+                // Hard delete the attachment record (except BGC.png logo)
+                if ($attachment->file_path !== 'images/logo/BGC.png') {
+                    $attachment->forceDelete();
+                }
 
                 // Refresh the slip
                 $this->selectedSlip->refresh();

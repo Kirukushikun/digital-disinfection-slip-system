@@ -49,8 +49,11 @@ class CleanAttachments extends Command
         foreach ($oldAttachments as $attachment) {
             // Check if attachment is a logo (used by Location) - these should be preserved
             $isLogo = Location::where('attachment_id', $attachment->id)->exists();
+            
+            // Check if attachment is the default BGC.png logo - this should be preserved
+            $isBgcLogo = $attachment->file_path === 'images/logo/BGC.png';
 
-            if ($isLogo) {
+            if ($isLogo || $isBgcLogo) {
                 $skippedCount++;
                 continue;
             }
@@ -58,7 +61,7 @@ class CleanAttachments extends Command
             try {
                 // First, remove the attachment reference from any disinfection slips
                 // This ensures data consistency before deletion (even though nullOnDelete() handles it)
-                DisinfectionSlip::where('attachment_id', $attachment->id)
+                DisinfectionSlip::where('attachment_id', operator: $attachment->id)
                     ->update(['attachment_id' => null]);
 
                 // Delete the physical file from storage
