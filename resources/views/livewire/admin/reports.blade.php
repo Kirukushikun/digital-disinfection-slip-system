@@ -163,6 +163,10 @@
                                 Slip No
                             </th>
                             <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col"
                                 class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -189,13 +193,29 @@
                                         {{ $report->slip->slip_id ?? 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     @if ($report->resolved_at)
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Resolved
-                                        </span>
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
+                                                Resolved
+                                            </span>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                {{ $report->resolved_at->format('M d, Y') }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $report->resolved_at->format('h:i A') }}
+                                            </div>
+                                        </div>
                                     @else
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            Unresolved
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    @if (!$report->resolved_at)
                                         <button wire:click="resolveReport({{ $report->id }})"
                                             class="hover:cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                             Resolve
@@ -205,7 +225,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
+                                <td colspan="5" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24"
                                             stroke="currentColor">
@@ -231,31 +251,7 @@
         {{-- Filter Modal --}}
         <x-modals.filter-modal>
             <x-slot name="filters">
-                <div class="space-y-4">
-                    {{-- Resolved Status Filter --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <select wire:model="filterResolved"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">All</option>
-                            <option value="0">Unresolved</option>
-                            <option value="1">Resolved</option>
-                        </select>
-                    </div>
-
-                    {{-- Date Range Filters --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Created From</label>
-                        <input type="date" wire:model="filterCreatedFrom"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Created To</label>
-                        <input type="date" wire:model="filterCreatedTo"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                </div>
+                <x-modals.filter-reports-body :availableStatuses="$availableStatuses" />
             </x-slot>
         </x-modals.filter-modal>
     </div>

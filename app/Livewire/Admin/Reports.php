@@ -20,16 +20,27 @@ class Reports extends Component
     public $sortDirection = 'desc';
     
     // Filter properties
-    public $filterResolved = null; // null = All, 0 = Unresolved, 1 = Resolved
+    public $filterResolved = '0'; // Default to Unresolved, null = All, 0 = Unresolved, 1 = Resolved
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
-    public $appliedResolved = null;
+    public $appliedResolved = '0'; // Default to Unresolved
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
-    public $filtersActive = false;
+    public $filtersActive = true; // Default to true since we filter by unresolved
+    
+    public $availableStatuses = [
+        '0' => 'Unresolved',
+        '1' => 'Resolved',
+    ];
+    
+    public function mount()
+    {
+        // Apply default filter on mount
+        $this->applyFilters();
+    }
     
     protected $queryString = ['search'];
     
@@ -37,13 +48,8 @@ class Reports extends Component
     {
         if ($value === null || $value === '' || $value === false) {
             $this->filterResolved = null;
-        } elseif (is_numeric($value)) {
-            $intValue = (int)$value;
-            if ($intValue >= 0 && $intValue <= 1) {
-                $this->filterResolved = $intValue;
-            } else {
-                $this->filterResolved = null;
-            }
+        } elseif (is_numeric($value) || $value === '0' || $value === '1') {
+            $this->filterResolved = (string)$value;
         } else {
             $this->filterResolved = null;
         }
@@ -153,8 +159,8 @@ class Reports extends Component
         }
         
         // Filters
-        if (!is_null($this->appliedResolved)) {
-            if ($this->appliedResolved == 1) {
+        if (!is_null($this->appliedResolved) && $this->appliedResolved !== '') {
+            if ($this->appliedResolved == '1' || $this->appliedResolved === 1) {
                 $query->whereNotNull('resolved_at');
             } else {
                 $query->whereNull('resolved_at');
@@ -181,6 +187,7 @@ class Reports extends Component
         
         return view('livewire.admin.reports', [
             'reports' => $reports,
+            'availableStatuses' => $this->availableStatuses,
         ]);
     }
 }
