@@ -61,4 +61,12 @@ class User extends Authenticatable
             default => 'user.dashboard', // includes 0 and null
         };
     }
+
+    /**
+     * Get the reports created by this user.
+     */
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
 }

@@ -92,4 +92,9 @@ class DisinfectionSlip extends Model
     {
         return $this->belongsTo(User::class, 'received_guard_id');
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'slip_id');
+    }
 }

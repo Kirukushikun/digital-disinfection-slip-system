@@ -1,0 +1,186 @@
+<?php
+
+namespace App\Livewire\Admin;
+
+use App\Models\Report;
+use App\Services\Logger;
+use Livewire\Component;
+use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
+
+class Reports extends Component
+{
+    use WithPagination;
+
+    public $search = '';
+    public $showFilters = false;
+    
+    // Sorting properties
+    public $sortBy = 'created_at';
+    public $sortDirection = 'desc';
+    
+    // Filter properties
+    public $filterResolved = null; // null = All, 0 = Unresolved, 1 = Resolved
+    public $filterCreatedFrom = '';
+    public $filterCreatedTo = '';
+    
+    // Applied filters
+    public $appliedResolved = null;
+    public $appliedCreatedFrom = '';
+    public $appliedCreatedTo = '';
+    
+    public $filtersActive = false;
+    
+    protected $queryString = ['search'];
+    
+    public function updatedFilterResolved($value)
+    {
+        if ($value === null || $value === '' || $value === false) {
+            $this->filterResolved = null;
+        } elseif (is_numeric($value)) {
+            $intValue = (int)$value;
+            if ($intValue >= 0 && $intValue <= 1) {
+                $this->filterResolved = $intValue;
+            } else {
+                $this->filterResolved = null;
+            }
+        } else {
+            $this->filterResolved = null;
+        }
+    }
+    
+    public function applySort($column)
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
+        $this->resetPage();
+    }
+    
+    public function applyFilters()
+    {
+        $this->appliedResolved = $this->filterResolved;
+        $this->appliedCreatedFrom = $this->filterCreatedFrom;
+        $this->appliedCreatedTo = $this->filterCreatedTo;
+        
+        $this->filtersActive = !is_null($this->appliedResolved) || 
+                               !empty($this->appliedCreatedFrom) || 
+                               !empty($this->appliedCreatedTo);
+        
+        $this->showFilters = false;
+        $this->resetPage();
+    }
+    
+    public function removeFilter($filterName)
+    {
+        switch ($filterName) {
+            case 'resolved':
+                $this->appliedResolved = null;
+                $this->filterResolved = null;
+                break;
+            case 'created_from':
+                $this->appliedCreatedFrom = '';
+                $this->filterCreatedFrom = '';
+                break;
+            case 'created_to':
+                $this->appliedCreatedTo = '';
+                $this->filterCreatedTo = '';
+                break;
+        }
+        
+        $this->filtersActive = !is_null($this->appliedResolved) || 
+                               !empty($this->appliedCreatedFrom) || 
+                               !empty($this->appliedCreatedTo);
+        
+        $this->resetPage();
+    }
+    
+    public function clearFilters()
+    {
+        $this->filterResolved = null;
+        $this->filterCreatedFrom = '';
+        $this->filterCreatedTo = '';
+        
+        $this->appliedResolved = null;
+        $this->appliedCreatedFrom = '';
+        $this->appliedCreatedTo = '';
+        
+        $this->filtersActive = false;
+        $this->resetPage();
+    }
+    
+    public function resolveReport($reportId)
+    {
+        $report = Report::findOrFail($reportId);
+        $oldValues = ['resolved_at' => $report->resolved_at];
+        $report->resolved_at = now();
+        $report->save();
+        
+        $slipId = $report->slip->slip_id ?? 'N/A';
+        $newValues = ['resolved_at' => $report->resolved_at];
+        Logger::update(
+            Report::class,
+            $report->id,
+            "Resolved report for slip {$slipId}",
+            $oldValues,
+            $newValues
+        );
+        
+        $this->dispatch('toast', message: 'Report marked as resolved.', type: 'success');
+        $this->resetPage();
+    }
+    
+    private function getFilteredReportsQuery()
+    {
+        $query = Report::with(['user', 'slip'])->whereNull('deleted_at');
+        
+        // Search
+        if (!empty($this->search)) {
+            $searchTerm = trim($this->search);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('description', 'like', '%' . $searchTerm . '%')
+                  ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                      $userQuery->where('first_name', 'like', '%' . $searchTerm . '%')
+                                ->orWhere('last_name', 'like', '%' . $searchTerm . '%');
+                  })
+                  ->orWhereHas('slip', function ($slipQuery) use ($searchTerm) {
+                      $slipQuery->where('slip_id', 'like', '%' . $searchTerm . '%');
+                  });
+            });
+        }
+        
+        // Filters
+        if (!is_null($this->appliedResolved)) {
+            if ($this->appliedResolved == 1) {
+                $query->whereNotNull('resolved_at');
+            } else {
+                $query->whereNull('resolved_at');
+            }
+        }
+        
+        if (!empty($this->appliedCreatedFrom)) {
+            $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
+        }
+        
+        if (!empty($this->appliedCreatedTo)) {
+            $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
+        }
+        
+        // Sorting
+        $query->orderBy($this->sortBy, $this->sortDirection);
+        
+        return $query;
+    }
+    
+    public function render()
+    {
+        $reports = $this->getFilteredReportsQuery()->paginate(15);
+        
+        return view('livewire.admin.reports', [
+            'reports' => $reports,
+        ]);
+    }
+}

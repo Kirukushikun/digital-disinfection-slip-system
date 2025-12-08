@@ -33,6 +33,11 @@ class AdminController extends Controller
         return view('admin.trucks');
     }
 
+    public function reports()
+    {
+        return view('admin.reports');
+    }
+
     public function auditTrail()
     {
         return view('admin.audit-trail');

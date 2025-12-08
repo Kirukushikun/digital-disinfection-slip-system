@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Driver;
 use App\Models\Truck;
 use App\Models\Location;
+use App\Models\Report;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -23,6 +24,7 @@ class AdminDashboard extends Component
             'total_drivers' => $this->getDriversCount(),
             'total_plate_numbers' => $this->getPlateNumbersCount(),
             'total_locations' => $this->getLocationsCount(),
+            'unresolved_reports' => $this->getUnresolvedReportsCount(),
         ];
     }
 
@@ -103,6 +105,16 @@ class AdminDashboard extends Component
     private function getLocationsCount()
     {
         return Location::where('disabled', false)
+            ->count();
+    }
+
+    /**
+     * Get count of unresolved reports
+     */
+    private function getUnresolvedReportsCount()
+    {
+        return Report::whereNull('resolved_at')
+            ->whereNull('deleted_at')
             ->count();
     }
 
