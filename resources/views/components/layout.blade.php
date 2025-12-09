@@ -1521,6 +1521,16 @@
         </style>
     @endif
     @livewireStyles
+    <style>
+        /* Mobile bottom navigation spacing - add bottom padding to content areas */
+        @media (max-width: 640px) {
+            .min-h-screen:not(header):not(nav),
+            div.min-h-screen,
+            main {
+                padding-bottom: 5rem !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="h-full bg-[#FFF7F1]">

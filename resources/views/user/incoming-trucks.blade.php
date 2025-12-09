@@ -1,9 +1,5 @@
 <x-layout>
-    <x-navigation.navbar module="Incoming Trucks">
-        <x-slot:sidebar>
-            <livewire:sidebar.sidebar-user :currentRoute="Route::currentRouteName()" />
-        </x-slot:sidebar>
-    </x-navigation.navbar>
+    <x-navigation.navbar module="Incoming Trucks" />
 
     <livewire:trucks.truck-list type="incoming" />
 </x-layout>

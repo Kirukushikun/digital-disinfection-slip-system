@@ -274,13 +274,13 @@
                                         <x-buttons.submit-button wire:click="restoreDriver({{ $driver->id }})"
                                             color="green" size="sm" :fullWidth="false" wire:loading.attr="disabled" wire:target="restoreDriver({{ $driver->id }})">
                                             <span wire:loading.remove wire:target="restoreDriver({{ $driver->id }})">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                                    </path>
-                                                </svg>
-                                                Restore
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                </path>
+                                            </svg>
+                                            Restore
                                             </span>
                                             <span wire:loading wire:target="restoreDriver({{ $driver->id }})" class="inline-flex items-center gap-1.5">
                                                 <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

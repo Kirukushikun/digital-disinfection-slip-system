@@ -1,9 +1,5 @@
 <x-layout>
-    <x-navigation.navbar module="Dashboard">
-        <x-slot:sidebar>
-            <livewire:sidebar.sidebar-user :currentRoute="Route::currentRouteName()" />
-        </x-slot:sidebar>
-    </x-navigation.navbar>
+    <x-navigation.navbar module="Dashboard" />
 
     <div class="p-4 sm:p-6 lg:p-8 bg-linear-to-br from-gray-50 to-gray-100 min-h-screen">
 
