@@ -7,37 +7,71 @@
     $locationName = session('location_name') ?? 'Brookside';
 @endphp
 
-<nav x-data="{ open: false }" class="bg-[#FFDBBD] shadow-md rounded-md px-4 py-3 flex items-center justify-between">
-    <!-- Left: Hamburger + Module Name + Date -->
-    <div class="flex items-center gap-3">
-        <button type="button"
-            class="hover:cursor-pointer shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border-2 border-gray-300 text-gray-700 shadow-sm hover:bg-[#EC8B18] hover:border-[#EC8B18] hover:text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#EC8B18] focus:ring-offset-2 transition-all duration-200 cursor-pointer"
-            x-on:click="open = true" aria-label="Open menu">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
-
-        <div class="flex flex-col transition-all duration-200" :class="open ? 'lg:ml-60' : ''">
-            <span class="font-semibold text-gray-800 text-lg">{{ $module }}</span>
-            <span class="text-sm text-gray-600">{{ now()->format('F d, Y') }}</span>
+<nav x-data="{ open: false }" class="bg-[#FFDBBD] shadow-md rounded-md px-2 sm:px-4 py-2 sm:py-3">
+    <!-- Mobile: Stacked Layout -->
+    <div class="flex flex-col sm:hidden gap-2">
+        <!-- Top Row: Hamburger + Module + Actions -->
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <button type="button"
+                    class="hover:cursor-pointer shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border-2 border-gray-300 text-gray-700 shadow-sm hover:bg-[#EC8B18] hover:border-[#EC8B18] hover:text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#EC8B18] focus:ring-offset-2 transition-all duration-200 cursor-pointer"
+                    x-on:click="open = true" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="min-w-0 flex-1">
+                    <span class="font-semibold text-gray-800 text-base truncate block">{{ $module }}</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                {{ $slot }}
+                <x-buttons.nav-button href="{{ url('/') }}" class="text-xs px-2 py-1.5">
+                    Landing
+                </x-buttons.nav-button>
+            </div>
+        </div>
+        <!-- Bottom Row: Logo + Location Name -->
+        <div class="flex items-center gap-2 justify-center">
+            <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-6 w-6 object-contain">
+            <span class="font-semibold text-gray-800 text-sm truncate">{{ $locationName }}</span>
         </div>
     </div>
 
-    <!-- Center: Logo + Location/Farm Name -->
-    <div class="flex items-center gap-2 flex-1 justify-center">
-        <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-8 w-8 object-contain">
-        <span class="font-semibold text-gray-800 text-lg hidden sm:inline">{{ $locationName }}</span>
-    </div>
+    <!-- Desktop: Horizontal Layout -->
+    <div class="hidden sm:flex items-center justify-between gap-3">
+        <!-- Left: Hamburger + Module Name + Date -->
+        <div class="flex items-center gap-3 min-w-0">
+            <button type="button"
+                class="hover:cursor-pointer shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border-2 border-gray-300 text-gray-700 shadow-sm hover:bg-[#EC8B18] hover:border-[#EC8B18] hover:text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#EC8B18] focus:ring-offset-2 transition-all duration-200 cursor-pointer"
+                x-on:click="open = true" aria-label="Open menu">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
 
-    <!-- Right: Slot for actions -->
-    <div class="flex items-center gap-3">
-        <x-buttons.nav-button href="{{ url('/') }}">
-            <span class="hidden sm:inline">Go to Landing</span>
-            <span class="sm:hidden">Landing</span>
-        </x-buttons.nav-button>
-        {{ $slot }}
+            <div class="flex flex-col transition-all duration-200 min-w-0" :class="open ? 'lg:ml-60' : ''">
+                <span class="font-semibold text-gray-800 text-lg truncate">{{ $module }}</span>
+                <span class="text-sm text-gray-600 hidden md:block">{{ now()->format('F d, Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Center: Logo + Location/Farm Name -->
+        <div class="flex items-center gap-2 flex-1 justify-center min-w-0">
+            <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-8 w-8 object-contain shrink-0">
+            <span class="font-semibold text-gray-800 text-lg truncate">{{ $locationName }}</span>
+        </div>
+
+        <!-- Right: Slot for actions -->
+        <div class="flex items-center gap-3 shrink-0">
+            <x-buttons.nav-button href="{{ url('/') }}">
+                <span class="hidden lg:inline">Go to Landing</span>
+                <span class="lg:hidden">Landing</span>
+            </x-buttons.nav-button>
+            {{ $slot }}
+        </div>
     </div>
 
     <!-- Sidebar / Drawer -->
