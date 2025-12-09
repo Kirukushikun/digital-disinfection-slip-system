@@ -3,7 +3,8 @@
 ])
 
 @php
-    $farmName = \App\Models\Setting::where('setting_name', 'farm_name')->value('value') ?? 'Brookside';
+    // Get location name from session if user is logged in at a location, otherwise default to Brookside
+    $locationName = session('location_name') ?? 'Brookside';
 @endphp
 
 <nav x-data="{ open: false }" class="bg-[#FFDBBD] shadow-md rounded-md px-4 py-3 flex items-center justify-between">
@@ -24,10 +25,10 @@
         </div>
     </div>
 
-    <!-- Center: Logo + Farm Name -->
+    <!-- Center: Logo + Location/Farm Name -->
     <div class="flex items-center gap-2 flex-1 justify-center">
         <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-8 w-8 object-contain">
-        <span class="font-semibold text-gray-800 text-lg hidden sm:inline">{{ $farmName }}</span>
+        <span class="font-semibold text-gray-800 text-lg hidden sm:inline">{{ $locationName }}</span>
     </div>
 
     <!-- Right: Slot for actions -->

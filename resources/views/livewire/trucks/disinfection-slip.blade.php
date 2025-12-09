@@ -196,15 +196,15 @@
                             </x-buttons.submit-button>
                         @endif
 
-                        {{-- Disinfecting Button (Status 0 -> 1, NOT by hatchery guard) --}}
-                        @if ($status == 0 && !$isHatcheryAssigned)
+                        {{-- Disinfecting Button (Status 0 -> 1, only on incoming at destination location) --}}
+                        @if ($this->canStartDisinfecting())
                             <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
                                 Start Disinfecting
                             </x-buttons.submit-button>
                         @endif
 
-                        {{-- Complete Button (Status 1 -> 2, by receiving guard only, NOT hatchery guard) --}}
-                        @if ($status == 1 && $isReceivingGuard && !$isHatcheryAssigned)
+                        {{-- Complete Button (Status 1 -> 2, only on incoming at destination location) --}}
+                        @if ($this->canComplete())
                             <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
                                 Complete Disinfection
                             </x-buttons.submit-button>
