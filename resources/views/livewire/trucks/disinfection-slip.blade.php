@@ -169,42 +169,47 @@
         {{-- Footer --}}
         <x-slot name="footer">
             @if (!$isEditing)
-                <div class="flex justify-end w-full gap-2">
-                    <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
-                        Close
-                    </x-buttons.submit-button>
-
-                    {{-- Edit Button (Only hatchery guard, matching location, and not completed) --}}
-                    @if ($this->canEdit())
-                        <x-buttons.submit-button wire:click="editDetailsModal" color="blue">
-                            Edit
+                <div class="flex justify-between w-full gap-2">
+                    {{-- Left Side: Report Button --}}
+                    <div>
+                        <x-buttons.submit-button wire:click="openReportModal" color="red">
+                            <div class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                                </svg>
+                                <span>Report</span>
+                            </div>
                         </x-buttons.submit-button>
-                    @endif
+                    </div>
 
-                    {{-- Disinfecting Button (Status 0 -> 1, for guards at destination location) --}}
-                    @if ($this->canStartDisinfecting())
-                        <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
-                            Start Disinfecting
+                    {{-- Right Side: Action Buttons --}}
+                    <div class="flex gap-2">
+                        <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
+                            Close
                         </x-buttons.submit-button>
-                    @endif
 
-                    {{-- Complete Button (Status 1 -> 2, by receiving guard only, NOT hatchery guard) --}}
-                    @if ($status == 1 && $isReceivingGuard && !$isHatcheryAssigned)
-                        <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
-                            Complete Disinfection
-                        </x-buttons.submit-button>
-                    @endif
+                        {{-- Edit Button (Only hatchery guard, matching location, and not completed) --}}
+                        @if ($this->canEdit())
+                            <x-buttons.submit-button wire:click="editDetailsModal" color="blue">
+                                Edit
+                            </x-buttons.submit-button>
+                        @endif
 
-                    {{-- Report Button (Available for all users when not editing) --}}
-                    <x-buttons.submit-button wire:click="openReportModal" color="red">
-                        <div class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                            </svg>
-                            <span>Report</span>
-                        </div>
-                    </x-buttons.submit-button>
+                        {{-- Disinfecting Button (Status 0 -> 1, for guards at destination location) --}}
+                        @if ($this->canStartDisinfecting())
+                            <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
+                                Start Disinfecting
+                            </x-buttons.submit-button>
+                        @endif
+
+                        {{-- Complete Button (Status 1 -> 2, by receiving guard only, NOT hatchery guard) --}}
+                        @if ($status == 1 && $isReceivingGuard && !$isHatcheryAssigned)
+                            <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
+                                Complete Disinfection
+                            </x-buttons.submit-button>
+                        @endif
+                    </div>
                 </div>
             @else
                 <div class="flex justify-between w-full">
