@@ -537,6 +537,12 @@ class PlateNumbers extends Component
         return Response::stream($callback, 200, $headers);
     }
 
+    public function toggleDeletedView()
+    {
+        $this->showDeleted = !$this->showDeleted;
+        $this->resetPage();
+    }
+
     public function openPrintView()
     {
         if ($this->showDeleted) {
