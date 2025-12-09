@@ -44,27 +44,28 @@
     $sizeClass = $sizes[$size] ?? $sizes['default'];
     $widthClass = $fullWidth ? 'w-full' : '';
     $baseClasses = $fullWidth
-        ? 'flex items-center justify-center gap-2 rounded-lg focus:ring-2 transition-all duration-200 hover:cursor-pointer cursor-pointer'
-        : 'inline-flex items-center gap-1.5 rounded-lg focus:ring-2 focus:ring-offset-2 transition-colors duration-150 hover:cursor-pointer cursor-pointer';
+        ? 'flex items-center justify-center gap-2 rounded-lg focus:ring-2 transition-all duration-200 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+        : 'inline-flex items-center gap-1.5 rounded-lg focus:ring-2 focus:ring-offset-2 transition-colors duration-150 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
     $disabledClasses = $disabled ? 'opacity-50 cursor-not-allowed' : '';
+@endphp
+
+@php
+    $buttonAttributes = $attributes->merge([
+        'class' => ($fullWidth ? "$widthClass $baseClasses $sizeClass $preset $disabledClasses" : "$baseClasses $sizeClass $preset hover:cursor-pointer $disabledClasses"),
+    ]);
+    if ($disabled) {
+        $buttonAttributes = $buttonAttributes->merge(['disabled' => true]);
+    }
 @endphp
 
 @if ($fullWidth)
     <div>
-        <button
-            {{ $attributes->merge([
-                'class' => "$widthClass $baseClasses $sizeClass $preset $disabledClasses",
-                'disabled' => $disabled,
-            ]) }}>
+        <button {{ $buttonAttributes }}>
             {{ $slot }}
         </button>
     </div>
 @else
-    <button
-        {{ $attributes->merge([
-            'class' => "$baseClasses $sizeClass $preset hover:cursor-pointer $disabledClasses",
-            'disabled' => $disabled,
-        ]) }}>
+    <button {{ $buttonAttributes }}>
         {{ $slot }}
     </button>
 @endif
