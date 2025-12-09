@@ -70,6 +70,7 @@ class Locations extends Component
     // Edit form fields
     public $location_name;
     public $edit_logo;
+    public $current_logo_path; // Track current logo path for edit
     public $remove_logo = false;
 
     // Create form fields
@@ -162,6 +163,14 @@ class Locations extends Component
         $this->location_name = $location->location_name;
         $this->edit_logo = null;
         $this->remove_logo = false;
+        
+        // Set current logo path for preview
+        if ($location->attachment_id && $location->attachment) {
+            $this->current_logo_path = $location->attachment->file_path;
+        } else {
+            $defaultLogo = Setting::where('setting_name', 'default_location_logo')->value('value') ?? 'images/logo/BGC.png';
+            $this->current_logo_path = $defaultLogo;
+        }
         
         // Store original values for change detection
         $this->original_location_name = $location->location_name;
@@ -300,7 +309,7 @@ class Locations extends Component
         );
 
         $this->showEditModal = false;
-        $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'remove_logo', 'original_location_name', 'original_attachment_id']);
+        $this->reset(['selectedLocationId', 'location_name', 'edit_logo', 'current_logo_path', 'remove_logo', 'original_location_name', 'original_attachment_id']);
         $this->dispatch('toast', message: "{$locationName} has been updated.", type: 'success');
     }
 
@@ -314,28 +323,19 @@ class Locations extends Component
             $this->resetValidation('edit_logo');
         }
     }
+    
+    public function getEditLogoPathProperty()
+    {
+        return $this->current_logo_path;
+    }
 
-    // Validate and clear invalid files
+    // Validate logo on upload (simplified like Settings)
     public function updatedCreate_logo()
     {
-        // Step 1: ALWAYS clear ALL previous errors when a new file is selected (even if file is null)
         $this->resetErrorBag();
         $this->resetValidation();
         
-        // Step 2: Only validate if a file is actually selected
         if ($this->create_logo) {
-            // Step 3: Quick validation - check extension first (before upload processing)
-            $extension = strtolower($this->create_logo->getClientOriginalExtension());
-            $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-            
-            if (!in_array($extension, $allowedExtensions)) {
-                // Invalid extension - clear file immediately, don't proceed with upload
-                $this->create_logo = null;
-                $this->addError('create_logo', 'The logo must be a file of type: jpeg, jpg, png, gif, webp.');
-                return;
-            }
-            
-            // Step 4: Full validation (file will be uploaded by Livewire, but we validate it)
             try {
                 $this->validateOnly('create_logo', [
                     'create_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
@@ -344,46 +344,23 @@ class Locations extends Component
                     'create_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
                     'create_logo.max' => 'The logo must not be larger than 15MB.',
                 ]);
-                
-                // Validation passed - ensure no errors remain
-                $this->resetErrorBag();
             } catch (\Illuminate\Validation\ValidationException $e) {
-                // Validation failed - clear file and set errors
                 $this->create_logo = null;
-                $this->resetErrorBag();
                 foreach ($e->errors() as $key => $messages) {
                     foreach ($messages as $message) {
                         $this->addError('create_logo', $message);
                     }
                 }
             }
-        } else {
-            // File was cleared - ensure all errors are also cleared
-            $this->resetErrorBag();
-            $this->resetValidation();
         }
     }
 
     public function updatedEdit_logo()
     {
-        // Step 1: ALWAYS clear ALL previous errors when a new file is selected (even if file is null)
         $this->resetErrorBag();
         $this->resetValidation();
         
-        // Step 2: Only validate if a file is actually selected
         if ($this->edit_logo) {
-            // Step 3: Quick validation - check extension first (before upload processing)
-            $extension = strtolower($this->edit_logo->getClientOriginalExtension());
-            $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-            
-            if (!in_array($extension, $allowedExtensions)) {
-                // Invalid extension - clear file immediately, don't proceed with upload
-                $this->edit_logo = null;
-                $this->addError('edit_logo', 'The logo must be a file of type: jpeg, jpg, png, gif, webp.');
-                return;
-            }
-            
-            // Step 4: Full validation (file will be uploaded by Livewire, but we validate it)
             try {
                 $this->validateOnly('edit_logo', [
                     'edit_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
@@ -392,23 +369,14 @@ class Locations extends Component
                     'edit_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
                     'edit_logo.max' => 'The logo must not be larger than 15MB.',
                 ]);
-                
-                // Validation passed - ensure no errors remain
-                $this->resetErrorBag();
             } catch (\Illuminate\Validation\ValidationException $e) {
-                // Validation failed - clear file and set errors
                 $this->edit_logo = null;
-                $this->resetErrorBag();
                 foreach ($e->errors() as $key => $messages) {
                     foreach ($messages as $message) {
                         $this->addError('edit_logo', $message);
                     }
                 }
             }
-        } else {
-            // File was cleared - ensure all errors are also cleared
-            $this->resetErrorBag();
-            $this->resetValidation();
         }
     }
 

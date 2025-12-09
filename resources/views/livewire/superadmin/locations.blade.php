@@ -431,69 +431,79 @@
                                     @enderror
                                 </div>
 
-                                {{-- Logo Section with Two-Column Layout --}}
+                                {{-- Logo Section (matching Settings pattern) --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">Logo <span
                                             class="text-gray-400">(Optional)</span></label>
 
-                                    {{-- Row 1: Choose File Button + Filename | Image Preview --}}
-                                    <div class="grid grid-cols-2 gap-4 mb-3">
-                                        <div class="min-w-0">
-                                            <label
-                                                class="cursor-pointer inline-flex items-center w-full justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                                wire:loading.class="opacity-50 cursor-not-allowed"
-                                                wire:target="edit_logo">
-                                                <svg wire:loading.remove wire:target="edit_logo" class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                    </path>
-                                                </svg>
-                                                <svg wire:loading wire:target="edit_logo" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <span wire:loading.remove wire:target="edit_logo">Choose File</span>
-                                                <span wire:loading wire:target="edit_logo">Uploading...</span>
-                                                <input type="file" wire:model="edit_logo" class="hidden"
-                                                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                                            </label>
-                                            @if ($edit_logo && !$errors->has('edit_logo'))
-                                                <p class="mt-2 text-sm text-gray-600 wrap-break-words"
+                                    <div class="space-y-3">
+                                        {{-- File Upload Button --}}
+                                        <label
+                                            class="cursor-pointer inline-flex items-center justify-center w-full px-4 py-2.5 bg-white border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            wire:loading.class="opacity-50 cursor-not-allowed"
+                                            wire:target="edit_logo">
+                                            <svg wire:loading.remove wire:target="edit_logo" class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                            <svg wire:loading wire:target="edit_logo" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span wire:loading.remove wire:target="edit_logo">Choose Image</span>
+                                            <span wire:loading wire:target="edit_logo">Uploading...</span>
+                                            <input type="file" wire:model="edit_logo" class="hidden"
+                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                        </label>
+
+                                        {{-- File Info --}}
+                                        @if ($edit_logo && !$errors->has('edit_logo'))
+                                            <div
+                                                class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-gray-700 truncate flex-1"
                                                     title="{{ $edit_logo->getClientOriginalName() }}">
                                                     {{ $edit_logo->getClientOriginalName() }}
                                                 </p>
                                                 <button wire:click="clearLogo('edit')" type="button"
-                                                    class="mt-1 text-xs text-red-600 hover:text-red-800">
+                                                    class="ml-2 text-xs text-red-600 hover:text-red-800 font-medium">
                                                     Clear
                                                 </button>
-                                            @elseif ($currentLocation && $currentLocation->attachment_id && $currentLocation->attachment && !$remove_logo)
-                                                <p class="mt-2 text-xs text-gray-500 wrap-break-words">Current logo:
-                                                    <span class="wrap-break-words">{{ basename($currentLocation->attachment->file_path) }}</span></p>
+                                            </div>
+                                        @elseif ($this->editLogoPath && !$remove_logo)
+                                            <div class="bg-white rounded-md px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-gray-700 truncate"
+                                                    title="{{ $this->editLogoPath }}">
+                                                    Current: {{ basename($this->editLogoPath) }}
+                                                </p>
                                                 <button wire:click="removeLogo" type="button"
                                                     class="mt-1 text-xs text-red-600 hover:text-red-800">
                                                     Remove Logo
                                                 </button>
-                                            @elseif ($remove_logo)
-                                                <p class="mt-2 text-xs text-red-600">Logo will be removed</p>
+                                            </div>
+                                        @elseif ($remove_logo)
+                                            <div class="bg-white rounded-md px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-red-600">Logo will be removed</p>
                                                 <button wire:click="cancelRemoveLogo" type="button"
                                                     class="mt-1 text-xs text-blue-600 hover:text-blue-800">
                                                     Cancel Remove
                                                 </button>
-                                            @endif
-                                        </div>
-                                        <div class="flex items-center justify-center">
+                                            </div>
+                                        @endif
+
+                                        {{-- Logo Preview --}}
+                                        <div
+                                            class="flex items-center justify-center bg-white rounded-lg p-3 border border-gray-200">
                                             @if ($edit_logo && !$errors->has('edit_logo'))
                                                 <img src="{{ $edit_logo->temporaryUrl() }}" alt="Logo preview"
-                                                    class="max-w-full max-h-32 object-contain rounded-lg border border-gray-200">
-                                            @elseif ($currentLocation && $currentLocation->attachment_id && $currentLocation->attachment && !$remove_logo)
-                                                <img src="{{ asset('storage/' . $currentLocation->attachment->file_path) }}"
-                                                    alt="Current logo"
-                                                    class="max-w-full max-h-32 object-contain rounded-lg border border-gray-200">
+                                                    class="max-w-full max-h-28 object-contain">
+                                            @elseif ($this->editLogoPath && !$remove_logo)
+                                                <img src="{{ asset('storage/' . $this->editLogoPath) }}"
+                                                    alt="Current logo" class="max-w-full max-h-28 object-contain">
                                             @else
                                                 <div
-                                                    class="w-full h-32 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
+                                                    class="w-full h-28 flex items-center justify-center bg-gray-50 rounded-md">
                                                     <span class="text-xs text-gray-400">No image selected</span>
                                                 </div>
                                             @endif
@@ -501,9 +511,10 @@
                                     </div>
 
                                     @error('edit_logo')
-                                        <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                                        <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span>
                                     @enderror
-                                    <p class="text-xs text-gray-500">Supported formats: JPEG, PNG, GIF, WebP (Max 15MB)
+                                    <p class="text-xs text-gray-600 mt-3 leading-relaxed">
+                                        Supported formats: JPEG, PNG, GIF, WebP (Max 15MB)
                                     </p>
                                 </div>
                             </div>
@@ -626,52 +637,57 @@
                                     @enderror
                                 </div>
 
-                                {{-- Logo Section with Two-Column Layout --}}
+                                {{-- Logo Section (matching Settings pattern) --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">Logo <span
                                             class="text-gray-400">(Optional)</span></label>
 
-                                    {{-- Row 1: Choose File Button + Filename | Image Preview --}}
-                                    <div class="grid grid-cols-2 gap-4 mb-3">
-                                        <div class="min-w-0">
-                                            <label
-                                                class="cursor-pointer inline-flex items-center w-full justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                                wire:loading.class="opacity-50 cursor-not-allowed"
-                                                wire:target="create_logo">
-                                                <svg wire:loading.remove wire:target="create_logo" class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                    </path>
-                                                </svg>
-                                                <svg wire:loading wire:target="create_logo" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <span wire:loading.remove wire:target="create_logo">Choose File</span>
-                                                <span wire:loading wire:target="create_logo">Uploading...</span>
-                                                <input type="file" wire:model="create_logo" class="hidden"
-                                                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                                            </label>
-                                            @if ($create_logo && !$errors->has('create_logo'))
-                                                <p class="mt-2 text-sm text-gray-600 wrap-break-words"
+                                    <div class="space-y-3">
+                                        {{-- File Upload Button --}}
+                                        <label
+                                            class="cursor-pointer inline-flex items-center justify-center w-full px-4 py-2.5 bg-white border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            wire:loading.class="opacity-50 cursor-not-allowed"
+                                            wire:target="create_logo">
+                                            <svg wire:loading.remove wire:target="create_logo" class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                            <svg wire:loading wire:target="create_logo" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span wire:loading.remove wire:target="create_logo">Choose Image</span>
+                                            <span wire:loading wire:target="create_logo">Uploading...</span>
+                                            <input type="file" wire:model="create_logo" class="hidden"
+                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                        </label>
+
+                                        {{-- File Info --}}
+                                        @if ($create_logo && !$errors->has('create_logo'))
+                                            <div
+                                                class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-gray-700 truncate flex-1"
                                                     title="{{ $create_logo->getClientOriginalName() }}">
                                                     {{ $create_logo->getClientOriginalName() }}
                                                 </p>
                                                 <button wire:click="clearLogo('create')" type="button"
-                                                    class="mt-1 text-xs text-red-600 hover:text-red-800">
+                                                    class="ml-2 text-xs text-red-600 hover:text-red-800 font-medium">
                                                     Clear
                                                 </button>
-                                            @endif
-                                        </div>
-                                        <div class="flex items-center justify-center">
+                                            </div>
+                                        @endif
+
+                                        {{-- Logo Preview --}}
+                                        <div
+                                            class="flex items-center justify-center bg-white rounded-lg p-3 border border-gray-200">
                                             @if ($create_logo && !$errors->has('create_logo'))
                                                 <img src="{{ $create_logo->temporaryUrl() }}" alt="Logo preview"
-                                                    class="max-w-full max-h-32 object-contain rounded-lg border border-gray-200">
+                                                    class="max-w-full max-h-28 object-contain">
                                             @else
                                                 <div
-                                                    class="w-full h-32 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg">
+                                                    class="w-full h-28 flex items-center justify-center bg-gray-50 rounded-md">
                                                     <span class="text-xs text-gray-400">No image selected</span>
                                                 </div>
                                             @endif
@@ -679,9 +695,10 @@
                                     </div>
 
                                     @error('create_logo')
-                                        <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                                        <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span>
                                     @enderror
-                                    <p class="text-xs text-gray-500">Supported formats: JPEG, PNG, GIF, WebP (Max 15MB)
+                                    <p class="text-xs text-gray-600 mt-3 leading-relaxed">
+                                        Supported formats: JPEG, PNG, GIF, WebP (Max 15MB)
                                     </p>
                                 </div>
                             </div>
