@@ -4,59 +4,59 @@
     $isReceivingGuard = Auth::id() === $selectedSlip?->received_guard_id;
     $status = $selectedSlip?->status ?? null;
     // Status: 0 = Ongoing, 1 = Disinfecting, 2 = Completed
+    
+    // Header class based on status
+    $headerClass = '';
+    if ($status == 0) {
+        $headerClass = 'border-t-4 border-t-red-500 bg-red-50';
+    } elseif ($status == 1) {
+        $headerClass = 'border-t-4 border-t-orange-500 bg-orange-50';
+    } elseif ($status == 2) {
+        $headerClass = 'border-t-4 border-t-green-500 bg-green-50';
+    }
 @endphp
 
 <div>
     {{-- MAIN DETAILS MODAL --}}
     <x-modals.modal-template show="showDetailsModal"
-        title="{{ strtoupper($selectedSlip?->location?->location_name . ' DISINFECTION SLIP DETAILS') }}"
-        max-width="max-w-3xl">
+        max-width="max-w-3xl"
+        header-class="{{ $headerClass }}">
+        <x-slot name="titleSlot">
+            {{ strtoupper($selectedSlip?->location?->location_name . ' DISINFECTION SLIP DETAILS') }}
+        </x-slot>
 
         @if ($selectedSlip)
 
-            {{-- Status Badge --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Status:</div>
-                <div class="col-span-2">
-                    @if ($status == 0)
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
-                            Ongoing
-                        </span>
-                    @elseif ($status == 1)
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                            Disinfecting
-                        </span>
-                    @elseif ($status == 2)
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                            Completed
-                        </span>
-                    @endif
+            {{-- Sub Header --}}
+            <div class="border-b border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mt-6 mb-2">
+                <div class="grid grid-cols-[1fr_1fr_auto] gap-4 items-start text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-500 mb-0.5">Date:</div>
+                        <div class="text-gray-900">{{ $selectedSlip->created_at->format('M d, Y') }}</div>
+                </div>
+                    <div>
+                        <div class="font-semibold text-gray-500 mb-0.5">Slip No:</div>
+                        <div class="text-gray-900 font-semibold">{{ $selectedSlip->slip_id }}</div>
+            </div>
+                    <div class="flex items-center">
+                        <button wire:click="openReportModal" type="button"
+                            class="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            title="Report">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
+                        </button>
+            </div>
                 </div>
             </div>
 
-            {{-- Date --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Date:</div>
-                <div class="col-span-2 text-gray-900">
-                    {{ $selectedSlip->created_at->format('M d, Y - h:i A') }}
-                </div>
-            </div>
-
-            {{-- Slip Number --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Slip No:</div>
-                <div class="col-span-2 text-gray-900 font-semibold">
-                    {{ $selectedSlip->slip_id }}
-                </div>
-            </div>
-
-            {{-- Plate --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Plate No:</div>
-                <div class="col-span-2 text-gray-900">
+            {{-- Body Fields --}}
+            <div class="space-y-0 -mx-6">
+                {{-- Plate No --}}
+                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                    <div class="font-semibold text-gray-500">Plate No:</div>
+                    <div class="text-gray-900">
                     @if ($isEditing)
                         <x-forms.searchable-dropdown wire-model="truck_id" :options="$this->truckOptions"
                             search-property="searchTruck" placeholder="Select plate number..."
@@ -67,32 +67,10 @@
                 </div>
             </div>
 
-            {{-- Origin --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Origin:</div>
-                <div class="col-span-2 text-gray-900">
-                    {{ $selectedSlip->location->location_name ?? 'N/A' }}
-                </div>
-            </div>
-
-            {{-- Destination --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Destination:</div>
-                <div class="col-span-2 text-gray-900">
-                    @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="destination_id" :options="$this->locationOptions"
-                            search-property="searchDestination" placeholder="Select destination..."
-                            search-placeholder="Search locations..." />
-                    @else
-                        {{ $selectedSlip->destination->location_name ?? 'N/A' }}
-                    @endif
-                </div>
-            </div>
-
             {{-- Driver --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Driver Name:</div>
-                <div class="col-span-2 text-gray-900">
+                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                    <div class="font-semibold text-gray-500">Driver:</div>
+                    <div class="text-gray-900">
                     @if ($isEditing)
                         <x-forms.searchable-dropdown wire-model="driver_id" :options="$this->driverOptions"
                             search-property="searchDriver" placeholder="Select driver..."
@@ -103,48 +81,45 @@
                 </div>
             </div>
 
-            {{-- Reason / textarea expands when editing --}}
-            <div class="grid grid-cols-3 mb-2">
-                <div class="font-semibold text-gray-700">Reason:</div>
-                <div class="col-span-2 text-gray-900">
-                    @if ($isEditing)
-                        <textarea wire:model.live="reason_for_disinfection" class="w-full border rounded px-2 py-1 text-sm" rows="6"></textarea>
-                    @else
-                        {{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}
-                    @endif
-                </div>
+                {{-- Origin --}}
+                @if (!$isEditing)
+                    <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                        <div class="font-semibold text-gray-500">Origin:</div>
+                        <div class="text-gray-900">
+                            {{ $selectedSlip->location->location_name ?? 'N/A' }}
             </div>
+                    </div>
+                @endif
 
-            {{-- Hidden Display Info when NOT editing --}}
-            @if (!$isEditing)
-
-                <div class="grid grid-cols-3 mb-2">
-                    <div class="font-semibold text-gray-700">Hatchery Guard:</div>
-                    <div class="col-span-2 text-gray-900">
-                        {{ $selectedSlip->hatcheryGuard?->first_name . ' ' . $selectedSlip->hatcheryGuard?->last_name ?? 'N/A' }}
+                {{-- Destination --}}
+                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                    <div class="font-semibold text-gray-500">Destination:</div>
+                    <div class="text-gray-900">
+                        @if ($isEditing)
+                            <x-forms.searchable-dropdown wire-model="destination_id" :options="$this->locationOptions"
+                                search-property="searchDestination" placeholder="Select destination..."
+                                search-placeholder="Search locations..." />
+                        @else
+                            {{ $selectedSlip->destination->location_name ?? 'N/A' }}
+                        @endif
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 mb-2">
-                    <div class="font-semibold text-gray-700">Received By:</div>
-                    <div class="col-span-2 text-gray-900">
-                        {{ $selectedSlip->receivedGuard?->first_name && $selectedSlip->receivedGuard?->last_name
-                            ? $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name
-                            : 'N/A' }}
+                {{-- Completion Date (only when completed) --}}
+                @if ($status == 2 && $selectedSlip->completed_at)
+                    <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                        <div class="font-semibold text-gray-500">End Date:</div>
+                        <div class="text-gray-900">
+                            {{ \Carbon\Carbon::parse($selectedSlip->completed_at)->format('M d, Y - h:i A') }}
+                        </div>
                     </div>
-                </div>
+                @endif
 
-                <div class="grid grid-cols-3 mb-2">
-                    <div class="font-semibold text-gray-700">Completion Date:</div>
-                    <div class="col-span-2 text-gray-900">
-                        {{ $selectedSlip->completed_at ? \Carbon\Carbon::parse($selectedSlip->completed_at)->format('M d, Y - h:i A') : 'N/A' }}
-                    </div>
-                </div>
-
-                {{-- Attachment Section --}}
-                <div class="grid grid-cols-3 mb-2">
-                    <div class="font-semibold text-gray-700">Attachment:</div>
-                    <div class="col-span-2">
+                {{-- Attachment --}}
+                @if (!$isEditing)
+                    <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                        <div class="font-semibold text-gray-500">Attachment:</div>
+                        <div class="text-gray-900">
                         @if ($selectedSlip->attachment)
                             <button wire:click="openAttachmentModal('{{ $selectedSlip->attachment->file_path }}')"
                                 class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
@@ -158,9 +133,43 @@
                         @else
                             N/A
                         @endif
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Reason --}}
+                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                    <div class="font-semibold text-gray-500">Reason:</div>
+                    <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
+                        @if ($isEditing)
+                            <textarea wire:model.live="reason_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                        @else
+                            <div class="whitespace-pre-wrap">{{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}</div>
+                        @endif
+                    </div>
                     </div>
                 </div>
 
+            {{-- Sub Footer --}}
+            @if (!$isEditing)
+                <div class="border-t border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mb-6">
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <div class="font-semibold text-gray-500 mb-0.5">Hatchery Guard:</div>
+                            <div class="text-gray-900">
+                                {{ $selectedSlip->hatcheryGuard?->first_name . ' ' . $selectedSlip->hatcheryGuard?->last_name ?? 'N/A' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-500 mb-0.5">Received By:</div>
+                            <div class="text-gray-900">
+                                {{ $selectedSlip->receivedGuard?->first_name && $selectedSlip->receivedGuard?->last_name
+                                    ? $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name
+                                    : 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @endif
         @else
             <p class="text-gray-500 text-center">No details available.</p>
@@ -169,22 +178,7 @@
         {{-- Footer --}}
         <x-slot name="footer">
             @if (!$isEditing)
-                <div class="flex justify-between w-full gap-2">
-                    {{-- Left: Report Button --}}
-                    <div>
-                        <x-buttons.submit-button wire:click="openReportModal" color="red">
-                            <div class="flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                                </svg>
-                                <span>Report</span>
-                            </div>
-                        </x-buttons.submit-button>
-                    </div>
-
-                    {{-- Right: Other buttons --}}
-                    <div class="flex gap-2">
+                <div class="flex justify-end w-full gap-2">
                         <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
                             Close
                         </x-buttons.submit-button>
@@ -209,7 +203,6 @@
                                 Complete Disinfection
                             </x-buttons.submit-button>
                         @endif
-                    </div>
                 </div>
             @else
                 <div class="flex justify-between w-full">
@@ -223,7 +216,12 @@
                             Cancel
                         </x-buttons.submit-button>
 
-                        <x-buttons.submit-button wire:click="save" color="green" wire:loading.attr="disabled" wire:target="save">
+                        <x-buttons.submit-button 
+                            wire:click="save" 
+                            color="green" 
+                            wire:loading.attr="disabled" 
+                            wire:target="save"
+                            :disabled="!$this->hasChanges">
                             <span wire:loading.remove wire:target="save">Save</span>
                             <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
                                 Saving...
@@ -239,7 +237,7 @@
     {{-- Cancel Confirmation Modal --}}
     <x-modals.unsaved-confirmation show="showCancelConfirmation" title="DISCARD CHANGES?"
         message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelEdit"
-        confirmText="Yes, Discard Changes" cancelText="Continue Editing" />
+        confirmText="Cancel" cancelText="Continue" />
 
     {{-- Delete Confirmation Modal --}}
     <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE SLIP?"

@@ -1,65 +1,41 @@
 <div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4">
 
-    {{-- Search + Filter + Sort --}}
+    {{-- Search + Filter --}}
     <div class="mb-4 flex items-center gap-3">
-
-        {{-- Search Bar --}}
-        <div class="relative w-full">
-            <label class="sr-only">Search</label>
-            <input type="text" wire:model.live="search"
-                class="py-2 px-3 ps-9 block w-full border-gray-200 shadow-sm rounded-lg sm:text-sm 
-                        focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Search...">
-            <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3">
-                <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.3-4.3"></path>
+        {{-- Search Bar with Filter Button Inside --}}
+        <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
             </div>
-        </div>
-
-        {{-- Filter Button (Icon Only) --}}
-        <button wire:click="$toggle('showFilters')" type="button"
-            class="p-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 12h12m-7 8h2" />
-            </svg>
-        </button>
-
-        {{-- Sort Button (Icon Only) --}}
-        <button wire:click="toggleSort" type="button"
-            class="p-2.5 text-white rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
-                @if ($sortDirection === 'asc') bg-green-500 hover:bg-green-600 focus:ring-green-500
-                @elseif ($sortDirection === 'desc') bg-red-500 hover:bg-red-600 focus:ring-red-500
-                @else bg-gray-500 hover:bg-gray-600 focus:ring-gray-500
-                @endif">
-            <div class="flex flex-col items-center">
-                @if ($sortDirection === 'asc')
-                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                    <svg class="w-3 h-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                @elseif ($sortDirection === 'desc')
-                    <svg class="w-3 h-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                @else
-                    <svg class="w-3 h-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                    <svg class="w-3 h-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+            <input type="text" wire:model.live="search"
+                class="block w-full pl-10 pr-24 py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Search...">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-1 gap-1">
+                @if ($search)
+                    <button wire:click="$set('search', '')"
+                        class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 @endif
+                <button wire:click="$toggle('showFilters')" title="Filters" type="button"
+                    class="inline-flex items-center justify-center w-8 h-8 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 relative hover:cursor-pointer cursor-pointer
+                        @if ($filtersActive) text-blue-600 bg-blue-50 hover:bg-blue-100
+                        @else text-gray-500 hover:text-gray-700
+                        @endif">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                        </path>
+                </svg>
+                </button>
             </div>
-        </button>
+        </div>
 
         {{-- Create Button (Only for Outgoing) --}}
         @if ($type === 'outgoing')
@@ -109,7 +85,7 @@
             }" x-ref="statusDropdownContainer" @click.outside="closeDropdown()"
                 @focusin.window="handleFocusIn($event)">
                 <div class="flex items-center justify-between mb-1">
-                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <label class="block text-xs font-medium text-gray-700">Status</label>
                     <button type="button" wire:click="$set('filterStatus', '')"
                         x-show="selected !== null && selected !== undefined && selected !== ''"
                         class="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -119,12 +95,12 @@
 
                 <div class="relative">
                     <button type="button" x-on:click="open = !open"
-                        class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500"
+                        class="inline-flex justify-between w-full px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500"
                         :class="{ 'ring-2 ring-orange-500': open }">
                         <span :class="{ 'text-gray-400': selected === null || selected === undefined || selected === '' }">
                             <span x-text="displayText"></span>
                         </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-2 -mr-1 transition-transform"
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-2 -mr-1 transition-transform"
                             :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd"
                                 d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
@@ -145,7 +121,7 @@
                                     selected = String(value);
                                     closeDropdown();
                                 "
-                                class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-orange-100 cursor-pointer rounded-md transition-colors"
+                                class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 active:bg-orange-100 cursor-pointer rounded-md transition-colors"
                                 :class="{
                                     'bg-orange-50 text-orange-700': selected !== null && selected !== undefined && String(selected) === String(value)
                                 }">
@@ -153,6 +129,33 @@
                             </a>
                         </template>
                     </div>
+                </div>
+            </div>
+
+            {{-- Sort Section --}}
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <label class="block text-xs font-medium text-gray-700 mb-2">Sort</label>
+                <div class="flex gap-2">
+                    <button wire:click="$set('filterSortDirection', 'asc')" type="button"
+                        class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                            @if ($filterSortDirection === 'asc') bg-green-50 border-green-500 text-green-700 hover:bg-green-100 focus:ring-green-500
+                            @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                            @endif">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                        Asc
+                    </button>
+                    <button wire:click="$set('filterSortDirection', 'desc')" type="button"
+                        class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                            @if ($filterSortDirection === 'desc' || $filterSortDirection === null) bg-red-50 border-red-500 text-red-700 hover:bg-red-100 focus:ring-red-500
+                            @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                            @endif">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Desc
+                    </button>
                 </div>
             </div>
         </x-slot>
@@ -187,7 +190,7 @@
                     <div class="text-gray-800">{{ $slip->slip_id }}</div>
 
                     <div class="font-semibold text-gray-600">Plate #:</div>
-                    <div class="text-gray-800">{{ $slip->truck->plate_number }}</div>
+                    <div class="text-gray-800">{{ $slip->truck->plate_number ?? 'N/A' }}</div>
                 </div>
 
                 {{-- Right Side --}}

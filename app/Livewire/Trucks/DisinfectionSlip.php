@@ -160,13 +160,25 @@ class DisinfectionSlip extends Component
         }
         
         $this->selectedSlip = DisinfectionSlipModel::with([
-            'truck',
-            'location',
-            'destination',
-            'driver',
+            'truck' => function($q) {
+                $q->withTrashed();
+            },
+            'location' => function($q) {
+                $q->withTrashed();
+            },
+            'destination' => function($q) {
+                $q->withTrashed();
+            },
+            'driver' => function($q) {
+                $q->withTrashed();
+            },
             'attachment',
-            'hatcheryGuard',
-            'receivedGuard'
+            'hatcheryGuard' => function($q) {
+                $q->withTrashed();
+            },
+            'receivedGuard' => function($q) {
+                $q->withTrashed();
+            }
         ])->find($id);
     
 
@@ -246,6 +258,19 @@ class DisinfectionSlip extends Component
             && $this->selectedSlip->status != 2;
     }
 
+    public function getHasChangesProperty()
+    {
+        if (!$this->isEditing || !$this->selectedSlip) {
+            return false;
+        }
+        
+        // Compare directly with selectedSlip (like Admin does)
+        return $this->truck_id != $this->selectedSlip->truck_id ||
+               $this->destination_id != $this->selectedSlip->destination_id ||
+               $this->driver_id != $this->selectedSlip->driver_id ||
+               ($this->reason_for_disinfection ?? '') != ($this->selectedSlip->reason_for_disinfection ?? '');
+    }
+
     public function canManageAttachment()
     {
         if (!$this->selectedSlip || $this->isUserDisabled()) {
@@ -269,12 +294,16 @@ class DisinfectionSlip extends Component
 
         $this->isEditing = true;
         
-        // Store original values before editing
+        // Store original values before editing (normalize reason to ensure consistent comparison)
+        $originalReason = $this->reason_for_disinfection ?? '';
+        $originalReason = trim($originalReason);
+        $originalReason = $originalReason === '' ? null : $originalReason;
+        
         $this->originalValues = [
             'truck_id'                => $this->truck_id,
             'destination_id'          => $this->destination_id,
             'driver_id'               => $this->driver_id,
-            'reason_for_disinfection' => $this->reason_for_disinfection,
+            'reason_for_disinfection' => $originalReason,
         ];
     }
 

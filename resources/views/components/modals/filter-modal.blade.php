@@ -35,7 +35,7 @@
             </div>
 
             {{-- Content --}}
-            <div class="bg-white px-4 py-5 sm:p-6 overflow-visible">
+            <div class="bg-white px-4 py-4 sm:p-5 overflow-visible">
                 {{ $filters }}
             </div>
 

@@ -4,8 +4,8 @@
     'message' => 'Are you sure you want to cancel?',
     'warning' => 'All unsaved changes will be lost.',
     'onConfirm' => 'cancelEdit',
-    'confirmText' => 'Yes, Discard Changes',
-    'cancelText' => 'Continue Editing',
+    'confirmText' => 'Cancel',
+    'cancelText' => 'Continue',
 ])
 
 <x-modals.modal-template :show="$show" :title="$title" max-width="max-w-md">

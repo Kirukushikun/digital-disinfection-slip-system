@@ -3,6 +3,7 @@
     'title' => 'Modal Title',
     'maxWidth' => 'max-w-md',
     'backdropOpacity' => '80',
+    'headerClass' => '',
 ])
 
 @php
@@ -34,14 +35,28 @@
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             class="relative bg-white rounded-xl shadow-xl w-full {{ $maxWidth }} overflow-visible" @click.stop>
             {{-- Header --}}
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 {{ $headerClass }}">
+                <div class="flex items-center gap-3">
+                    @if (isset($header))
+                        {{ $header }}
+                    @endif
+                    @if (isset($titleSlot))
+                        <h3 class="text-lg font-semibold text-gray-900">{{ $titleSlot }}</h3>
+                    @else
                 <h3 class="text-lg font-semibold text-gray-900">{{ $title }}</h3>
+                    @endif
+                </div>
+                <div class="flex items-center gap-2">
+                    @if (isset($headerActions))
+                        {{ $headerActions }}
+                    @endif
                 <button @click="show = false" class="text-gray-400 hover:text-gray-600 transition hover:cursor-pointer">
                     <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+                </div>
             </div>
 
             {{-- Body (slot) --}}

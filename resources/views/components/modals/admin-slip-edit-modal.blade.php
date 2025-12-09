@@ -333,4 +333,4 @@
 {{-- Cancel Confirmation Modal --}}
 <x-modals.unsaved-confirmation show="showCancelEditConfirmation" title="DISCARD CHANGES?"
     message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelEdit"
-    confirmText="Yes, Discard Changes" cancelText="Continue Editing" />
+    confirmText="Cancel" cancelText="Continue" />

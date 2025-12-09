@@ -30,7 +30,8 @@ class TruckList extends Component
     public $appliedStatus = '';
     
     public $filtersActive = false;
-    public $sortDirection = null; // null, 'asc', 'desc'
+    public $sortDirection = null; // null, 'asc', 'desc' (applied)
+    public $filterSortDirection = null; // null, 'asc', 'desc' (temporary, in filter modal)
     
     public $availableStatuses = [
         0 => 'Ongoing',
@@ -58,6 +59,8 @@ class TruckList extends Component
         $this->type = $type;
         $this->filterDateFrom = null;
         $this->filterDateTo = null;
+        $this->filterSortDirection = $this->sortDirection; // Initialize filter sort with current sort
+        $this->checkFiltersActive();
 
         // Check if we should open create modal from route parameter
         if (request()->has('openCreate') && $this->type === 'outgoing') {
@@ -167,8 +170,17 @@ class TruckList extends Component
         $this->appliedDateFrom = $this->filterDateFrom;
         $this->appliedDateTo = $this->filterDateTo;
         $this->appliedStatus = $this->filterStatus;
-        $this->filtersActive = true;
+        $this->sortDirection = $this->filterSortDirection;
+        $this->checkFiltersActive();
         $this->resetPage();
+    }
+    
+    private function checkFiltersActive()
+    {
+        $this->filtersActive = !empty($this->appliedDateFrom) ||
+                              !empty($this->appliedDateTo) ||
+                              $this->appliedStatus !== '' ||
+                              ($this->sortDirection !== null && $this->sortDirection !== 'desc');
     }
 
     public function cancelFilters()
@@ -184,26 +196,17 @@ class TruckList extends Component
         }
     }
 
-    public function toggleSort()
-    {
-        if ($this->sortDirection === null) {
-            $this->sortDirection = 'asc';
-        } elseif ($this->sortDirection === 'asc') {
-            $this->sortDirection = 'desc';
-        } else {
-            $this->sortDirection = null;
-        }
-        $this->resetPage();
-    }
 
     public function clearFilters()
     {
         $this->filterDateFrom = null;
         $this->filterDateTo = null;
         $this->filterStatus = '';
+        $this->filterSortDirection = null;
         $this->appliedDateFrom = null;
         $this->appliedDateTo = null;
         $this->appliedStatus = '';
+        $this->sortDirection = null;
         $this->filtersActive = false;
         $this->resetPage();
     }
@@ -395,7 +398,7 @@ class TruckList extends Component
                 $q->where(function($query) {
                     $query->where('slip_id', 'like', '%' . $this->search . '%')
                           ->orWhereHas('truck', function($t) {
-                              $t->where('plate_number', 'like', '%' . $this->search . '%');
+                              $t->withTrashed()->where('plate_number', 'like', '%' . $this->search . '%');
                           });
                 });
             })
@@ -414,7 +417,9 @@ class TruckList extends Component
                 $q->where('status', $this->appliedStatus);
             })
 
-            ->with('truck') // Load relationship only for final filtered results
+            ->with(['truck' => function($q) {
+                $q->withTrashed();
+            }]) // Load relationship with soft deleted records
             ->when($this->sortDirection === 'asc', function($q) {
                 $q->orderBy('slip_id', 'asc');
             })
