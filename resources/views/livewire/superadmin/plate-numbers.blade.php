@@ -43,14 +43,16 @@
                     </button>
 
                     {{-- Create Button (Primary action - Icon + Text) --}}
-                    <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
-                        :fullWidth="false">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
-                            </path>
-                        </svg>
-                        Create Plate Number
-                    </x-buttons.submit-button>
+                    @if (!($showDeleted ?? false))
+                        <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
+                            :fullWidth="false">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                                </path>
+                            </svg>
+                            Create Plate Number
+                        </x-buttons.submit-button>
+                    @endif
 
                     {{-- Restore Deleted Button (Icon + Text) --}}
                     <button wire:click="toggleDeletedView" wire:loading.attr="disabled" wire:target="toggleDeletedView"

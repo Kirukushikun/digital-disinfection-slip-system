@@ -352,7 +352,8 @@
                 {{-- Modal Panel --}}
                 <div class="flex min-h-full items-center justify-center p-4">
                     <div
-                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg"
+                        wire:click.stop>
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900">Edit Location</h3>
                         </div>
@@ -391,8 +392,8 @@
                                                 <input type="file" wire:model="edit_logo" class="hidden"
                                                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
                                             </label>
-                                            @if ($edit_logo)
-                                                <p class="mt-2 text-sm text-gray-600 truncate"
+                                            @if ($edit_logo && !$errors->has('edit_logo'))
+                                                <p class="mt-2 text-sm text-gray-600 break-words"
                                                     title="{{ $edit_logo->getClientOriginalName() }}">
                                                     {{ $edit_logo->getClientOriginalName() }}
                                                 </p>
@@ -416,7 +417,7 @@
                                             @endif
                                         </div>
                                         <div class="flex items-center justify-center">
-                                            @if ($edit_logo)
+                                            @if ($edit_logo && !$errors->has('edit_logo'))
                                                 <img src="{{ $edit_logo->temporaryUrl() }}" alt="Logo preview"
                                                     class="max-w-full max-h-32 object-contain rounded-lg border border-gray-200">
                                             @elseif ($currentLocation && $currentLocation->attachment_id && $currentLocation->attachment && !$remove_logo)
@@ -533,12 +534,13 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}
-                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal" wire:key="create-modal-backdrop"></div>
 
                 {{-- Modal Panel --}}
                 <div class="flex min-h-full items-center justify-center p-4">
                     <div
-                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg"
+                        wire:click.stop>
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900">Create Location</h3>
                         </div>
@@ -578,8 +580,8 @@
                                                 <input type="file" wire:model="create_logo" class="hidden"
                                                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
                                             </label>
-                                            @if ($create_logo)
-                                                <p class="mt-2 text-sm text-gray-600 truncate"
+                                            @if ($create_logo && !$errors->has('create_logo'))
+                                                <p class="mt-2 text-sm text-gray-600 break-words"
                                                     title="{{ $create_logo->getClientOriginalName() }}">
                                                     {{ $create_logo->getClientOriginalName() }}
                                                 </p>
@@ -590,7 +592,7 @@
                                             @endif
                                         </div>
                                         <div class="flex items-center justify-center">
-                                            @if ($create_logo)
+                                            @if ($create_logo && !$errors->has('create_logo'))
                                                 <img src="{{ $create_logo->temporaryUrl() }}" alt="Logo preview"
                                                     class="max-w-full max-h-32 object-contain rounded-lg border border-gray-200">
                                             @else
