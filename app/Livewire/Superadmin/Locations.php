@@ -319,6 +319,9 @@ class Locations extends Component
     // Validate and clear invalid files
     public function updatedCreate_logo()
     {
+        // Clear any previous errors when a new file is selected
+        $this->resetValidation('create_logo');
+        
         $this->validateOnly('create_logo', [
             'create_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
         ], [
@@ -335,6 +338,9 @@ class Locations extends Component
 
     public function updatedEdit_logo()
     {
+        // Clear any previous errors when a new file is selected
+        $this->resetValidation('edit_logo');
+        
         $this->validateOnly('edit_logo', [
             'edit_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
         ], [
