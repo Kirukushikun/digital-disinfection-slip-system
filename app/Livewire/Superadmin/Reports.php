@@ -22,11 +22,13 @@ class Reports extends Component
     
     // Filter properties
     public $filterResolved = '0'; // Default to Unresolved, null = All, 0 = Unresolved, 1 = Resolved
+    public $filterReportType = null; // null = All, 'slip' = Slip, 'misc' = Miscellaneous
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
     public $appliedResolved = '0'; // Default to Unresolved
+    public $appliedReportType = null;
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
@@ -50,6 +52,11 @@ class Reports extends Component
     // Protection flags
     public $isDeleting = false;
     public $isRestoring = false;
+    public $isResolving = false;
+    
+    // View Details Modal
+    public $showDetailsModal = false;
+    public $selectedReport = null;
     
     protected $queryString = ['search'];
     
@@ -84,10 +91,12 @@ class Reports extends Component
     public function applyFilters()
     {
         $this->appliedResolved = $this->filterResolved;
+        $this->appliedReportType = $this->filterReportType;
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
         
         $this->filtersActive = !is_null($this->appliedResolved) || 
+                               !is_null($this->appliedReportType) ||
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -102,6 +111,10 @@ class Reports extends Component
                 $this->appliedResolved = null;
                 $this->filterResolved = null;
                 break;
+            case 'report_type':
+                $this->appliedReportType = null;
+                $this->filterReportType = null;
+                break;
             case 'created_from':
                 $this->appliedCreatedFrom = '';
                 $this->filterCreatedFrom = '';
@@ -113,6 +126,7 @@ class Reports extends Component
         }
         
         $this->filtersActive = !is_null($this->appliedResolved) || 
+                               !is_null($this->appliedReportType) ||
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -122,10 +136,12 @@ class Reports extends Component
     public function clearFilters()
     {
         $this->filterResolved = null;
+        $this->filterReportType = null;
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         
         $this->appliedResolved = null;
+        $this->appliedReportType = null;
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         
@@ -133,50 +149,113 @@ class Reports extends Component
         $this->resetPage();
     }
     
-    public function resolveReport($reportId)
+    public function openDetailsModal($reportId)
     {
-        $report = $this->showDeleted 
-            ? Report::onlyTrashed()->findOrFail($reportId)
-            : Report::findOrFail($reportId);
-        $oldValues = ['resolved_at' => $report->resolved_at];
-        $report->resolved_at = now();
-        $report->save();
-        
-        $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $newValues = ['resolved_at' => $report->resolved_at];
-        Logger::update(
-            Report::class,
-            $report->id,
-            "Resolved report {$reportType}",
-            $oldValues,
-            $newValues
-        );
-        
-        $this->dispatch('toast', message: 'Report marked as resolved.', type: 'success');
-        $this->resetPage();
+        $this->selectedReport = $this->showDeleted 
+            ? Report::onlyTrashed()->with(['user', 'slip'])->findOrFail($reportId)
+            : Report::with(['user', 'slip'])->findOrFail($reportId);
+        $this->showDetailsModal = true;
+    }
+    
+    public function getReportTypeProperty()
+    {
+        if (!$this->selectedReport) {
+            return null;
+        }
+        return $this->selectedReport->slip_id ? 'slip' : 'misc';
+    }
+    
+    public function closeDetailsModal()
+    {
+        $this->showDetailsModal = false;
+        $this->selectedReport = null;
+    }
+    
+    public function resolveReport()
+    {
+        // Prevent multiple submissions
+        if ($this->isResolving) {
+            return;
+        }
+
+        $this->isResolving = true;
+
+        try {
+            if (!$this->selectedReport) {
+                $this->dispatch('toast', message: 'No report selected.', type: 'error');
+                return;
+            }
+
+            $report = $this->showDeleted 
+                ? Report::onlyTrashed()->findOrFail($this->selectedReport->id)
+                : Report::findOrFail($this->selectedReport->id);
+            $oldValues = [
+                'resolved_at' => $report->resolved_at,
+                'description' => $report->description,
+            ];
+            
+            $report->resolved_at = now();
+            $report->save();
+            
+            $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+            $newValues = [
+                'resolved_at' => $report->resolved_at,
+                'description' => $report->description,
+            ];
+            Logger::update(
+                Report::class,
+                $report->id,
+                "Resolved report {$reportType}",
+                $oldValues,
+                $newValues
+            );
+            
+            $this->dispatch('toast', message: 'Report marked as resolved.', type: 'success');
+            $this->closeDetailsModal();
+            $this->resetPage();
+        } finally {
+            $this->isResolving = false;
+        }
     }
 
-    public function unresolveReport($reportId)
+    public function unresolveReport()
     {
-        $report = $this->showDeleted 
-            ? Report::onlyTrashed()->findOrFail($reportId)
-            : Report::findOrFail($reportId);
-        $oldValues = ['resolved_at' => $report->resolved_at];
-        $report->resolved_at = null;
-        $report->save();
-        
-        $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $newValues = ['resolved_at' => null];
-        Logger::update(
-            Report::class,
-            $report->id,
-            "Unresolved report {$reportType}",
-            $oldValues,
-            $newValues
-        );
-        
-        $this->dispatch('toast', message: 'Report marked as unresolved.', type: 'success');
-        $this->resetPage();
+        // Prevent multiple submissions
+        if ($this->isResolving) {
+            return;
+        }
+
+        $this->isResolving = true;
+
+        try {
+            if (!$this->selectedReport) {
+                $this->dispatch('toast', message: 'No report selected.', type: 'error');
+                return;
+            }
+
+            $report = $this->showDeleted 
+                ? Report::onlyTrashed()->findOrFail($this->selectedReport->id)
+                : Report::findOrFail($this->selectedReport->id);
+            $oldValues = ['resolved_at' => $report->resolved_at];
+            $report->resolved_at = null;
+            $report->save();
+            
+            $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+            $newValues = ['resolved_at' => null];
+            Logger::update(
+                Report::class,
+                $report->id,
+                "Unresolved report {$reportType}",
+                $oldValues,
+                $newValues
+            );
+            
+            $this->dispatch('toast', message: 'Report marked as unresolved.', type: 'success');
+            $this->closeDetailsModal();
+            $this->resetPage();
+        } finally {
+            $this->isResolving = false;
+        }
     }
     
     public function confirmDelete($reportId)
@@ -254,8 +333,7 @@ class Reports extends Component
         if (!empty($this->search)) {
             $searchTerm = trim($this->search);
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('description', 'like', '%' . $searchTerm . '%')
-                  ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                $q->whereHas('user', function ($userQuery) use ($searchTerm) {
                       $userQuery->where('first_name', 'like', '%' . $searchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $searchTerm . '%');
                   })
@@ -276,6 +354,14 @@ class Reports extends Component
                 $query->whereNotNull('resolved_at');
             } else {
                 $query->whereNull('resolved_at');
+            }
+        }
+        
+        if (!is_null($this->appliedReportType)) {
+            if ($this->appliedReportType === 'slip') {
+                $query->whereNotNull('slip_id');
+            } elseif ($this->appliedReportType === 'misc') {
+                $query->whereNull('slip_id');
             }
         }
         

@@ -1852,9 +1852,9 @@ class Trucks extends Component
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
                             $driverQuery->withTrashed()->where(function($dq) use ($escapedSearchTerm) {
                                 $dq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                                    ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                                ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                                ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
                             });
                         })
                         ->orWhereHas('location', function($locationQuery) use ($escapedSearchTerm) {
@@ -1866,19 +1866,19 @@ class Trucks extends Component
                         ->orWhereHas('hatcheryGuard', function($guardQuery) use ($escapedSearchTerm) {
                             $guardQuery->withTrashed()->where(function($gq) use ($escapedSearchTerm) {
                                 $gq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                                    ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                                ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                                ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
                             });
                         })
                         ->orWhereHas('receivedGuard', function($guardQuery) use ($escapedSearchTerm) {
                             $guardQuery->withTrashed()->where(function($gq) use ($escapedSearchTerm) {
                                 $gq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                                    ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                                ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                                ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
                             });
                         });
                 });
@@ -2025,10 +2025,10 @@ class Trucks extends Component
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
                             $driverQuery->withTrashed()->where(function($dq) use ($escapedSearchTerm) {
                                 $dq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                                    ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                                ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                                ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
                             });
                         })
                         ->orWhereHas('location', function($locationQuery) use ($escapedSearchTerm) {

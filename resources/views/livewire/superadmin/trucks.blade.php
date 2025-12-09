@@ -408,7 +408,7 @@
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             @if ($slip->truck)
-                                                {{ $slip->truck->plate_number }}
+                                            {{ $slip->truck->plate_number }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif
@@ -419,7 +419,7 @@
                                     @else
                                         <div class="text-sm font-semibold text-gray-900">
                                             @if ($slip->truck)
-                                                {{ $slip->truck->plate_number }}
+                                            {{ $slip->truck->plate_number }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif
