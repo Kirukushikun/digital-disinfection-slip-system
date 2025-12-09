@@ -328,18 +328,33 @@ class Guards extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = User::where('id', $this->selectedUserId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $user->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedUserId', 'selectedUserDisabled']);
+            $this->dispatch('toast', message: 'The user status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
         $action = $newStatus ? 'disabled' : 'enabled';
         $guardName = $this->getGuardFullName($user);
         
         // Capture old values for logging
         $oldValues = ['disabled' => $wasDisabled];
         
-        $user->update([
-            'disabled' => $newStatus
-        ]);
+        // Refresh user to get updated data
+        $user->refresh();
         
         // Log the status change
         Logger::update(
@@ -450,8 +465,19 @@ class Guards extends Component
             'disabled'
         ]);
         
-        // Soft delete the user
-        $user->delete();
+        // Atomic delete: Only delete if not already deleted to prevent race conditions
+        $deleted = User::where('id', $this->selectedUserId)
+            ->whereNull('deleted_at') // Only delete if not already deleted
+            ->update(['deleted_at' => now()]);
+        
+        if ($deleted === 0) {
+            // User was already deleted by another process
+            $this->showDeleteModal = false;
+            $this->reset(['selectedUserId', 'selectedUserName']);
+            $this->dispatch('toast', message: 'This user was already deleted by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
         
         // Log the delete action
         Logger::delete(
@@ -514,7 +540,23 @@ class Guards extends Component
         }
 
         $guardName = $this->getGuardFullName($user);
-        $user->restore();
+        
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        $restored = User::where('id', $this->selectedUserId)
+            ->whereNotNull('deleted_at') // Only restore if currently deleted
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // User was already restored by another process
+            $this->showRestoreModal = false;
+            $this->reset(['selectedUserId', 'selectedUserName']);
+            $this->dispatch('toast', message: 'This user was already restored by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh user to get updated data
+        $user->refresh();
         
         // Log the restore action
         Logger::restore(

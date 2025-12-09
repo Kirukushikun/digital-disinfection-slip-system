@@ -194,8 +194,22 @@ class Reports extends Component
                 'description' => $report->description,
             ];
             
-        $report->resolved_at = now();
-        $report->save();
+        // Atomic update: Only resolve if not already resolved to prevent race conditions
+        $updated = Report::where('id', $this->selectedReport->id)
+            ->whereNull('resolved_at') // Only update if not already resolved
+            ->update(['resolved_at' => now()]);
+        
+        if ($updated === 0) {
+            // Report was already resolved by another process
+            $report->refresh();
+            $this->dispatch('toast', message: 'This report was already resolved by another administrator. Please refresh the page.', type: 'error');
+            $this->closeDetailsModal();
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh report to get updated data
+        $report->refresh();
         
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
             $newValues = [
@@ -237,8 +251,23 @@ class Reports extends Component
                 ? Report::onlyTrashed()->findOrFail($this->selectedReport->id)
                 : Report::findOrFail($this->selectedReport->id);
         $oldValues = ['resolved_at' => $report->resolved_at];
-        $report->resolved_at = null;
-        $report->save();
+        
+        // Atomic update: Only unresolve if currently resolved to prevent race conditions
+        $updated = Report::where('id', $this->selectedReport->id)
+            ->whereNotNull('resolved_at') // Only update if currently resolved
+            ->update(['resolved_at' => null]);
+        
+        if ($updated === 0) {
+            // Report was already unresolved by another process
+            $report->refresh();
+            $this->dispatch('toast', message: 'This report was already unresolved by another administrator. Please refresh the page.', type: 'error');
+            $this->closeDetailsModal();
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh report to get updated data
+        $report->refresh();
         
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $newValues = ['resolved_at' => null];
@@ -278,7 +307,19 @@ class Reports extends Component
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $oldValues = $report->only(['user_id', 'slip_id', 'description', 'resolved_at']);
         
-        $report->delete();
+        // Atomic delete: Only delete if not already deleted to prevent race conditions
+        $deleted = Report::where('id', $this->selectedReportId)
+            ->whereNull('deleted_at') // Only delete if not already deleted
+            ->update(['deleted_at' => now()]);
+        
+        if ($deleted === 0) {
+            // Report was already deleted by another process
+            $this->showDeleteConfirmation = false;
+            $this->reset(['selectedReportId']);
+            $this->dispatch('toast', message: 'This report was already deleted by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
         
         Logger::delete(
             Report::class,
@@ -308,7 +349,21 @@ class Reports extends Component
         try {
         $report = Report::onlyTrashed()->findOrFail($reportId);
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $report->restore();
+        
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        $restored = Report::where('id', $reportId)
+            ->whereNotNull('deleted_at') // Only restore if currently deleted
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // Report was already restored by another process
+            $this->dispatch('toast', message: 'This report was already restored by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh report to get updated data
+        $report->refresh();
         
         Logger::restore(
             Report::class,

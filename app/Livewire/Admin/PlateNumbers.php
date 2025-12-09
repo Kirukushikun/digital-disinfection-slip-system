@@ -233,12 +233,27 @@ class PlateNumbers extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $truck = Truck::findOrFail($this->selectedTruckId);
         $wasDisabled = $truck->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
-        $truck->update([
-            'disabled' => $newStatus
-        ]);
+        
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = Truck::where('id', $this->selectedTruckId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $truck->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedTruckId', 'selectedTruckDisabled']);
+            $this->dispatch('toast', message: 'The plate number status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
+        // Refresh truck to get updated data
+        $truck->refresh();
 
         // Always reset to first page to avoid pagination issues when truck disappears/appears from filtered results
         $this->resetPage();

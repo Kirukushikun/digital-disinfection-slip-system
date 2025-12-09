@@ -120,10 +120,25 @@ class Reports extends Component
     
     public function resolveReport($reportId)
     {
+        // Atomic update: Only resolve if not already resolved to prevent race conditions
         $report = Report::findOrFail($reportId);
         $oldValues = ['resolved_at' => $report->resolved_at];
-        $report->resolved_at = now();
-        $report->save();
+        
+        // Atomic update: Only update if not already resolved
+        $updated = Report::where('id', $reportId)
+            ->whereNull('resolved_at') // Only update if not already resolved
+            ->update(['resolved_at' => now()]);
+        
+        if ($updated === 0) {
+            // Report was already resolved by another process
+            $report->refresh();
+            $this->dispatch('toast', message: 'This report was already resolved by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh report to get updated data
+        $report->refresh();
         
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $newValues = ['resolved_at' => $report->resolved_at];
@@ -141,10 +156,25 @@ class Reports extends Component
 
     public function unresolveReport($reportId)
     {
+        // Atomic update: Only unresolve if currently resolved to prevent race conditions
         $report = Report::findOrFail($reportId);
         $oldValues = ['resolved_at' => $report->resolved_at];
-        $report->resolved_at = null;
-        $report->save();
+        
+        // Atomic update: Only update if currently resolved
+        $updated = Report::where('id', $reportId)
+            ->whereNotNull('resolved_at') // Only update if currently resolved
+            ->update(['resolved_at' => null]);
+        
+        if ($updated === 0) {
+            // Report was already unresolved by another process
+            $report->refresh();
+            $this->dispatch('toast', message: 'This report was already unresolved by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh report to get updated data
+        $report->refresh();
         
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $newValues = ['resolved_at' => null];

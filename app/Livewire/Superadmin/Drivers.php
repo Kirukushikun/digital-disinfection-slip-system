@@ -290,18 +290,33 @@ class Drivers extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $driver = Driver::findOrFail($this->selectedDriverId);
         $wasDisabled = $driver->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = Driver::where('id', $this->selectedDriverId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $driver->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedDriverId', 'selectedDriverDisabled']);
+            $this->dispatch('toast', message: 'The driver status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
         $action = $newStatus ? 'disabled' : 'enabled';
         $driverName = $this->getDriverFullName($driver);
         
         // Capture old values for logging
         $oldValues = ['disabled' => $wasDisabled];
         
-        $driver->update([
-            'disabled' => $newStatus
-        ]);
+        // Refresh driver to get updated data
+        $driver->refresh();
         
         // Log the status change
         Logger::update(
@@ -673,7 +688,21 @@ class Drivers extends Component
         }
 
         $driver = Driver::onlyTrashed()->findOrFail($driverId);
-        $driver->restore();
+        
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        $restored = Driver::where('id', $driverId)
+            ->whereNotNull('deleted_at') // Only restore if currently deleted
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // Driver was already restored by another process
+            $this->dispatch('toast', message: 'This driver was already restored by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh driver to get updated data
+        $driver->refresh();
         
         $driverName = trim(implode(' ', array_filter([$driver->first_name, $driver->middle_name, $driver->last_name])));
         $this->dispatch('toast', message: "{$driverName} has been restored.", type: 'success');

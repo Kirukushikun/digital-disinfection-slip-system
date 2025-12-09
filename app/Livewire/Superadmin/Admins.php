@@ -326,18 +326,33 @@ class Admins extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
+        
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = User::where('id', $this->selectedUserId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $user->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedUserId', 'selectedUserDisabled']);
+            $this->dispatch('toast', message: 'The admin status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
         $action = $newStatus ? 'disabled' : 'enabled';
         $adminName = $this->getAdminFullName($user);
         
         // Capture old values for logging
         $oldValues = ['disabled' => $wasDisabled];
         
-        $user->update([
-            'disabled' => $newStatus
-        ]);
+        // Refresh user to get updated data
+        $user->refresh();
         
         // Log the status change
         Logger::update(
@@ -510,6 +525,23 @@ class Admins extends Component
             return;
         }
 
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        $restored = User::where('id', $this->selectedUserId)
+            ->whereNotNull('deleted_at') // Only restore if currently deleted
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // User was already restored by another process
+            $this->showRestoreModal = false;
+            $this->reset(['selectedUserId', 'selectedUserName']);
+            $this->dispatch('toast', message: 'This admin was already restored by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh user to get updated data
+        $user->refresh();
+        
         $oldValues = [
             'first_name' => $user->first_name,
             'middle_name' => $user->middle_name,

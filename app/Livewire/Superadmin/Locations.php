@@ -369,12 +369,27 @@ class Locations extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $location = Location::findOrFail($this->selectedLocationId);
         $wasDisabled = $location->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
-        $location->update([
-            'disabled' => $newStatus
-        ]);
+        
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = Location::where('id', $this->selectedLocationId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $location->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedLocationId', 'selectedLocationDisabled']);
+            $this->dispatch('toast', message: 'The location status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
+        // Refresh location to get updated data
+        $location->refresh();
 
         // Always reset to first page to avoid pagination issues when location disappears/appears from filtered results
         $this->resetPage();
@@ -494,7 +509,21 @@ class Locations extends Component
         }
 
         $location = Location::onlyTrashed()->findOrFail($locationId);
-        $location->restore();
+        
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        $restored = Location::where('id', $locationId)
+            ->whereNotNull('deleted_at') // Only restore if currently deleted
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // Location was already restored by another process
+            $this->dispatch('toast', message: 'This location was already restored by another administrator. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Refresh location to get updated data
+        $location->refresh();
         
         $this->dispatch('toast', message: "{$location->location_name} has been restored.", type: 'success');
         $this->resetPage();

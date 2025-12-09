@@ -1355,8 +1355,17 @@ class Trucks extends Component
             'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
         ]);
         
-        // Soft delete the slip
-        $this->selectedSlip->delete();
+        // Atomic delete: Only delete if not already deleted to prevent race conditions
+        $deleted = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
+            ->whereNull('deleted_at') // Only delete if not already deleted
+            ->update(['deleted_at' => now()]);
+        
+        if ($deleted === 0) {
+            // Slip was already deleted by another process
+            $this->showDeleteModal = false;
+            $this->dispatch('toast', message: 'This slip was already deleted by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
         
         // Log the delete
         Logger::delete(

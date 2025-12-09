@@ -321,16 +321,30 @@ class Guards extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Atomic update: Get current status and update atomically to prevent race conditions
         $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         
+        // Atomic update: Only update if the current disabled status matches what we expect
+        $updated = User::where('id', $this->selectedUserId)
+            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->update(['disabled' => $newStatus]);
+        
+        if ($updated === 0) {
+            // Status was changed by another process, refresh and show error
+            $user->refresh();
+            $this->showDisableModal = false;
+            $this->reset(['selectedUserId', 'selectedUserDisabled']);
+            $this->dispatch('toast', message: 'The user status was changed by another administrator. Please refresh the page.', type: 'error');
+            return;
+        }
+        
         $oldValues = ['disabled' => $wasDisabled];
         $newValues = ['disabled' => $newStatus];
         
-        $user->update([
-            'disabled' => $newStatus
-        ]);
+        // Refresh user to get updated data
+        $user->refresh();
 
         // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
         $this->resetPage();
