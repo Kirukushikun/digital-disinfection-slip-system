@@ -35,16 +35,10 @@ class TruckCountCard extends Component
         // Apply filters based on type
         switch ($this->type) {
             case 'incoming':
-                // Incoming trucks today: Status 0 (Ongoing) - no auth required, Status 1 (Disinfecting) - only for auth guard
+                // Incoming trucks today: Only show status 0 (Ongoing) - no auth required
                 $query->whereDate('created_at', today())
                       ->where('destination_id', $locationId)
-                      ->where(function($q) {
-                          $q->where('status', 0) // Ongoing - anyone can see
-                            ->orWhere(function($q2) {
-                                $q2->where('status', 1) // Disinfecting - only for auth guard
-                                   ->where('received_guard_id', Auth::id());
-                            });
-                      });
+                      ->where('status', 0); // Only Ongoing status
                 break;
 
             case 'outgoing':

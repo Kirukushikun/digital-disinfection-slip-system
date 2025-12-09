@@ -145,7 +145,7 @@
                             <p class="text-2xl font-bold text-gray-800">
                                 <livewire:trucks.truck-count-card type="inprogress" :key="'inprogress-count'" />
                             </p>
-                            <p class="text-xs text-gray-500">In Progress</p>
+                            <p class="text-xs text-gray-500">Disinfecting</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">

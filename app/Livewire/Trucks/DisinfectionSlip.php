@@ -334,11 +334,35 @@ class DisinfectionSlip extends Component
             return;
         }
 
-        // Update status to 1 (disinfecting) and set received_guard_id
-        $this->selectedSlip->update([
-            'status' => 1,
-            'received_guard_id' => Auth::id(),
-        ]);
+        // Atomic update: Only update if status is still 0 (Ongoing) to prevent race conditions
+        // This ensures only one user can claim the slip even if multiple users click simultaneously
+        $updated = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
+            ->where('status', 0) // Only update if still in Ongoing status
+            ->whereNull('received_guard_id') // Additional safety check
+            ->update([
+                'status' => 1,
+                'received_guard_id' => Auth::id(),
+            ]);
+
+        if ($updated === 0) {
+            // Another user already claimed this slip
+            $this->dispatch('toast', message: 'This slip has already been claimed by another user. Please refresh the page.', type: 'error');
+            // Refresh the slip to get the latest data
+            $this->selectedSlip->refresh();
+            $this->selectedSlip->load([
+                'truck',
+                'location',
+                'destination',
+                'driver',
+                'attachment',
+                'hatcheryGuard',
+                'receivedGuard',
+            ]);
+            return;
+        }
+
+        // Refresh the slip with relationships
+        $this->selectedSlip->refresh();
 
         // Refresh the slip with relationships
         $this->selectedSlip->refresh();
