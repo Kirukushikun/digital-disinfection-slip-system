@@ -3,7 +3,7 @@
     $isHatcheryAssigned = Auth::id() === $selectedSlip?->hatchery_guard_id;
     $isReceivingGuard = Auth::id() === $selectedSlip?->received_guard_id;
     $status = $selectedSlip?->status ?? null;
-    // Status: 0 = Pending, 1 = Disinfecting, 2 = Completed
+    // Status: 0 = Ongoing, 1 = Disinfecting, 2 = Completed
 @endphp
 
 <div>
@@ -21,7 +21,7 @@
                     @if ($status == 0)
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
-                            Pending
+                            Ongoing
                         </span>
                     @elseif ($status == 1)
                         <span
@@ -181,8 +181,8 @@
                         </x-buttons.submit-button>
                     @endif
 
-                    {{-- Disinfecting Button (Status 0 -> 1, NOT by hatchery guard) --}}
-                    @if ($status == 0 && !$isHatcheryAssigned)
+                    {{-- Disinfecting Button (Status 0 -> 1, for guards at destination location) --}}
+                    @if ($this->canStartDisinfecting())
                         <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
                             Start Disinfecting
                         </x-buttons.submit-button>

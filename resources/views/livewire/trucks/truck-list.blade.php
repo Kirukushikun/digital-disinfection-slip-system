@@ -166,7 +166,7 @@
     <livewire:trucks.disinfection-slip />
 
     {{-- Card List --}}
-    <div wire:poll class="space-y-3 pb-4">
+    <div @if (!$showFilters && !$showCreateModal) wire:poll.keep-alive @endif class="space-y-3 pb-4">
 
         @forelse ($slips as $slip)
             @php
