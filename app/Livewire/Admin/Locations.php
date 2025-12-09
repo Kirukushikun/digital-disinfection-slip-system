@@ -318,66 +318,92 @@ class Locations extends Component
     // Validate and clear invalid files
     public function updatedCreate_logo()
     {
-        // Clear any previous errors when a new file is selected
+        // Step 1: Clear any previous errors when a new file is selected
         $this->resetErrorBag('create_logo');
         $this->resetValidation('create_logo');
         
-        // Only validate if a file is actually selected
+        // Step 2: Only validate if a file is actually selected
         if ($this->create_logo) {
-            // Quick check: if extension is not an image type, clear immediately
+            // Step 3: Quick validation - check extension first (before upload processing)
             $extension = strtolower($this->create_logo->getClientOriginalExtension());
             $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
             
             if (!in_array($extension, $allowedExtensions)) {
+                // Invalid extension - clear file immediately, don't proceed with upload
                 $this->create_logo = null;
                 $this->addError('create_logo', 'The logo must be a file of type: jpeg, jpg, png, gif, webp.');
                 return;
             }
             
-            $this->validateOnly('create_logo', [
-                'create_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
-            ], [
-                'create_logo.image' => 'The logo must be an image.',
-                'create_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
-                'create_logo.max' => 'The logo must not be larger than 15MB.',
-            ]);
-            
-            // If validation fails, clear the file
-            if ($this->getErrorBag()->has('create_logo')) {
+            // Step 4: Full validation (file will be uploaded by Livewire, but we validate it)
+            try {
+                $this->validateOnly('create_logo', [
+                    'create_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
+                ], [
+                    'create_logo.image' => 'The logo must be an image.',
+                    'create_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
+                    'create_logo.max' => 'The logo must not be larger than 15MB.',
+                ]);
+                
+                // Step 5: If validation fails, clear the file (prevent preview)
+                if ($this->getErrorBag()->has('create_logo')) {
+                    $this->create_logo = null;
+                }
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Validation failed - clear file
                 $this->create_logo = null;
+                $this->resetErrorBag('create_logo');
+                foreach ($e->errors() as $key => $messages) {
+                    foreach ($messages as $message) {
+                        $this->addError('create_logo', $message);
+                    }
+                }
             }
         }
     }
 
     public function updatedEdit_logo()
     {
-        // Clear any previous errors when a new file is selected
+        // Step 1: Clear any previous errors when a new file is selected
         $this->resetErrorBag('edit_logo');
         $this->resetValidation('edit_logo');
         
-        // Only validate if a file is actually selected
+        // Step 2: Only validate if a file is actually selected
         if ($this->edit_logo) {
-            // Quick check: if extension is not an image type, clear immediately
+            // Step 3: Quick validation - check extension first (before upload processing)
             $extension = strtolower($this->edit_logo->getClientOriginalExtension());
             $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
             
             if (!in_array($extension, $allowedExtensions)) {
+                // Invalid extension - clear file immediately, don't proceed with upload
                 $this->edit_logo = null;
                 $this->addError('edit_logo', 'The logo must be a file of type: jpeg, jpg, png, gif, webp.');
                 return;
             }
             
-            $this->validateOnly('edit_logo', [
-                'edit_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
-            ], [
-                'edit_logo.image' => 'The logo must be an image.',
-                'edit_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
-                'edit_logo.max' => 'The logo must not be larger than 15MB.',
-            ]);
-            
-            // If validation fails, clear the file
-            if ($this->getErrorBag()->has('edit_logo')) {
+            // Step 4: Full validation (file will be uploaded by Livewire, but we validate it)
+            try {
+                $this->validateOnly('edit_logo', [
+                    'edit_logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:15360'],
+                ], [
+                    'edit_logo.image' => 'The logo must be an image.',
+                    'edit_logo.mimes' => 'The logo must be a file of type: jpeg, jpg, png, gif, webp.',
+                    'edit_logo.max' => 'The logo must not be larger than 15MB.',
+                ]);
+                
+                // Step 5: If validation fails, clear the file (prevent preview)
+                if ($this->getErrorBag()->has('edit_logo')) {
+                    $this->edit_logo = null;
+                }
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Validation failed - clear file
                 $this->edit_logo = null;
+                $this->resetErrorBag('edit_logo');
+                foreach ($e->errors() as $key => $messages) {
+                    foreach ($messages as $message) {
+                        $this->addError('edit_logo', $message);
+                    }
+                }
             }
         }
     }
