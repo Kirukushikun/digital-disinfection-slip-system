@@ -2,6 +2,10 @@
     'module' => 'Dashboard',
 ])
 
+@php
+    $farmName = \App\Models\Setting::where('setting_name', 'farm_name')->value('value') ?? 'Brookside';
+@endphp
+
 <nav x-data="{ open: false }" class="bg-[#FFDBBD] shadow-md rounded-md px-4 py-3 flex items-center justify-between">
     <!-- Left: Hamburger + Module Name + Date -->
     <div class="flex items-center gap-3">
@@ -18,6 +22,12 @@
             <span class="font-semibold text-gray-800 text-lg">{{ $module }}</span>
             <span class="text-sm text-gray-600">{{ now()->format('F d, Y') }}</span>
         </div>
+    </div>
+
+    <!-- Center: Logo + Farm Name -->
+    <div class="flex items-center gap-2 flex-1 justify-center">
+        <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-8 w-8 object-contain">
+        <span class="font-semibold text-gray-800 text-lg hidden sm:inline">{{ $farmName }}</span>
     </div>
 
     <!-- Right: Slot for actions -->
