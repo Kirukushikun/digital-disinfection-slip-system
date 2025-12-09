@@ -108,7 +108,7 @@
                 <div class="font-semibold text-gray-700">Reason:</div>
                 <div class="col-span-2 text-gray-900">
                     @if ($isEditing)
-                        <textarea wire:model="reason_for_disinfection" class="w-full border rounded px-2 py-1 text-sm" rows="6"></textarea>
+                        <textarea wire:model.live="reason_for_disinfection" class="w-full border rounded px-2 py-1 text-sm" rows="6"></textarea>
                     @else
                         {{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}
                     @endif

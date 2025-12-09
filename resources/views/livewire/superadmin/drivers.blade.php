@@ -385,7 +385,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="first_name"
+                                    <input type="text" wire:model.live="first_name"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter first name">
                                     @error('first_name')
@@ -396,7 +396,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Middle Name <span
                                             class="text-gray-400">(Optional)</span></label>
-                                    <input type="text" wire:model="middle_name"
+                                    <input type="text" wire:model.live="middle_name"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter middle name">
                                     @error('middle_name')
@@ -407,7 +407,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="last_name"
+                                    <input type="text" wire:model.live="last_name"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter last name">
                                     @error('last_name')

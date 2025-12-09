@@ -292,7 +292,7 @@
     <div class="grid grid-cols-3 mb-4">
         <div class="font-semibold text-gray-700">Reason:</div>
         <div class="col-span-2">
-            <textarea wire:model="editReasonForDisinfection"
+            <textarea wire:model.live="editReasonForDisinfection"
                 class="w-full border rounded px-2 py-1 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 rows="6" placeholder="Enter reason for disinfection..."></textarea>
             @error('editReasonForDisinfection')

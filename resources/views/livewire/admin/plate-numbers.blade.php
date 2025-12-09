@@ -340,7 +340,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Plate Number <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="plate_number"
+                                    <input type="text" wire:model.live="plate_number"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                                         placeholder="Enter plate number">
                                     @error('plate_number')

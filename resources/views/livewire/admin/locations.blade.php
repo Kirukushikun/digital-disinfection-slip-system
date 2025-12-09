@@ -362,7 +362,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location Name <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="location_name"
+                                    <input type="text" wire:model.live="location_name"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter location name">
                                     @error('location_name')
