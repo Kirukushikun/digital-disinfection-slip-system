@@ -245,12 +245,12 @@ class PlateNumbers extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $truck = Truck::findOrFail($this->selectedTruckId);
+        $truck = Truck::findOrFail($this->selectedTruckId);
         $wasDisabled = $truck->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $truck->update([
@@ -289,12 +289,12 @@ class PlateNumbers extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $truck = Truck::findOrFail($this->selectedTruckId);
+        $truck = Truck::findOrFail($this->selectedTruckId);
         $truckIdForLog = $truck->id;
         $plateNumber = $truck->plate_number;
         
@@ -580,16 +580,16 @@ class PlateNumbers extends Component
         $this->isRestoring = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $truck = Truck::onlyTrashed()->findOrFail($truckId);
-            $truck->restore();
-            
-            $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
-            $this->resetPage();
+        $truck = Truck::onlyTrashed()->findOrFail($truckId);
+        $truck->restore();
+        
+        $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
+        $this->resetPage();
         } finally {
             $this->isRestoring = false;
         }

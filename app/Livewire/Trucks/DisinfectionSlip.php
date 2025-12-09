@@ -373,13 +373,13 @@ class DisinfectionSlip extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check using canDelete
-            if (!$this->canDelete()) {
-                $this->dispatch('toast', message: 'You are not authorized to delete this slip.', type: 'error');
-                return;
-            }
+        // Authorization check using canDelete
+        if (!$this->canDelete()) {
+            $this->dispatch('toast', message: 'You are not authorized to delete this slip.', type: 'error');
+            return;
+        }
 
-            $slipId = $this->selectedSlip->slip_id;
+        $slipId = $this->selectedSlip->slip_id;
         
         // Soft delete the slip (sets deleted_at timestamp)
         $this->selectedSlip->delete();

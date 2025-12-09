@@ -70,7 +70,7 @@ class Admins extends Component
     public $showCreateModal = false;
     public $showDeleteModal = false;
     public $showDeleted = false; // Toggle to show deleted items
-    
+
     // Protection flags
     public $isTogglingStatus = false;
     public $isResettingPassword = false;
@@ -321,12 +321,12 @@ class Admins extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $action = $newStatus ? 'disabled' : 'enabled';
@@ -377,12 +377,12 @@ class Admins extends Component
         $this->isResettingPassword = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $defaultPassword = $this->getDefaultAdminPassword();
         $user->update([
             'password' => Hash::make($defaultPassword),
@@ -428,12 +428,12 @@ class Admins extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $userIdForLog = $user->id;
         $adminName = $this->getAdminFullName($user);
         
@@ -491,14 +491,14 @@ class Admins extends Component
         $this->isRestoring = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            if (!$this->selectedUserId) {
-                return;
-            }
+        if (!$this->selectedUserId) {
+            return;
+        }
 
         $user = User::onlyTrashed()->findOrFail($this->selectedUserId);
         

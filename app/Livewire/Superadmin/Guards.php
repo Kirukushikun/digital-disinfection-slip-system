@@ -72,7 +72,7 @@ class Guards extends Component
     public $showDeleted = false; // Toggle to show deleted items
     public $selectedRestoreUserId = null;
     public $selectedRestoreUserName = '';
-    
+
     // Protection flags
     public $isTogglingStatus = false;
     public $isResettingPassword = false;
@@ -323,12 +323,12 @@ class Guards extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $action = $newStatus ? 'disabled' : 'enabled';
@@ -380,12 +380,12 @@ class Guards extends Component
         $this->isResettingPassword = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $defaultPassword = $this->getDefaultGuardPassword();
         $user->update([
             'password' => Hash::make($defaultPassword),
@@ -431,12 +431,12 @@ class Guards extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $userIdForLog = $user->id;
         $guardName = $this->getGuardFullName($user);
         
@@ -494,14 +494,14 @@ class Guards extends Component
         $this->isRestoring = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            if (!$this->selectedUserId) {
-                return;
-            }
+        if (!$this->selectedUserId) {
+            return;
+        }
 
         $user = User::onlyTrashed()->findOrFail($this->selectedUserId);
         

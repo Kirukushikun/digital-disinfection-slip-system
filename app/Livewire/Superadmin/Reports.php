@@ -195,7 +195,7 @@ class Reports extends Component
         $this->isDeleting = true;
 
         try {
-            $report = Report::findOrFail($this->selectedReportId);
+        $report = Report::findOrFail($this->selectedReportId);
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $oldValues = $report->only(['user_id', 'slip_id', 'description', 'resolved_at']);
         
@@ -227,7 +227,7 @@ class Reports extends Component
         $this->isRestoring = true;
 
         try {
-            $report = Report::onlyTrashed()->findOrFail($reportId);
+        $report = Report::onlyTrashed()->findOrFail($reportId);
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         $report->restore();
         

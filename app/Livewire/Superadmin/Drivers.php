@@ -285,12 +285,12 @@ class Drivers extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $driver = Driver::findOrFail($this->selectedDriverId);
+        $driver = Driver::findOrFail($this->selectedDriverId);
         $wasDisabled = $driver->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $action = $newStatus ? 'disabled' : 'enabled';
@@ -353,12 +353,12 @@ class Drivers extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $driver = Driver::findOrFail($this->selectedDriverId);
+        $driver = Driver::findOrFail($this->selectedDriverId);
         $driverIdForLog = $driver->id;
         $driverName = $this->getDriverFullName($driver);
         
@@ -667,12 +667,12 @@ class Drivers extends Component
         $this->isRestoring = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $driver = Driver::onlyTrashed()->findOrFail($driverId);
+        $driver = Driver::onlyTrashed()->findOrFail($driverId);
         $driver->restore();
         
         $driverName = trim(implode(' ', array_filter([$driver->first_name, $driver->middle_name, $driver->last_name])));

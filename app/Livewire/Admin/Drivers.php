@@ -281,12 +281,12 @@ class Drivers extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 1) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $driver = Driver::findOrFail($this->selectedDriverId);
+        $driver = Driver::findOrFail($this->selectedDriverId);
         $wasDisabled = $driver->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $driver->update([

@@ -66,7 +66,7 @@ class Guards extends Component
     public $showDisableModal = false;
     public $showResetPasswordModal = false;
     public $showCreateModal = false;
-    
+
     // Protection flags
     public $isTogglingStatus = false;
     public $isResettingPassword = false;
@@ -316,12 +316,12 @@ class Guards extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 1) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         
@@ -371,12 +371,12 @@ class Guards extends Component
         $this->isResettingPassword = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 1) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $user = User::findOrFail($this->selectedUserId);
+        $user = User::findOrFail($this->selectedUserId);
         $defaultPassword = $this->getDefaultGuardPassword();
         $user->update([
             'password' => Hash::make($defaultPassword),

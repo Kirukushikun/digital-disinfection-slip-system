@@ -260,11 +260,11 @@ class TruckList extends Component
         $this->isCreating = true;
 
         try {
-            // Check if user is disabled
-            if ($this->isUserDisabled()) {
-                $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
-                return;
-            }
+        // Check if user is disabled
+        if ($this->isUserDisabled()) {
+            $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
+            return;
+        }
 
         // Get current location to validate against
         $currentLocationId = Session::get('location_id');

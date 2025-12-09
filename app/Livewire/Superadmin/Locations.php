@@ -364,12 +364,12 @@ class Locations extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $location = Location::findOrFail($this->selectedLocationId);
+        $location = Location::findOrFail($this->selectedLocationId);
         $wasDisabled = $location->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $location->update([
@@ -408,12 +408,12 @@ class Locations extends Component
         $this->isDeleting = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 2) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $location = Location::findOrFail($this->selectedLocationId);
+        $location = Location::findOrFail($this->selectedLocationId);
         $locationIdForLog = $location->id;
         $locationName = $location->location_name;
         
@@ -488,7 +488,7 @@ class Locations extends Component
         $this->isRestoring = true;
 
         try {
-            // Authorization check
+        // Authorization check
         if (Auth::user()->user_type < 2) {
             abort(403, 'Unauthorized action.');
         }

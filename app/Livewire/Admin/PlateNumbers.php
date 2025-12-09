@@ -228,12 +228,12 @@ class PlateNumbers extends Component
         $this->isTogglingStatus = true;
 
         try {
-            // Authorization check
-            if (Auth::user()->user_type < 1) {
-                abort(403, 'Unauthorized action.');
-            }
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
+        }
 
-            $truck = Truck::findOrFail($this->selectedTruckId);
+        $truck = Truck::findOrFail($this->selectedTruckId);
         $wasDisabled = $truck->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         $truck->update([

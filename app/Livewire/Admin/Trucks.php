@@ -94,7 +94,7 @@ class Trucks extends Component
     public $showRemoveAttachmentConfirmation = false;
     public $selectedSlip = null;
     public $attachmentFile = null;
-    
+
     // Protection flags
     public $isDeleting = false;
 
@@ -1341,12 +1341,12 @@ class Trucks extends Component
         $this->isDeleting = true;
 
         try {
-            if (!$this->canDelete()) {
-                $this->dispatch('toast', message: 'Cannot delete a completed slip.', type: 'error');
-                return;
-            }
+        if (!$this->canDelete()) {
+            $this->dispatch('toast', message: 'Cannot delete a completed slip.', type: 'error');
+            return;
+        }
 
-            $slipId = $this->selectedSlip->slip_id;
+        $slipId = $this->selectedSlip->slip_id;
         $slipIdForLog = $this->selectedSlip->id;
         
         // Capture old values for logging
@@ -1461,7 +1461,7 @@ class Trucks extends Component
         $this->isCreating = true;
 
         try {
-            $this->validate([
+        $this->validate([
             'truck_id' => 'required|exists:trucks,id',
             'location_id' => [
                 'required',
