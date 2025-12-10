@@ -345,9 +345,9 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Plate Number <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model.live="plate_number" maxlength="7"
+                                    <input type="text" wire:model.live="plate_number" maxlength="8"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-                                        placeholder="Enter plate number">
+                                        placeholder="Enter plate number (max 7 non-space characters)">
                                     @error('plate_number')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
@@ -471,9 +471,9 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Plate Number <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="create_plate_number" maxlength="7"
+                                    <input type="text" wire:model="create_plate_number" maxlength="8"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-                                        placeholder="Enter plate number">
+                                        placeholder="Enter plate number (max 7 non-space characters)">
                                     @error('create_plate_number')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror

@@ -186,10 +186,10 @@ class PlateNumbers extends Component
         }
 
         $this->validate([
-            'plate_number' => ['required', 'string', 'max:7', 'unique:trucks,plate_number,' . $this->selectedTruckId],
+            'plate_number' => ['required', 'string', 'max:8', 'unique:trucks,plate_number,' . $this->selectedTruckId],
         ], [
             'plate_number.required' => 'Plate number is required.',
-            'plate_number.max' => 'Plate number must not exceed 7 characters.',
+            'plate_number.max' => 'Plate number must not exceed 8 characters total.',
             'plate_number.unique' => 'This plate number already exists.',
         ], [
             'plate_number' => 'Plate Number',
@@ -197,6 +197,13 @@ class PlateNumbers extends Component
 
         // Sanitize and uppercase input
         $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number);
+        
+        // Validate non-space character count (max 7 non-space characters)
+        $nonSpaceCount = strlen(str_replace(' ', '', $plateNumber));
+        if ($nonSpaceCount > 7) {
+            $this->addError('plate_number', 'Plate number must not exceed 7 non-space characters.');
+            return;
+        }
 
         $truck = Truck::findOrFail($this->selectedTruckId);
         
@@ -396,10 +403,10 @@ class PlateNumbers extends Component
         }
 
         $this->validate([
-            'create_plate_number' => ['required', 'string', 'max:7', 'unique:trucks,plate_number'],
+            'create_plate_number' => ['required', 'string', 'max:8', 'unique:trucks,plate_number'],
         ], [
             'create_plate_number.required' => 'Plate number is required.',
-            'create_plate_number.max' => 'Plate number must not exceed 7 characters.',
+            'create_plate_number.max' => 'Plate number must not exceed 8 characters total.',
             'create_plate_number.unique' => 'This plate number already exists.',
         ], [
             'create_plate_number' => 'Plate Number',
@@ -407,6 +414,13 @@ class PlateNumbers extends Component
 
         // Sanitize and uppercase input
         $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->create_plate_number);
+        
+        // Validate non-space character count (max 7 non-space characters)
+        $nonSpaceCount = strlen(str_replace(' ', '', $plateNumber));
+        if ($nonSpaceCount > 7) {
+            $this->addError('create_plate_number', 'Plate number must not exceed 7 non-space characters.');
+            return;
+        }
 
         // Create truck
         $truck = Truck::create([
