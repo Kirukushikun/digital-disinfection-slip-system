@@ -218,9 +218,9 @@ class Guards extends Component
         }
 
         $this->validate([
-            'first_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'first_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'middle_name' => ['nullable', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'last_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
         ], [
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
             'middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
@@ -544,9 +544,9 @@ class Guards extends Component
         }
 
         $this->validate([
-            'create_first_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'create_middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'create_last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'create_first_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'create_middle_name' => ['nullable', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
+            'create_last_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
         ], [
             'create_first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
             'create_middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
