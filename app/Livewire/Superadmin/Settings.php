@@ -159,8 +159,9 @@ class Settings extends Component
                 Storage::disk('public')->delete($oldLogoPath);
             }
             
-            // Store new logo
-            $logoPath = $this->default_logo_file->store('images/logo', 'public');
+            // Store new logo in images/logos/ (plural) directory for user uploads
+            // images/logo/ (singular) is reserved for static/seed logos tracked in git
+            $logoPath = $this->default_logo_file->store('images/logos', 'public');
             $this->default_location_logo = $logoPath;
             $this->current_logo_path = $logoPath;
             $this->default_logo_file = null;
