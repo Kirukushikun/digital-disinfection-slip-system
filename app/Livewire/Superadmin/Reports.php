@@ -175,6 +175,13 @@ class Reports extends Component
         $this->selectedReport = null;
     }
     
+    public function closeRestoreModal()
+    {
+        $this->showRestoreModal = false;
+        $this->selectedReportId = null;
+        $this->selectedReportName = null;
+    }
+    
     public function resolveReport()
     {
         // Prevent multiple submissions

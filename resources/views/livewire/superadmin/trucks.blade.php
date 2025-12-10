@@ -562,68 +562,68 @@
             :available-origins-options="$availableOriginsOptions" :available-destinations-options="$availableDestinationsOptions" :create-truck-options="$createTruckOptions" :create-driver-options="$createDriverOptions" :create-guard-options="$createGuardOptions"
             :create-received-guard-options="$createReceivedGuardOptions" :is-creating="$isCreating" />
 
-        {{-- Admin Edit Modal --}}
-        @if ($selectedSlip)
-            {{-- Restore Confirmation Modal --}}
-            @if ($showRestoreModal)
-                <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-                    aria-modal="true">
-                    {{-- Backdrop --}}
-                    <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeDetailsModal"></div>
+        {{-- Restore Confirmation Modal --}}
+        @if ($showRestoreModal)
+            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+                aria-modal="true">
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeDetailsModal"></div>
 
-                    {{-- Modal Panel --}}
-                    <div class="flex min-h-full items-center justify-center p-4">
-                        <div
-                            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
-                            <div class="px-6 py-4 bg-white border-b border-gray-200">
-                                <div class="flex items-center">
-                                    <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
-                                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Disinfection Slip</h3>
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                        <div class="px-6 py-4 bg-white border-b border-gray-200">
+                            <div class="flex items-center">
+                                <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
+                                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
                                 </div>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Disinfection Slip</h3>
                             </div>
+                        </div>
 
-                            <div class="px-6 py-4">
-                                <p class="text-sm text-gray-600">
-                                    Are you sure you want to restore disinfection slip <span
-                                        class="font-medium text-gray-900">{{ $selectedSlipName }}</span>?
-                                    The slip will be available again.
-                                </p>
-                            </div>
+                        <div class="px-6 py-4">
+                            <p class="text-sm text-gray-600">
+                                Are you sure you want to restore disinfection slip <span
+                                    class="font-medium text-gray-900">{{ $selectedSlipName }}</span>?
+                                The slip will be available again.
+                            </p>
+                        </div>
 
-                            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                                <button wire:click="closeDetailsModal" wire:loading.attr="disabled" wire:target="restoreSlip"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Cancel
-                                </button>
-                                <button wire:click.prevent="restoreSlip" wire:loading.attr="disabled" wire:target="restoreSlip"
-                                    :disabled="$isRestoring"
-                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="restoreSlip">Restore Slip</span>
-                                    <span wire:loading wire:target="restoreSlip" class="inline-flex items-center gap-2">
-                                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                            viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                            </path>
-                                        </svg>
-                                        Restoring...
-                                    </span>
-                                </button>
-                            </div>
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                            <button wire:click="closeDetailsModal" wire:loading.attr="disabled" wire:target="restoreSlip"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                Cancel
+                            </button>
+                            <button wire:click.prevent="restoreSlip" wire:loading.attr="disabled" wire:target="restoreSlip"
+                                :disabled="$isRestoring"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                <span wire:loading.remove wire:target="restoreSlip">Restore Slip</span>
+                                <span wire:loading wire:target="restoreSlip" class="inline-flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    Restoring...
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </div>
-            @endif
+            </div>
+        @endif
 
+        {{-- Admin Edit Modal --}}
+        @if ($selectedSlip)
             {{-- Delete Confirmation Modal --}}
             <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE SLIP?"
                 message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
