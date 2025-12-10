@@ -1,6 +1,14 @@
 <div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4"
     @if (!$showFilters && !$showDetailsModal) wire:poll.keep-alive @endif>
 
+    {{-- Simple Header --}}
+    <div class="mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">My Reports</h1>
+            <p class="text-gray-600 text-sm mt-1">View and manage all your submitted reports</p>
+        </div>
+    </div>
+
     {{-- Search + Filter --}}
     <div class="mb-4 flex items-center gap-3">
         {{-- Search Bar with Filter Button Inside --}}

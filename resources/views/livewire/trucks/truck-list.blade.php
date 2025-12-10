@@ -1,5 +1,25 @@
 <div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4">
 
+    {{-- Simple Header --}}
+    <div class="mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">
+                @if ($type === 'incoming')
+                    Incoming Trucks
+                @else
+                    Outgoing Trucks
+                @endif
+            </h1>
+            <p class="text-gray-600 text-sm mt-1">
+                @if ($type === 'incoming')
+                    View all incoming trucks for disinfection
+                @else
+                    View all outgoing trucks and create new disinfection slips
+                @endif
+            </p>
+        </div>
+    </div>
+
     {{-- Search + Filter --}}
     <div class="mb-4 flex items-center gap-3">
         {{-- Search Bar with Filter Button Inside --}}
