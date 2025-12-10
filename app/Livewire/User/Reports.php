@@ -95,7 +95,7 @@ class Reports extends Component
     {
         $this->selectedReport = Report::where('user_id', Auth::id())
             ->whereNull('deleted_at')
-            ->with(['slip'])
+            ->with(['slip', 'resolvedBy'])
             ->findOrFail($reportId);
         $this->showDetailsModal = true;
     }

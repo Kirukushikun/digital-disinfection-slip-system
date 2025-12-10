@@ -334,23 +334,27 @@
                                 <div class="whitespace-pre-wrap">{{ $selectedReport->description ?? 'No description provided.' }}</div>
                             </div>
                         </div>
-
-                        {{-- Resolved Information --}}
-                        @if ($selectedReport->resolved_at)
-                            <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
-                                <div class="font-semibold text-gray-500">Resolved by:</div>
-                                <div class="text-gray-900">
-                                    {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
-                                <div class="font-semibold text-gray-500">Resolved on:</div>
-                                <div class="text-gray-900">
-                                    {{ $selectedReport->resolved_at->format('M d, Y - h:i A') }}
-                                </div>
-                            </div>
-                        @endif
                     </div>
+
+                    {{-- Sub Footer --}}
+                    @if ($selectedReport->resolved_at)
+                        <div class="border-t border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mb-6 mt-2">
+                            <div class="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <div class="font-bold text-gray-500 mb-0.5">Resolved by:</div>
+                                    <div class="text-gray-900">
+                                        {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-gray-500 mb-0.5">Resolved on:</div>
+                                    <div class="text-gray-900">
+                                        {{ $selectedReport->resolved_at->format('M d, Y - h:i A') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 @else
                     <p class="text-gray-500 text-center">No details available.</p>
                 @endif
