@@ -237,7 +237,7 @@
     {{-- Cancel Confirmation Modal --}}
     <x-modals.unsaved-confirmation show="showCancelConfirmation" title="DISCARD CHANGES?"
         message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelEdit"
-        confirmText="Cancel" cancelText="Continue" />
+        confirmText="Discard" cancelText="Back" />
 
     {{-- Delete Confirmation Modal --}}
     <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE SLIP?"

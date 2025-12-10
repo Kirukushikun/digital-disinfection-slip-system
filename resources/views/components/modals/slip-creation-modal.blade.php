@@ -79,4 +79,4 @@
 {{-- Cancel Confirmation Modal --}}
 <x-modals.unsaved-confirmation show="showCancelCreateConfirmation" title="DISCARD CHANGES?"
     message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelCreate"
-    confirmText="Cancel" cancelText="Continue" />
+    confirmText="Discard" cancelText="Back" />
