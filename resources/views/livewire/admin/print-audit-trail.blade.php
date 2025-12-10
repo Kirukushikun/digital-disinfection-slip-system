@@ -214,7 +214,7 @@
                     <td>
                         @php
                             $userTypes = [
-                                0 => 'User',
+                                0 => 'Guard',
                                 1 => 'Admin',
                                 2 => 'Superadmin'
                             ];
