@@ -338,114 +338,109 @@
 
         {{-- View Details Modal --}}
         @if ($showDetailsModal && $selectedReport)
-            <div class="fixed inset-0 z-100 overflow-y-auto" x-data="{ show: @entangle('showDetailsModal') }" x-show="show"
-                x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                style="display: none;" x-cloak>
-                {{-- Backdrop --}}
-                <div class="fixed inset-0 transition-opacity bg-black/80" x-on:click="show = false"></div>
-
-                {{-- Modal Content --}}
-                <div class="flex min-h-full items-center justify-center p-4 text-center">
-                    <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                        x-transition:enter="ease-out duration-300"
-                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                        x-transition:leave="ease-in duration-200"
-                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                        Report Details
-                                    </h3>
-                                    
-                                    <div class="space-y-4">
-                                        {{-- Name --}}
-                                        <div>
-                                            <p class="text-sm text-gray-900">
-                                                <span class="font-medium text-gray-700">Name:</span> {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
-                                            </p>
-                                        </div>
-                                        
-                                        {{-- Type --}}
-                                        <div>
-                                            <p class="text-sm text-gray-900">
-                                                <span class="font-medium text-gray-700">Type:</span> 
-                                                @if ($selectedReport->slip_id)
-                                                    <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
-                                                @else
-                                                    <span class="text-gray-500 italic">Miscellaneous</span>
-                                                @endif
-                                            </p>
-                                        </div>
-                                        
-                                        {{-- Description --}}
-                                        <div>
-                                            <p class="text-sm text-gray-700 font-medium mb-1">Description:</p>
-                                            <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ $selectedReport->description ?? 'No description provided.' }}</p>
-                                        </div>
-                                        
-                                        {{-- Resolved Information --}}
-                                        @if ($selectedReport->resolved_at)
-                                            <div class="pt-2 border-t border-gray-200">
-                                                <p class="text-sm text-gray-700 font-medium mb-1">Resolved Information:</p>
-                                                <div class="space-y-1">
-                                                    <p class="text-sm text-gray-900">
-                                                        <span class="font-medium text-gray-700">Resolved by:</span> 
-                                                        {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
-                                                    </p>
-                                                    <p class="text-sm text-gray-900">
-                                                        <span class="font-medium text-gray-700">Resolved on:</span> 
-                                                        {{ $selectedReport->resolved_at->format('M d, Y h:i A') }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        @endif
-                                    </div>
+            @php
+                $isResolved = $selectedReport->resolved_at !== null;
+                $headerClass = $isResolved ? 'border-t-4 border-t-green-500 bg-green-50' : 'border-t-4 border-t-red-500 bg-red-50';
+            @endphp
+            <x-modals.modal-template show="showDetailsModal" title="REPORT DETAILS" max-width="max-w-3xl" header-class="{{ $headerClass }}">
+                @if ($selectedReport)
+                    {{-- Sub Header --}}
+                    <div class="border-b border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mt-6 mb-2">
+                        <div class="grid grid-cols-[1fr_1fr] gap-4 items-start text-xs">
+                            <div>
+                                <div class="font-semibold text-gray-500 mb-0.5">Date:</div>
+                                <div class="text-gray-900">{{ $selectedReport->created_at->format('M d, Y') }}</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-500 mb-0.5">
+                                    @if ($selectedReport->slip_id)
+                                        Slip No:
+                                    @else
+                                        Type:
+                                    @endif
+                                </div>
+                                <div class="text-gray-900 font-semibold">
+                                    @if ($selectedReport->slip_id)
+                                        {{ $selectedReport->slip->slip_id ?? 'N/A' }}
+                                    @else
+                                        <span class="italic font-normal">Miscellaneous</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
-                            @if (!$selectedReport->resolved_at)
-                                <button wire:click="resolveReport" wire:loading.attr="disabled" wire:target="resolveReport"
-                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="resolveReport" class="inline-flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Resolve
-                                    </span>
-                                    <span wire:loading wire:target="resolveReport" class="inline-flex items-center gap-2">
-                                        Resolving...
-                                    </span>
-                                </button>
-                            @else
-                                <button wire:click="unresolveReport" wire:loading.attr="disabled" wire:target="unresolveReport"
-                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="unresolveReport" class="inline-flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        Unresolve
-                                    </span>
-                                    <span wire:loading wire:target="unresolveReport" class="inline-flex items-center gap-2">
-                                        Unresolving...
-                                    </span>
-                                </button>
-                            @endif
-                            
-                            <button wire:click="closeDetailsModal" wire:loading.attr="disabled" wire:target="resolveReport,unresolveReport"
-                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                Cancel
-                            </button>
-                        </div>
                     </div>
-                </div>
-            </div>
+
+                    {{-- Body Fields --}}
+                    <div class="space-y-0 -mx-6">
+                        {{-- Name --}}
+                        <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                            <div class="font-semibold text-gray-500">Name:</div>
+                            <div class="text-gray-900">
+                                {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
+                            </div>
+                        </div>
+
+                        {{-- Type --}}
+                        <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                            <div class="font-semibold text-gray-500">Type:</div>
+                            <div class="text-gray-900">
+                                @if ($selectedReport->slip_id)
+                                    <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                @else
+                                    <span class="text-gray-500 italic">Miscellaneous</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Description --}}
+                        <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                            <div class="font-semibold text-gray-500">Description:</div>
+                            <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
+                                <div class="whitespace-pre-wrap">{{ $selectedReport->description ?? 'No description provided.' }}</div>
+                            </div>
+                        </div>
+
+                        {{-- Resolved Information --}}
+                        @if ($selectedReport->resolved_at)
+                            <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
+                                <div class="font-semibold text-gray-500">Resolved by:</div>
+                                <div class="text-gray-900">
+                                    {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
+                                <div class="font-semibold text-gray-500">Resolved on:</div>
+                                <div class="text-gray-900">
+                                    {{ $selectedReport->resolved_at->format('M d, Y - h:i A') }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-gray-500 text-center">No details available.</p>
+                @endif
+
+                {{-- Footer --}}
+                <x-slot name="footer">
+                    <div class="flex justify-end w-full gap-2">
+                        <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
+                            Close
+                        </x-buttons.submit-button>
+
+                        @if (!$selectedReport->resolved_at)
+                            <x-buttons.submit-button wire:click="resolveReport" color="green" wire:loading.attr="disabled" wire:target="resolveReport">
+                                <span wire:loading.remove wire:target="resolveReport">Resolve</span>
+                                <span wire:loading wire:target="resolveReport">Resolving...</span>
+                            </x-buttons.submit-button>
+                        @else
+                            <x-buttons.submit-button wire:click="unresolveReport" color="orange" wire:loading.attr="disabled" wire:target="unresolveReport">
+                                <span wire:loading.remove wire:target="unresolveReport">Unresolve</span>
+                                <span wire:loading wire:target="unresolveReport">Unresolving...</span>
+                            </x-buttons.submit-button>
+                        @endif
+                    </div>
+                </x-slot>
+            </x-modals.modal-template>
         @endif
     </div>
 </div>
