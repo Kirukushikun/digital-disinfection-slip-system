@@ -387,6 +387,23 @@
                                             <p class="text-sm text-gray-700 font-medium mb-1">Description:</p>
                                             <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ $selectedReport->description ?? 'No description provided.' }}</p>
                                         </div>
+                                        
+                                        {{-- Resolved Information --}}
+                                        @if ($selectedReport->resolved_at)
+                                            <div class="pt-2 border-t border-gray-200">
+                                                <p class="text-sm text-gray-700 font-medium mb-1">Resolved Information:</p>
+                                                <div class="space-y-1">
+                                                    <p class="text-sm text-gray-900">
+                                                        <span class="font-medium text-gray-700">Resolved by:</span> 
+                                                        {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
+                                                    </p>
+                                                    <p class="text-sm text-gray-900">
+                                                        <span class="font-medium text-gray-700">Resolved on:</span> 
+                                                        {{ $selectedReport->resolved_at->format('M d, Y h:i A') }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

@@ -16,6 +16,7 @@ class Report extends Model
         'slip_id',
         'description',
         'resolved_at',
+        'resolved_by',
     ];
 
     protected $casts = [
@@ -48,5 +49,10 @@ class Report extends Model
     public function slip()
     {
         return $this->belongsTo(DisinfectionSlip::class, 'slip_id');
+    }
+
+    public function resolvedBy()
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
     }
 }

@@ -36,6 +36,13 @@ class Reports extends Component
         '1' => 'Resolved',
     ];
     
+    // View Details Modal
+    public $showDetailsModal = false;
+    public $selectedReport = null;
+    
+    // Protection flags
+    public $isResolving = false;
+    
     public function mount()
     {
         // Apply default filter on mount
@@ -118,76 +125,142 @@ class Reports extends Component
         $this->resetPage();
     }
     
-    public function resolveReport($reportId)
+    public function openDetailsModal($reportId)
     {
-        // Atomic update: Only resolve if not already resolved to prevent race conditions
-        $report = Report::findOrFail($reportId);
-        $oldValues = ['resolved_at' => $report->resolved_at];
-        
-        // Atomic update: Only update if not already resolved
-        $updated = Report::where('id', $reportId)
-            ->whereNull('resolved_at') // Only update if not already resolved
-            ->update(['resolved_at' => now()]);
-        
-        if ($updated === 0) {
-            // Report was already resolved by another process
-            $report->refresh();
-            $this->dispatch('toast', message: 'This report was already resolved by another administrator. Please refresh the page.', type: 'error');
-            $this->resetPage();
+        $this->selectedReport = Report::with(['user', 'slip', 'resolvedBy'])->findOrFail($reportId);
+        $this->showDetailsModal = true;
+    }
+    
+    public function closeDetailsModal()
+    {
+        $this->showDetailsModal = false;
+        $this->selectedReport = null;
+    }
+    
+    public function resolveReport()
+    {
+        // Prevent multiple submissions
+        if ($this->isResolving) {
             return;
         }
-        
-        // Refresh report to get updated data
-        $report->refresh();
-        
-        $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $newValues = ['resolved_at' => $report->resolved_at];
-        Logger::update(
-            Report::class,
-            $report->id,
-            "Resolved report {$reportType}",
-            $oldValues,
-            $newValues
-        );
-        
-        $this->dispatch('toast', message: 'Report marked as resolved.', type: 'success');
-        $this->resetPage();
+
+        $this->isResolving = true;
+
+        try {
+            if (!$this->selectedReport) {
+                $this->dispatch('toast', message: 'No report selected.', type: 'error');
+                return;
+            }
+
+            $report = Report::findOrFail($this->selectedReport->id);
+            $oldValues = [
+                'resolved_at' => $report->resolved_at,
+                'resolved_by' => $report->resolved_by,
+                'description' => $report->description,
+            ];
+            
+            // Atomic update: Only resolve if not already resolved to prevent race conditions
+            $updated = Report::where('id', $this->selectedReport->id)
+                ->whereNull('resolved_at') // Only update if not already resolved
+                ->update([
+                    'resolved_at' => now(),
+                    'resolved_by' => Auth::id(),
+                ]);
+            
+            if ($updated === 0) {
+                // Report was already resolved by another process
+                $report->refresh();
+                $this->dispatch('toast', message: 'This report was already resolved by another administrator. Please refresh the page.', type: 'error');
+                $this->closeDetailsModal();
+                $this->resetPage();
+                return;
+            }
+            
+            // Refresh report to get updated data
+            $report->refresh();
+            
+            $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+            $newValues = [
+                'resolved_at' => $report->resolved_at,
+                'resolved_by' => $report->resolved_by,
+                'description' => $report->description,
+            ];
+            Logger::update(
+                Report::class,
+                $report->id,
+                "Resolved report {$reportType}",
+                $oldValues,
+                $newValues
+            );
+            
+            $this->dispatch('toast', message: 'Report marked as resolved.', type: 'success');
+            $this->closeDetailsModal();
+            $this->resetPage();
+        } finally {
+            $this->isResolving = false;
+        }
     }
 
-    public function unresolveReport($reportId)
+    public function unresolveReport()
     {
-        // Atomic update: Only unresolve if currently resolved to prevent race conditions
-        $report = Report::findOrFail($reportId);
-        $oldValues = ['resolved_at' => $report->resolved_at];
-        
-        // Atomic update: Only update if currently resolved
-        $updated = Report::where('id', $reportId)
-            ->whereNotNull('resolved_at') // Only update if currently resolved
-            ->update(['resolved_at' => null]);
-        
-        if ($updated === 0) {
-            // Report was already unresolved by another process
-            $report->refresh();
-            $this->dispatch('toast', message: 'This report was already unresolved by another administrator. Please refresh the page.', type: 'error');
-            $this->resetPage();
+        // Prevent multiple submissions
+        if ($this->isResolving) {
             return;
         }
-        
-        // Refresh report to get updated data
-        $report->refresh();
-        
-        $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $newValues = ['resolved_at' => null];
-        Logger::update(
-            Report::class,
-            $report->id,
-            "Unresolved report {$reportType}",
-            $oldValues,
-            $newValues
-        );
-        
-        $this->dispatch('toast', message: 'Report marked as unresolved.', type: 'success');
-        $this->resetPage();
+
+        $this->isResolving = true;
+
+        try {
+            if (!$this->selectedReport) {
+                $this->dispatch('toast', message: 'No report selected.', type: 'error');
+                return;
+            }
+
+            $report = Report::findOrFail($this->selectedReport->id);
+            $oldValues = [
+                'resolved_at' => $report->resolved_at,
+                'resolved_by' => $report->resolved_by,
+            ];
+            
+            // Atomic update: Only unresolve if currently resolved to prevent race conditions
+            $updated = Report::where('id', $this->selectedReport->id)
+                ->whereNotNull('resolved_at') // Only update if currently resolved
+                ->update([
+                    'resolved_at' => null,
+                    'resolved_by' => null,
+                ]);
+            
+            if ($updated === 0) {
+                // Report was already unresolved by another process
+                $report->refresh();
+                $this->dispatch('toast', message: 'This report was already unresolved by another administrator. Please refresh the page.', type: 'error');
+                $this->closeDetailsModal();
+                $this->resetPage();
+                return;
+            }
+            
+            // Refresh report to get updated data
+            $report->refresh();
+            
+            $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+            $newValues = [
+                'resolved_at' => null,
+                'resolved_by' => null,
+            ];
+            Logger::update(
+                Report::class,
+                $report->id,
+                "Unresolved report {$reportType}",
+                $oldValues,
+                $newValues
+            );
+            
+            $this->dispatch('toast', message: 'Report marked as unresolved.', type: 'success');
+            $this->closeDetailsModal();
+            $this->resetPage();
+        } finally {
+            $this->isResolving = false;
+        }
     }
     
     private function getFilteredReportsQuery()
@@ -198,8 +271,7 @@ class Reports extends Component
         if (!empty($this->search)) {
             $searchTerm = trim($this->search);
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('description', 'like', '%' . $searchTerm . '%')
-                  ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                $q->whereHas('user', function ($userQuery) use ($searchTerm) {
                       $userQuery->where('first_name', 'like', '%' . $searchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $searchTerm . '%');
                   })

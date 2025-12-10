@@ -22,6 +22,8 @@ return new class extends Migration
             // Report details
             $table->text('description');
             $table->timestamp('resolved_at')->nullable();
+            // Track who resolved the report (admin/superadmin user_id)
+            $table->foreignId('resolved_by')->nullable()->constrained('users')->cascadeOnUpdate()->nullOnDelete();
             
             $table->softDeletes();
             $table->timestamps();

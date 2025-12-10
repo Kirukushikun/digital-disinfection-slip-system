@@ -152,8 +152,8 @@ class Reports extends Component
     public function openDetailsModal($reportId)
     {
         $this->selectedReport = $this->showDeleted 
-            ? Report::onlyTrashed()->with(['user', 'slip'])->findOrFail($reportId)
-            : Report::with(['user', 'slip'])->findOrFail($reportId);
+            ? Report::onlyTrashed()->with(['user', 'slip', 'resolvedBy'])->findOrFail($reportId)
+            : Report::with(['user', 'slip', 'resolvedBy'])->findOrFail($reportId);
         $this->showDetailsModal = true;
     }
     
@@ -191,13 +191,17 @@ class Reports extends Component
                 : Report::findOrFail($this->selectedReport->id);
             $oldValues = [
                 'resolved_at' => $report->resolved_at,
+                'resolved_by' => $report->resolved_by,
                 'description' => $report->description,
             ];
             
         // Atomic update: Only resolve if not already resolved to prevent race conditions
         $updated = Report::where('id', $this->selectedReport->id)
             ->whereNull('resolved_at') // Only update if not already resolved
-            ->update(['resolved_at' => now()]);
+            ->update([
+                'resolved_at' => now(),
+                'resolved_by' => Auth::id(),
+            ]);
         
         if ($updated === 0) {
             // Report was already resolved by another process
@@ -214,6 +218,7 @@ class Reports extends Component
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
             $newValues = [
                 'resolved_at' => $report->resolved_at,
+                'resolved_by' => $report->resolved_by,
                 'description' => $report->description,
             ];
         Logger::update(
@@ -250,12 +255,18 @@ class Reports extends Component
         $report = $this->showDeleted 
                 ? Report::onlyTrashed()->findOrFail($this->selectedReport->id)
                 : Report::findOrFail($this->selectedReport->id);
-        $oldValues = ['resolved_at' => $report->resolved_at];
+        $oldValues = [
+            'resolved_at' => $report->resolved_at,
+            'resolved_by' => $report->resolved_by,
+        ];
         
         // Atomic update: Only unresolve if currently resolved to prevent race conditions
         $updated = Report::where('id', $this->selectedReport->id)
             ->whereNotNull('resolved_at') // Only update if currently resolved
-            ->update(['resolved_at' => null]);
+            ->update([
+                'resolved_at' => null,
+                'resolved_by' => null,
+            ]);
         
         if ($updated === 0) {
             // Report was already unresolved by another process
@@ -270,7 +281,10 @@ class Reports extends Component
         $report->refresh();
         
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
-        $newValues = ['resolved_at' => null];
+        $newValues = [
+            'resolved_at' => null,
+            'resolved_by' => null,
+        ];
         Logger::update(
             Report::class,
             $report->id,

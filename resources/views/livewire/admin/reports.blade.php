@@ -10,7 +10,7 @@
 
                 {{-- Search and Filter Bar --}}
                 <div class="flex gap-3 w-full lg:w-auto">
-                    {{-- Search Bar --}}
+                    {{-- Search Bar with Filter Button Inside --}}
                     <div class="relative flex-1 lg:w-96">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,28 +19,33 @@
                             </svg>
                         </div>
                         <input type="text" wire:model.live="search"
-                            class="block w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Search by name, slip no, description...">
+                            class="block w-full pl-10 {{ $search ? 'pr-20' : 'pr-12' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            placeholder="Search by name, slip no...">
+                        
+                        {{-- Right Side Buttons Container --}}
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
+                            {{-- Clear Button (X) - Only when search has text --}}
                         @if ($search)
                             <button wire:click="$set('search', '')"
-                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                    class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 hover:cursor-pointer cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
                             </button>
                         @endif
-                    </div>
 
-                    {{-- Filter Button --}}
+                            {{-- Filter Button Inside Search (Right Side) --}}
                     <button wire:click="$toggle('showFilters')" title="Filters"
-                        class="inline-flex items-center justify-center w-10 h-10 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 relative hover:cursor-pointer cursor-pointer">
+                                class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 focus:outline-none hover:cursor-pointer cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
                             </path>
                         </svg>
                     </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -160,11 +165,7 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Slip No
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Description
+                                Type
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -195,15 +196,10 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
                                         @if ($report->slip_id)
-                                            {{ $report->slip->slip_id ?? 'N/A' }}
+                                            <span class="text-blue-600">Slip: {{ $report->slip->slip_id ?? 'N/A' }}</span>
                                         @else
                                             <span class="text-gray-500 italic">Miscellaneous</span>
                                         @endif
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900 max-w-md">
-                                        {{ Str::limit($report->description, 100) }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -228,44 +224,24 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    @if (!($showDeleted ?? false))
-                                    @if (!$report->resolved_at)
-                                        <button wire:click="resolveReport({{ $report->id }})" wire:loading.attr="disabled" wire:target="resolveReport({{ $report->id }})"
-                                            class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <span wire:loading.remove wire:target="resolveReport({{ $report->id }})" class="inline-flex items-center gap-2">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button wire:click="openDetailsModal({{ $report->id }})"
+                                            class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 13l4 4L19 7" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                             </svg>
-                                            Resolve
-                                            </span>
-                                            <span wire:loading wire:target="resolveReport({{ $report->id }})" class="inline-flex items-center gap-2">
-                                                Resolving...
-                                            </span>
+                                            View Details
                                         </button>
-                                    @else
-                                        <button wire:click="unresolveReport({{ $report->id }})" wire:loading.attr="disabled" wire:target="unresolveReport({{ $report->id }})"
-                                            class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <span wire:loading.remove wire:target="unresolveReport({{ $report->id }})" class="inline-flex items-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                            Unresolve
-                                            </span>
-                                            <span wire:loading wire:target="unresolveReport({{ $report->id }})" class="inline-flex items-center gap-2">
-                                                Unresolving...
-                                            </span>
-                                        </button>
-                                        @endif
-                                    @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="5" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24"
                                             stroke="currentColor">
@@ -294,5 +270,117 @@
                 <x-modals.filter-reports-body :availableStatuses="$availableStatuses" />
             </x-slot>
         </x-modals.filter-modal>
+
+        {{-- View Details Modal --}}
+        @if ($showDetailsModal && $selectedReport)
+            <div class="fixed inset-0 z-100 overflow-y-auto" x-data="{ show: @entangle('showDetailsModal') }" x-show="show"
+                x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                style="display: none;" x-cloak>
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" x-on:click="show = false"></div>
+
+                {{-- Modal Content --}}
+                <div class="flex min-h-full items-center justify-center p-4 text-center">
+                    <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                        x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                        Report Details
+                                    </h3>
+                                    
+                                    <div class="space-y-4">
+                                        {{-- Name --}}
+                                        <div>
+                                            <p class="text-sm text-gray-900">
+                                                <span class="font-medium text-gray-700">Name:</span> {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
+                                            </p>
+                                        </div>
+                                        
+                                        {{-- Type --}}
+                                        <div>
+                                            <p class="text-sm text-gray-900">
+                                                <span class="font-medium text-gray-700">Type:</span> 
+                                                @if ($selectedReport->slip_id)
+                                                    <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                                @else
+                                                    <span class="text-gray-500 italic">Miscellaneous</span>
+                                                @endif
+                                            </p>
+                                        </div>
+                                        
+                                        {{-- Description --}}
+                                        <div>
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Description:</p>
+                                            <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ $selectedReport->description ?? 'No description provided.' }}</p>
+                                        </div>
+                                        
+                                        {{-- Resolved Information --}}
+                                        @if ($selectedReport->resolved_at)
+                                            <div class="pt-2 border-t border-gray-200">
+                                                <p class="text-sm text-gray-700 font-medium mb-1">Resolved Information:</p>
+                                                <div class="space-y-1">
+                                                    <p class="text-sm text-gray-900">
+                                                        <span class="font-medium text-gray-700">Resolved by:</span> 
+                                                        {{ $selectedReport->resolvedBy ? trim($selectedReport->resolvedBy->first_name . ' ' . ($selectedReport->resolvedBy->middle_name ?? '') . ' ' . $selectedReport->resolvedBy->last_name) : 'N/A' }}
+                                                    </p>
+                                                    <p class="text-sm text-gray-900">
+                                                        <span class="font-medium text-gray-700">Resolved on:</span> 
+                                                        {{ $selectedReport->resolved_at->format('M d, Y h:i A') }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
+                            @if (!$selectedReport->resolved_at)
+                                <button wire:click="resolveReport" wire:loading.attr="disabled" wire:target="resolveReport"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                    <span wire:loading.remove wire:target="resolveReport" class="inline-flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Resolve
+                                    </span>
+                                    <span wire:loading wire:target="resolveReport" class="inline-flex items-center gap-2">
+                                        Resolving...
+                                    </span>
+                                </button>
+                            @else
+                                <button wire:click="unresolveReport" wire:loading.attr="disabled" wire:target="unresolveReport"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                    <span wire:loading.remove wire:target="unresolveReport" class="inline-flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Unresolve
+                                    </span>
+                                    <span wire:loading wire:target="unresolveReport" class="inline-flex items-center gap-2">
+                                        Unresolving...
+                                    </span>
+                                </button>
+                            @endif
+                            
+                            <button wire:click="closeDetailsModal" wire:loading.attr="disabled" wire:target="resolveReport,unresolveReport"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
