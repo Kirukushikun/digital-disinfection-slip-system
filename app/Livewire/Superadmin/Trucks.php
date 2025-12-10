@@ -981,6 +981,9 @@ class Trucks extends Component
         $this->appliedCreatedFrom = null;
         $this->appliedCreatedTo = null;
         
+        // Reset exclude deleted items filter to default
+        $this->excludeDeletedItems = true;
+        
         $this->filtersActive = false;
         $this->resetPage();
     }
@@ -1450,8 +1453,8 @@ class Trucks extends Component
 
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = DisinfectionSlipModel::where('id', $slipId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = DisinfectionSlipModel::onlyTrashed()
+            ->where('id', $slipId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {

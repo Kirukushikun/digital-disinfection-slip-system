@@ -363,8 +363,8 @@ class Reports extends Component
         try {
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = Report::where('id', $reportId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = Report::onlyTrashed()
+            ->where('id', $reportId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {

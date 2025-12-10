@@ -602,8 +602,8 @@ class PlateNumbers extends Component
 
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = Truck::where('id', $truckId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = Truck::onlyTrashed()
+            ->where('id', $truckId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {

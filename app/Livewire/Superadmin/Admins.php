@@ -517,8 +517,8 @@ class Admins extends Component
 
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = User::where('id', $this->selectedUserId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = User::onlyTrashed()
+            ->where('id', $this->selectedUserId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {

@@ -510,8 +510,8 @@ class Locations extends Component
 
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = Location::where('id', $locationId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = Location::onlyTrashed()
+            ->where('id', $locationId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {

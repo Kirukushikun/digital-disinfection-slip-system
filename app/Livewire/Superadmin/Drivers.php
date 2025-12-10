@@ -689,8 +689,8 @@ class Drivers extends Component
 
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
-        $restored = Driver::where('id', $driverId)
-            ->whereNotNull('deleted_at') // Only restore if currently deleted
+        $restored = Driver::onlyTrashed()
+            ->where('id', $driverId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
