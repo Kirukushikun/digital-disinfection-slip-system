@@ -73,6 +73,7 @@ class Locations extends Component
     public $showDisableModal = false;
     public $showCreateModal = false;
     public $showDeleteModal = false;
+    public $showRestoreModal = false;
     public $showDeleted = false; // Toggle to show deleted items
 
     // Edit form fields
@@ -465,6 +466,7 @@ class Locations extends Component
         $this->showDisableModal = false;
         $this->showDeleteModal = false;
         $this->showCreateModal = false;
+        $this->showRestoreModal = false;
         $this->reset(['selectedLocationId', 'selectedLocationDisabled', 'selectedLocationName', 'location_name', 'edit_logo', 'current_logo_path', 'remove_logo', 'original_location_name', 'original_attachment_id', 'create_location_name', 'create_logo']);
         $this->resetValidation();
     }
@@ -493,7 +495,15 @@ class Locations extends Component
         $this->resetPage();
     }
 
-    public function restoreLocation($locationId)
+    public function openRestoreModal($locationId)
+    {
+        $location = Location::onlyTrashed()->findOrFail($locationId);
+        $this->selectedLocationId = $locationId;
+        $this->selectedLocationName = $location->location_name;
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreLocation()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -508,21 +518,27 @@ class Locations extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        if (!$this->selectedLocationId) {
+            return;
+        }
+
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
         $restored = Location::onlyTrashed()
-            ->where('id', $locationId)
+            ->where('id', $this->selectedLocationId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
             // Location was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedLocationId', 'selectedLocationName']);
             $this->dispatch('toast', message: 'This location was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
         
         // Now load the restored location
-        $location = Location::findOrFail($locationId);
+        $location = Location::findOrFail($this->selectedLocationId);
         
         // Log the restore action
         Logger::restore(
@@ -531,8 +547,10 @@ class Locations extends Component
             "Restored location {$location->location_name}"
         );
         
-        $this->dispatch('toast', message: "{$location->location_name} has been restored.", type: 'success');
+        $this->showRestoreModal = false;
+        $this->reset(['selectedLocationId', 'selectedLocationName']);
         $this->resetPage();
+        $this->dispatch('toast', message: "{$location->location_name} has been restored.", type: 'success');
         } finally {
             $this->isRestoring = false;
         }

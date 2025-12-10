@@ -64,6 +64,7 @@ class PlateNumbers extends Component
     public $showDisableModal = false;
     public $showCreateModal = false;
     public $showDeleteModal = false;
+    public $showRestoreModal = false;
     
     // Protection flags
     public $isTogglingStatus = false;
@@ -352,6 +353,7 @@ class PlateNumbers extends Component
         $this->showDisableModal = false;
         $this->showDeleteModal = false;
         $this->showCreateModal = false;
+        $this->showRestoreModal = false;
         $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'selectedTruckName', 'plate_number', 'original_plate_number', 'create_plate_number']);
         $this->resetValidation();
     }
@@ -599,7 +601,15 @@ class PlateNumbers extends Component
         $this->resetPage();
     }
 
-    public function restorePlateNumber($truckId)
+    public function openRestoreModal($truckId)
+    {
+        $truck = Truck::onlyTrashed()->findOrFail($truckId);
+        $this->selectedTruckId = $truckId;
+        $this->selectedTruckName = $truck->plate_number;
+        $this->showRestoreModal = true;
+    }
+
+    public function restorePlateNumber()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -614,21 +624,27 @@ class PlateNumbers extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        if (!$this->selectedTruckId) {
+            return;
+        }
+
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
         $restored = Truck::onlyTrashed()
-            ->where('id', $truckId)
+            ->where('id', $this->selectedTruckId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
             // Truck was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedTruckId', 'selectedTruckName']);
             $this->dispatch('toast', message: 'This plate number was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
         
         // Now load the restored truck
-        $truck = Truck::findOrFail($truckId);
+        $truck = Truck::findOrFail($this->selectedTruckId);
         
         // Log the restore action
         Logger::restore(
@@ -637,8 +653,10 @@ class PlateNumbers extends Component
             "Restored plate number {$truck->plate_number}"
         );
         
-        $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
+        $this->showRestoreModal = false;
+        $this->reset(['selectedTruckId', 'selectedTruckName']);
         $this->resetPage();
+        $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
         } finally {
             $this->isRestoring = false;
         }

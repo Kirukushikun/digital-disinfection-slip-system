@@ -49,6 +49,10 @@ class Reports extends Component
     public $showDeleteConfirmation = false;
     public $selectedReportId = null;
     
+    // Restore confirmation
+    public $showRestoreModal = false;
+    public $selectedReportName = null;
+    
     // Protection flags
     public $isDeleting = false;
     public $isRestoring = false;
@@ -351,7 +355,15 @@ class Reports extends Component
         }
     }
     
-    public function restoreReport($reportId)
+    public function openRestoreModal($reportId)
+    {
+        $report = Report::onlyTrashed()->with(['slip'])->findOrFail($reportId);
+        $this->selectedReportId = $reportId;
+        $this->selectedReportName = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreReport()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -361,21 +373,27 @@ class Reports extends Component
         $this->isRestoring = true;
 
         try {
+        if (!$this->selectedReportId) {
+            return;
+        }
+
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
         $restored = Report::onlyTrashed()
-            ->where('id', $reportId)
+            ->where('id', $this->selectedReportId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
             // Report was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedReportId', 'selectedReportName']);
             $this->dispatch('toast', message: 'This report was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
         
         // Now load the restored report
-        $report = Report::findOrFail($reportId);
+        $report = Report::with(['slip'])->findOrFail($this->selectedReportId);
         $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
         
         Logger::restore(
@@ -384,8 +402,10 @@ class Reports extends Component
             "Restored report {$reportType}"
         );
         
-        $this->dispatch('toast', message: 'Report has been restored.', type: 'success');
+        $this->showRestoreModal = false;
+        $this->reset(['selectedReportId', 'selectedReportName']);
         $this->resetPage();
+        $this->dispatch('toast', message: 'Report has been restored.', type: 'success');
         } finally {
             $this->isRestoring = false;
         }

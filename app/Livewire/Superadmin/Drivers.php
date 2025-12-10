@@ -64,6 +64,7 @@ class Drivers extends Component
     public $showDisableModal = false;
     public $showCreateModal = false;
     public $showDeleteModal = false;
+    public $showRestoreModal = false;
     
     // Protection flags
     public $isTogglingStatus = false;
@@ -346,6 +347,7 @@ class Drivers extends Component
         $this->showDisableModal = false;
         $this->showCreateModal = false;
         $this->showDeleteModal = false;
+        $this->showRestoreModal = false;
         $this->reset(['selectedDriverId', 'selectedDriverDisabled', 'selectedDriverName', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
@@ -672,7 +674,15 @@ class Drivers extends Component
         $this->resetPage();
     }
 
-    public function restoreDriver($driverId)
+    public function openRestoreModal($driverId)
+    {
+        $driver = Driver::onlyTrashed()->findOrFail($driverId);
+        $this->selectedDriverId = $driverId;
+        $this->selectedDriverName = $this->getDriverFullName($driver);
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreDriver()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -687,23 +697,29 @@ class Drivers extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        if (!$this->selectedDriverId) {
+            return;
+        }
+
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
         $restored = Driver::onlyTrashed()
-            ->where('id', $driverId)
+            ->where('id', $this->selectedDriverId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
             // Driver was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedDriverId', 'selectedDriverName']);
             $this->dispatch('toast', message: 'This driver was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
         
         // Now load the restored driver
-        $driver = Driver::findOrFail($driverId);
+        $driver = Driver::findOrFail($this->selectedDriverId);
         
-        $driverName = trim(implode(' ', array_filter([$driver->first_name, $driver->middle_name, $driver->last_name])));
+        $driverName = $this->getDriverFullName($driver);
         
         // Log the restore action
         Logger::restore(
@@ -712,8 +728,10 @@ class Drivers extends Component
             "Restored driver {$driverName}"
         );
         
-        $this->dispatch('toast', message: "{$driverName} has been restored.", type: 'success');
+        $this->showRestoreModal = false;
+        $this->reset(['selectedDriverId', 'selectedDriverName']);
         $this->resetPage();
+        $this->dispatch('toast', message: "{$driverName} has been restored.", type: 'success');
         } finally {
             $this->isRestoring = false;
         }

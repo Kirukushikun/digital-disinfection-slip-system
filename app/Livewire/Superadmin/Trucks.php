@@ -94,8 +94,11 @@ class Trucks extends Component
     public $showAttachmentModal = false;
     public $showDeleteConfirmation = false;
     public $showRemoveAttachmentConfirmation = false;
+    public $showRestoreModal = false;
     public $showDeleted = false; // Toggle to show deleted items
     public $selectedSlip = null;
+    public $selectedSlipId = null;
+    public $selectedSlipName = null;
     public $attachmentFile = null;
 
     // Protection flags
@@ -1436,7 +1439,15 @@ class Trucks extends Component
         $this->resetPage();
     }
 
-    public function restoreSlip($slipId)
+    public function openRestoreModal($slipId)
+    {
+        $slip = DisinfectionSlipModel::onlyTrashed()->findOrFail($slipId);
+        $this->selectedSlipId = $slipId;
+        $this->selectedSlipName = $slip->slip_id;
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreSlip()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -1451,21 +1462,27 @@ class Trucks extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        if (!$this->selectedSlipId) {
+            return;
+        }
+
         // Atomic restore: Only restore if currently deleted to prevent race conditions
         // Do the atomic update first, then load the model only if successful
         $restored = DisinfectionSlipModel::onlyTrashed()
-            ->where('id', $slipId)
+            ->where('id', $this->selectedSlipId)
             ->update(['deleted_at' => null]);
         
         if ($restored === 0) {
             // Slip was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedSlipId', 'selectedSlipName']);
             $this->dispatch('toast', message: 'This slip was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
         
         // Now load the restored slip
-        $slip = DisinfectionSlipModel::findOrFail($slipId);
+        $slip = DisinfectionSlipModel::findOrFail($this->selectedSlipId);
         
         // Log the restore action
         Logger::restore(
@@ -1474,8 +1491,10 @@ class Trucks extends Component
             "Restored disinfection slip {$slip->slip_id}"
         );
         
-        $this->dispatch('toast', message: "Disinfection slip {$slip->slip_id} has been restored.", type: 'success');
+        $this->showRestoreModal = false;
+        $this->reset(['selectedSlipId', 'selectedSlipName']);
         $this->resetPage();
+        $this->dispatch('toast', message: "Disinfection slip {$slip->slip_id} has been restored.", type: 'success');
         } finally {
             $this->isRestoring = false;
         }
@@ -1485,8 +1504,10 @@ class Trucks extends Component
     {
         $this->showDeleteConfirmation = false;
         $this->showRemoveAttachmentConfirmation = false;
+        $this->showRestoreModal = false;
         $this->showDetailsModal = false;
         $this->js('setTimeout(() => $wire.clearSelectedSlip(), 300)');
+        $this->reset(['selectedSlipId', 'selectedSlipName']);
     }
 
     public function clearSelectedSlip()
