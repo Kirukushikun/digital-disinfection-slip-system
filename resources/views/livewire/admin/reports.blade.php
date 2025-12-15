@@ -393,7 +393,7 @@
         @include('livewire.admin.slip-details-modal')
 
         {{-- Admin Edit Modal --}}
-        @if ($selectedSlip)
+        @if ($selectedSlip && $showEditModal)
             <x-modals.admin-slip-edit-modal :trucks="$trucks" :locations="$locations" :drivers="$drivers" :guards="$guards"
                 :available-origins-options="$editAvailableOriginsOptions" :available-destinations-options="$editAvailableDestinationsOptions" :edit-truck-options="$editTruckOptions" :edit-driver-options="$editDriverOptions" :edit-guard-options="$editGuardOptions"
                 :edit-received-guard-options="$editReceivedGuardOptions" :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" />
