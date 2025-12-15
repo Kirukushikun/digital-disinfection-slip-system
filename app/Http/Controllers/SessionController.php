@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\Location;
 use App\Models\Setting;
+use App\Models\User;
 
 class SessionController extends Controller
 {
@@ -48,15 +50,19 @@ class SessionController extends Controller
             "password"=> ['required'],
         ]);
 
-        if(! Auth::attempt($attributes)){
+        // Find user by username (case-insensitive)
+        $user = User::whereRaw('LOWER(username) = ?', [strtolower($attributes['username'])])->first();
+
+        // Verify password and attempt login
+        if (!$user || !Hash::check($attributes['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'username'=> 'Sorry, those credentials are incorrect',
                 'password'=> '',
             ]);
         }
-        
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+
+        // Log the user in
+        Auth::login($user);
 
         // Check if user is disabled
         if ($user->disabled) {

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable
 {
@@ -48,6 +49,45 @@ class User extends Authenticatable
             'password' => 'hashed',
             'disabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Ensure username uniqueness is case-insensitive
+        static::creating(function ($user) {
+            // Check if a user with the same username (case-insensitive) already exists
+            if ($user->username) {
+                $existingUser = static::whereRaw('LOWER(username) = ?', [strtolower($user->username)])
+                    ->where('id', '!=', $user->id ?? 0)
+                    ->first();
+                
+                if ($existingUser) {
+                    throw ValidationException::withMessages([
+                        'username' => ['A user with this username already exists (case-insensitive).']
+                    ]);
+                }
+            }
+        });
+
+        static::updating(function ($user) {
+            // Check if a user with the same username (case-insensitive) already exists
+            if ($user->isDirty('username') && $user->username) {
+                $existingUser = static::whereRaw('LOWER(username) = ?', [strtolower($user->username)])
+                    ->where('id', '!=', $user->id)
+                    ->first();
+                
+                if ($existingUser) {
+                    throw ValidationException::withMessages([
+                        'username' => ['A user with this username already exists (case-insensitive).']
+                    ]);
+                }
+            }
+        });
     }
 
     /**

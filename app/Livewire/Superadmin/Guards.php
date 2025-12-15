@@ -684,7 +684,7 @@ class Guards extends Component
         $counter = 0;
         $baseUsername = $username;
 
-        while (User::where('username', $username)
+        while (User::whereRaw('LOWER(username) = ?', [strtolower($username)])
             ->when($excludeUserId, function ($query) use ($excludeUserId) {
                 $query->where('id', '!=', $excludeUserId);
             })
