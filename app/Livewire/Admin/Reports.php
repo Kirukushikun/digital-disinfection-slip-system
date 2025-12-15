@@ -4,6 +4,10 @@ namespace App\Livewire\Admin;
 
 use App\Models\Report;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
+use App\Models\Truck;
+use App\Models\Location;
+use App\Models\Driver;
+use App\Models\User;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -47,6 +51,26 @@ class Reports extends Component
     public $selectedSlip = null;
     public $showAttachmentModal = false;
     public $attachmentFile = null;
+    
+    // Edit Modal
+    public $showEditModal = false;
+    public $showCancelEditConfirmation = false;
+    public $editTruckId;
+    public $editLocationId; // Origin (for status 0)
+    public $editDestinationId;
+    public $editDriverId;
+    public $editHatcheryGuardId; // For status 0
+    public $editReceivedGuardId = null;
+    public $editReasonForDisinfection;
+    public $editStatus;
+    
+    // Search properties for edit modal
+    public $searchEditTruck = '';
+    public $searchEditOrigin = '';
+    public $searchEditDestination = '';
+    public $searchEditDriver = '';
+    public $searchEditHatcheryGuard = '';
+    public $searchEditReceivedGuard = '';
     
     // Protection flags
     public $isResolving = false;
@@ -363,19 +387,369 @@ class Reports extends Component
         return view('livewire.admin.reports', [
             'reports' => $reports,
             'availableStatuses' => $this->availableStatuses,
+            'trucks' => $this->getCachedTrucks(),
+            'locations' => $this->getCachedLocations(),
+            'drivers' => $this->getCachedDrivers(),
+            'guards' => $this->getCachedGuards(),
+            'editTruckOptions' => $this->editTruckOptions,
+            'editDriverOptions' => $this->editDriverOptions,
+            'editGuardOptions' => $this->editGuardOptions,
+            'editReceivedGuardOptions' => $this->editReceivedGuardOptions,
+            'editAvailableOriginsOptions' => $this->editAvailableOriginsOptions,
+            'editAvailableDestinationsOptions' => $this->editAvailableDestinationsOptions,
         ]);
     }
     
     // Slip details modal methods (stubs for slip-details-modal component)
     public function canEdit()
     {
-        // Reports page cannot edit slips
-        return false;
+        if (!$this->selectedSlip) {
+            return false;
+        }
+
+        // Admin cannot edit completed slips (status == 2 or completed_at is set)
+        // Only SuperAdmins can edit completed slips
+        return $this->selectedSlip->status != 2 && $this->selectedSlip->completed_at === null;
     }
     
     public function openEditModal()
     {
-        // Not used in reports context
+        if (!$this->selectedSlip) {
+            return;
+        }
+        
+        // Load slip data into edit fields
+        $this->editTruckId = $this->selectedSlip->truck_id;
+        $this->editLocationId = $this->selectedSlip->location_id;
+        $this->editDestinationId = $this->selectedSlip->destination_id;
+        $this->editDriverId = $this->selectedSlip->driver_id;
+        $this->editHatcheryGuardId = $this->selectedSlip->hatchery_guard_id;
+        $this->editReceivedGuardId = $this->selectedSlip->received_guard_id;
+        $this->editReasonForDisinfection = $this->selectedSlip->reason_for_disinfection;
+        $this->editStatus = $this->selectedSlip->status;
+        
+        // Reset search properties
+        $this->searchEditTruck = '';
+        $this->searchEditOrigin = '';
+        $this->searchEditDestination = '';
+        $this->searchEditDriver = '';
+        $this->searchEditHatcheryGuard = '';
+        $this->searchEditReceivedGuard = '';
+        
+        $this->showEditModal = true;
+    }
+    
+    public function closeEditModal()
+    {
+        // Check if form has unsaved changes
+        if ($this->hasEditUnsavedChanges()) {
+            $this->showCancelEditConfirmation = true;
+        } else {
+            $this->resetEditForm();
+            $this->showEditModal = false;
+        }
+    }
+    
+    public function cancelEdit()
+    {
+        $this->resetEditForm();
+        $this->showCancelEditConfirmation = false;
+        $this->showEditModal = false;
+    }
+    
+    public function resetEditForm()
+    {
+        $this->editTruckId = null;
+        $this->editLocationId = null;
+        $this->editDestinationId = null;
+        $this->editDriverId = null;
+        $this->editHatcheryGuardId = null;
+        $this->editReceivedGuardId = null;
+        $this->editReasonForDisinfection = null;
+        $this->editStatus = null;
+        $this->searchEditTruck = '';
+        $this->searchEditOrigin = '';
+        $this->searchEditDestination = '';
+        $this->searchEditDriver = '';
+        $this->searchEditHatcheryGuard = '';
+        $this->searchEditReceivedGuard = '';
+        $this->resetErrorBag();
+    }
+    
+    public function hasEditUnsavedChanges()
+    {
+        if (!$this->selectedSlip) {
+            return false;
+        }
+        
+        return $this->editTruckId != $this->selectedSlip->truck_id ||
+               $this->editLocationId != $this->selectedSlip->location_id ||
+               $this->editDestinationId != $this->selectedSlip->destination_id ||
+               $this->editDriverId != $this->selectedSlip->driver_id ||
+               $this->editHatcheryGuardId != $this->selectedSlip->hatchery_guard_id ||
+               $this->editReceivedGuardId != $this->selectedSlip->received_guard_id ||
+               $this->editReasonForDisinfection != $this->selectedSlip->reason_for_disinfection ||
+               $this->editStatus != $this->selectedSlip->status;
+    }
+    
+    public function getHasChangesProperty()
+    {
+        return $this->hasEditUnsavedChanges();
+    }
+    
+    public function saveEdit()
+    {
+        // Authorization check - Admins cannot edit completed slips
+        if (!$this->canEdit()) {
+            $this->dispatch('toast', message: 'You are not authorized to edit completed slips.', type: 'error');
+            return;
+        }
+
+        // Use the edited status, not the current status
+        $status = $this->editStatus;
+        
+        // Validate status
+        $this->validate([
+            'editStatus' => 'required|in:0,1,2',
+        ], [], [
+            'editStatus' => 'Status',
+        ]);
+        
+        // Build validation rules based on selected status
+        $rules = [
+            'editTruckId' => 'required|exists:trucks,id',
+            'editDestinationId' => [
+                'required',
+                'exists:locations,id',
+                function ($attribute, $value, $fail) {
+                    if ($value == $this->editLocationId) {
+                        $fail('The destination cannot be the same as the origin.');
+                    }
+                },
+            ],
+            'editDriverId' => 'required|exists:drivers,id',
+            'editReasonForDisinfection' => 'nullable|string|max:1000',
+        ];
+
+        // Status 0 (Ongoing): Origin and Hatchery Guard are required, Receiving Guard is optional
+        if ($status == 0) {
+            $rules['editLocationId'] = [
+                'required',
+                'exists:locations,id',
+                function ($attribute, $value, $fail) {
+                    if ($value == $this->editDestinationId) {
+                        $fail('The origin cannot be the same as the destination.');
+                    }
+                },
+            ];
+            $rules['editHatcheryGuardId'] = [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected hatchery guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected hatchery guard has been disabled.');
+                    }
+                },
+            ];
+            $rules['editReceivedGuardId'] = [
+                'nullable',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    if ($value && $value == $this->editHatcheryGuardId) {
+                        $fail('The receiving guard cannot be the same as the hatchery guard.');
+                        return;
+                    }
+                    if ($value) {
+                        $guard = User::find($value);
+                        if (!$guard) {
+                            $fail('The selected receiving guard does not exist.');
+                            return;
+                        }
+                        if ($guard->user_type !== 0) {
+                            $fail('The selected user is not a guard.');
+                            return;
+                        }
+                        if ($guard->disabled) {
+                            $fail('The selected receiving guard has been disabled.');
+                        }
+                    }
+                },
+            ];
+        }
+        
+        // Status 1 (Disinfecting) or 2 (Completed): Origin, Hatchery Guard, and Receiving Guard are all required
+        if ($status == 1 || $status == 2) {
+            $rules['editLocationId'] = [
+                'required',
+                'exists:locations,id',
+                function ($attribute, $value, $fail) {
+                    if ($value == $this->editDestinationId) {
+                        $fail('The origin cannot be the same as the destination.');
+                    }
+                },
+            ];
+            $rules['editHatcheryGuardId'] = [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected hatchery guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected hatchery guard has been disabled.');
+                    }
+                },
+            ];
+            $rules['editReceivedGuardId'] = [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    if ($value && $value == $this->editHatcheryGuardId) {
+                        $fail('The receiving guard cannot be the same as the hatchery guard.');
+                        return;
+                    }
+                    $guard = User::find($value);
+                    if (!$guard) {
+                        $fail('The selected receiving guard does not exist.');
+                        return;
+                    }
+                    if ($guard->user_type !== 0) {
+                        $fail('The selected user is not a guard.');
+                        return;
+                    }
+                    if ($guard->disabled) {
+                        $fail('The selected receiving guard has been disabled.');
+                    }
+                },
+            ];
+        }
+
+        $this->validate($rules, [], [
+            'editTruckId' => 'Plate Number',
+            'editLocationId' => 'Origin',
+            'editDestinationId' => 'Destination',
+            'editDriverId' => 'Driver',
+            'editHatcheryGuardId' => 'Hatchery Guard',
+            'editReceivedGuardId' => 'Receiving Guard',
+            'editReasonForDisinfection' => 'Reason for Disinfection',
+            'editStatus' => 'Status',
+        ]);
+
+        // Check if there are any changes
+        if (!$this->hasEditUnsavedChanges()) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            return;
+        }
+
+        // Sanitize reason_for_disinfection
+        $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);
+
+        // Capture old values for logging
+        $oldValues = $this->selectedSlip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+        ]);
+
+        // Build update data based on status
+        $updateData = [
+            'truck_id' => $this->editTruckId,
+            'destination_id' => $this->editDestinationId,
+            'driver_id' => $this->editDriverId,
+            'reason_for_disinfection' => $sanitizedReason,
+            'status' => $this->editStatus,
+        ];
+
+        // Status 0: Update origin and hatchery guard, receiving guard is optional
+        if ($status == 0) {
+            $updateData['location_id'] = $this->editLocationId;
+            $updateData['hatchery_guard_id'] = $this->editHatcheryGuardId;
+            $updateData['received_guard_id'] = $this->editReceivedGuardId; // Can be null
+        }
+        
+        // Status 1 or 2: Update origin, hatchery guard, and receiving guard (required)
+        if ($status == 1 || $status == 2) {
+            $updateData['location_id'] = $this->editLocationId;
+            $updateData['hatchery_guard_id'] = $this->editHatcheryGuardId;
+            $updateData['received_guard_id'] = $this->editReceivedGuardId; // Required, validated above
+        }
+
+        $this->selectedSlip->update($updateData);
+
+        // Refresh the slip with relationships
+        $this->selectedSlip->refresh();
+        $this->selectedSlip->load([
+            'truck',
+            'location',
+            'destination',
+            'driver',
+            'attachment',
+            'hatcheryGuard',
+            'receivedGuard'
+        ]);
+
+        $slipId = $this->selectedSlip->slip_id;
+        
+        // Log the update
+        $newValues = $this->selectedSlip->only([
+            'truck_id', 'location_id', 'destination_id', 'driver_id',
+            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+        ]);
+        Logger::update(
+            DisinfectionSlipModel::class,
+            $this->selectedSlip->id,
+            "Updated slip {$slipId}",
+            $oldValues,
+            $newValues
+        );
+        
+        $this->resetEditForm();
+        $this->showEditModal = false;
+        $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
+    }
+    
+    private function sanitizeText($text)
+    {
+        if (empty($text)) {
+            return null;
+        }
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+        
+        // Decode HTML entities
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Remove control characters (but preserve newlines \n and carriage returns \r)
+        $text = preg_replace('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/u', '', $text);
+        
+        // Normalize line endings to \n
+        $text = preg_replace('/\r\n|\r/', "\n", $text);
+        
+        // Normalize multiple spaces to single space (but preserve newlines)
+        $text = preg_replace('/[ \t]+/', ' ', $text);
+        
+        // Remove trailing whitespace from each line
+        $lines = explode("\n", $text);
+        $lines = array_map('rtrim', $lines);
+        $text = implode("\n", $lines);
+        
+        // Trim the entire text
+        return trim($text) ?: null;
     }
     
     public function openAttachmentModal($file)
@@ -392,8 +766,17 @@ class Reports extends Component
     
     public function canRemoveAttachment()
     {
-        // Reports page cannot remove attachments
-        return false;
+        if (!$this->selectedSlip) {
+            return false;
+        }
+
+        // Admin cannot remove attachment from completed slips (status == 2 or completed_at is set)
+        // Only SuperAdmins can remove attachments from completed slips
+        if ($this->selectedSlip->status == 2 || $this->selectedSlip->completed_at !== null) {
+            return false;
+        }
+
+        return $this->selectedSlip->attachment_id !== null;
     }
     
     public function confirmRemoveAttachment()
