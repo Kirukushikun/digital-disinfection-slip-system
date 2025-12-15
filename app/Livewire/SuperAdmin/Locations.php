@@ -270,6 +270,12 @@ class Locations extends Component
             ]);
             
             $attachmentId = $attachment->id;
+
+            \Log::info('File upload attempt', [
+                'authenticated' => Auth::check(),
+                'user_id' => Auth::id(),
+                'file_name' => $this->edit_logo?->getClientOriginalName(),
+            ]);
         }
         
         // Check if there are any changes
@@ -704,7 +710,7 @@ class Locations extends Component
             $currentLocation = Location::with('attachment')->find($this->selectedLocationId);
         }
 
-        return view('livewire.superadmin.locations', [
+        return view('livewire.super-admin.locations', [
             'locations' => $locations,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,

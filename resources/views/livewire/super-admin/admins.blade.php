@@ -1,11 +1,11 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal && !$showDeleteModal && !$showRestoreModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal && !$showDeleteModal && !$showResetPasswordModal && !$showRestoreModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
         {{-- Simple Header --}}
         <div class="mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Drivers</h1>
-                    <p class="text-gray-600 text-sm mt-1">Manage all drivers in the system</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Admins</h1>
+                    <p class="text-gray-600 text-sm mt-1">Manage all admins in the system</p>
                 </div>
 
                 {{-- Search and Filter Bar --}}
@@ -20,7 +20,7 @@
                         </div>
                         <input type="text" wire:model.live="search"
                             class="block w-full pl-10 {{ $search ? 'pr-20' : 'pr-12' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Search by name...">
+                            placeholder="Search by name or @username...">
                         
                         {{-- Right Side Buttons Container --}}
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
@@ -48,20 +48,20 @@
                     </div>
 
                     {{-- Create Button (Primary action - Icon + Text) --}}
-                    @if (!($showDeleted ?? false))
+                    @if (!$showDeleted)
                         <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
                             :fullWidth="false">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                                 </path>
                             </svg>
-                            Create Driver
+                            Create Admin
                         </x-buttons.submit-button>
                     @endif
 
                     {{-- Restore Deleted Button (Icon + Text) --}}
                     <button wire:click="toggleDeletedView" wire:loading.attr="disabled" wire:target="toggleDeletedView"
-                        class="inline-flex items-center px-4 py-2.5 {{ $showDeleted ?? false ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-700' }} text-white rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $showDeleted ?? false ? 'focus:ring-gray-500' : 'focus:ring-orange-500' }} disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                        class="inline-flex items-center px-4 py-2.5 {{ $showDeleted ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-700' }} text-white rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $showDeleted ? 'focus:ring-gray-500' : 'focus:ring-orange-500' }} disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                         <svg wire:loading.remove wire:target="toggleDeletedView" class="w-5 h-5 mr-2" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -70,12 +70,12 @@
                         </svg>
 
                         <span wire:loading.remove
-                            wire:target="toggleDeletedView">{{ $showDeleted ?? false ? 'Back to Active' : 'Restore Deleted' }}</span>
+                            wire:target="toggleDeletedView">{{ $showDeleted ? 'Back to Active' : 'Restore Deleted' }}</span>
                         <span wire:loading wire:target="toggleDeletedView">Loading...</span>
                     </button>
 
                     {{-- Download Button (Icon only with dropdown) --}}
-                    @if (!($showDeleted ?? false))
+                    @if (!$showDeleted)
                         <x-buttons.export-button />
                     @endif
                 </div>
@@ -90,7 +90,8 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Status: {{ $availableStatuses[(int) $appliedStatus] ?? '' }}
-                            <button wire:click="removeFilter('status')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('status')"
+                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -104,7 +105,8 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             From: {{ \Carbon\Carbon::parse($appliedCreatedFrom)->format('M d, Y') }}
-                            <button wire:click="removeFilter('createdFrom')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('createdFrom')"
+                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -118,7 +120,8 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             To: {{ \Carbon\Carbon::parse($appliedCreatedTo)->format('M d, Y') }}
-                            <button wire:click="removeFilter('createdTo')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('createdTo')"
+                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -196,6 +199,10 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Username
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
                                     <span>Created Date</span>
                                     <button wire:click.prevent="applySort('created_at')" type="button"
@@ -248,52 +255,80 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($drivers as $driver)
+                        @forelse($users as $user)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ $driver->first_name }}
-                                        @if ($driver->middle_name)
-                                            {{ $driver->middle_name }}
+                                        {{ $user->first_name }}
+                                        @if ($user->middle_name)
+                                            {{ $user->middle_name }}
                                         @endif
-                                        {{ $driver->last_name }}
+                                        {{ $user->last_name }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-700">
+                                        <span>@</span>{{ $user->username }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ \Carbon\Carbon::parse($driver->created_at)->format('M d, Y') }}
+                                        @if ($showDeleted)
+                                            {{ \Carbon\Carbon::parse($user->deleted_at)->format('M d, Y') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}
+                                        @endif
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
-                                        {{ \Carbon\Carbon::parse($driver->created_at)->format('h:i A') }}
+                                        @if ($showDeleted)
+                                            {{ \Carbon\Carbon::parse($user->deleted_at)->format('h:i A') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($user->created_at)->format('h:i A') }}
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     @if ($showDeleted)
-                                        <x-buttons.submit-button wire:click="openRestoreModal({{ $driver->id }})"
+                                        <x-buttons.submit-button wire:click="openRestoreModal({{ $user->id }})"
                                             color="green" size="sm" :fullWidth="false">
+                                            <div class="inline-flex items-center gap-1.5">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                                 </path>
                                             </svg>
-                                            <span>Restore</span>
+                                                <span>Restore</span>
+                                            </div>
                                         </x-buttons.submit-button>
                                     @else
                                         <div class="flex items-center justify-center gap-2">
-                                            <x-buttons.submit-button wire:click="openEditModal({{ $driver->id }})"
+                                            <x-buttons.submit-button wire:click="openEditModal({{ $user->id }})"
                                                 color="blue" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                                     </path>
                                                 </svg>
                                                 Edit
                                             </x-buttons.submit-button>
-                                            @if ($driver->disabled)
+                                            <x-buttons.submit-button
+                                                wire:click="openResetPasswordModal({{ $user->id }})"
+                                                color="gray" size="sm" :fullWidth="false">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                                    </path>
+                                                </svg>
+                                                Reset Password
+                                            </x-buttons.submit-button>
+                                            @if ($user->disabled)
                                                 <x-buttons.submit-button
-                                                    wire:click="openDisableModal({{ $driver->id }})" color="green"
+                                                    wire:click="openDisableModal({{ $user->id }})" color="green"
                                                     size="sm" :fullWidth="false">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -306,7 +341,7 @@
                                                 </x-buttons.submit-button>
                                             @else
                                                 <x-buttons.submit-button
-                                                    wire:click="openDisableModal({{ $driver->id }})" color="orange"
+                                                    wire:click="openDisableModal({{ $user->id }})" color="orange"
                                                     size="sm" :fullWidth="false">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -318,11 +353,12 @@
                                                     Disable
                                                 </x-buttons.submit-button>
                                             @endif
-                                            <x-buttons.submit-button wire:click="openDeleteModal({{ $driver->id }})"
+                                            <x-buttons.submit-button wire:click="openDeleteModal({{ $user->id }})"
                                                 color="red" size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                                     </path>
                                                 </svg>
@@ -334,21 +370,21 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="px-6 py-12 text-center">
+                                <td colspan="4" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24"
                                             stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                                             </path>
                                         </svg>
-                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No drivers found</h3>
+                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No admins found</h3>
                                         <p class="text-sm text-gray-500">
                                             @if ($search)
                                                 No results match your search "<span
                                                     class="font-medium text-gray-700">{{ $search }}</span>".
                                             @else
-                                                No drivers available in the system.
+                                                No admins available in the system.
                                             @endif
                                         </p>
                                         @if ($search)
@@ -367,14 +403,14 @@
 
             {{-- Pagination Footer --}}
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <x-buttons.nav-pagination :paginator="$drivers" />
+                <x-buttons.nav-pagination :paginator="$users" />
             </div>
         </div>
 
         {{-- Filter Modal --}}
         <x-modals.filter-modal>
             <x-slot name="filters">
-                <x-modals.filter-drivers-body :availableStatuses="$availableStatuses" />
+                <x-modals.filter-admins-body :availableStatuses="$availableStatuses" />
             </x-slot>
         </x-modals.filter-modal>
 
@@ -390,10 +426,11 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Edit Driver</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Edit Admin</h3>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -432,14 +469,14 @@
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                             <button wire:click="closeModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="updateDriver" wire:loading.attr="disabled" wire:target="updateDriver"
+                            <button wire:click.prevent="updateUser" wire:loading.attr="disabled" wire:target="updateUser"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="!$this->hasChanges">
-                                <span wire:loading.remove wire:target="updateDriver">Save Changes</span>
-                                <span wire:loading wire:target="updateDriver" class="inline-flex items-center gap-2">
+                                <span wire:loading.remove wire:target="updateUser">Save Changes</span>
+                                <span wire:loading wire:target="updateUser" class="inline-flex items-center gap-2">
                                     Saving...
                                 </span>
                             </button>
@@ -462,7 +499,7 @@
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <div class="flex items-center">
-                                @if ($selectedDriverDisabled)
+                                @if ($selectedUserDisabled)
                                     <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
                                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -471,7 +508,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Driver</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Admin</h3>
                                 @else
                                     <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
                                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
@@ -481,41 +518,42 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Driver</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Admin</h3>
                                 @endif
                             </div>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
-                                @if ($selectedDriverDisabled)
-                                    Are you sure you want to enable this driver? The driver will be available for use
-                                    again.
+                                @if ($selectedUserDisabled)
+                                    Are you sure you want to enable this admin? The admin will be able to access the
+                                    system again.
                                 @else
-                                    Are you sure you want to disable this driver? The driver will not be available for
-                                    use.
+                                    Are you sure you want to disable this admin? The admin will not be able to access
+                                    the system.
                                 @endif
                             </p>
                         </div>
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                                 Cancel
                             </button>
-                            @if ($selectedDriverDisabled)
-                                <button wire:click="toggleDriverStatus" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
-                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <span wire:loading.remove wire:target="toggleDriverStatus">Enable Driver</span>
-                                    <span wire:loading wire:target="toggleDriverStatus" class="inline-flex items-center gap-2">
+                            @if ($selectedUserDisabled)
+                                <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                    <span wire:loading.remove wire:target="toggleUserStatus">Enable Admin</span>
+                                    <span wire:loading wire:target="toggleUserStatus" class="inline-flex items-center gap-2">
                                         Enabling...
                                     </span>
                                 </button>
                             @else
-                                <button wire:click="toggleDriverStatus" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
-                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <span wire:loading.remove wire:target="toggleDriverStatus">Disable Driver</span>
-                                    <span wire:loading wire:target="toggleDriverStatus" class="inline-flex items-center gap-2">
+                                <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                    <span wire:loading.remove wire:target="toggleUserStatus">Disable Admin</span>
+                                    <span wire:loading wire:target="toggleUserStatus" class="inline-flex items-center gap-2">
                                         Disabling...
                                     </span>
                                 </button>
@@ -526,7 +564,59 @@
             </div>
         @endif
 
-        {{-- Create Driver Modal --}}
+        {{-- Reset Password Modal --}}
+        @if ($showResetPasswordModal)
+            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+                aria-modal="true">
+                {{-- Backdrop --}}
+                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
+
+                {{-- Modal Panel --}}
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                        <div class="px-6 py-4 bg-white border-b border-gray-200">
+                            <div class="flex items-center">
+                                <div class="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full">
+                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Reset Password</h3>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-4">
+                    @csrf
+                            <p class="text-sm text-gray-600">
+                                Are you sure you want to reset this admin's password? The password will be reset to the
+                                default password "<span
+                                    class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="resetPassword"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                Cancel
+                            </button>
+                            <button wire:click="resetPassword" wire:loading.attr="disabled" wire:target="resetPassword"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                                <span wire:loading.remove wire:target="resetPassword">Reset Password</span>
+                                <span wire:loading wire:target="resetPassword" class="inline-flex items-center gap-2">          
+                                    Resetting...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Create Admin Modal --}}
         @if ($showCreateModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
@@ -538,10 +628,11 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Create Driver</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Create Admin</h3>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -583,10 +674,10 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="createDriver" wire:loading.attr="disabled" wire:target="createDriver"
+                            <button wire:click.prevent="createAdmin" wire:loading.attr="disabled" wire:target="createAdmin"
                                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading.remove wire:target="createDriver">Create Driver</span>
-                                <span wire:loading wire:target="createDriver" class="inline-flex items-center gap-2">
+                                <span wire:loading.remove wire:target="createAdmin">Create Admin</span>
+                                <span wire:loading wire:target="createAdmin" class="inline-flex items-center gap-2">
                                     Creating...
                                 </span>
                             </button>
@@ -597,8 +688,8 @@
         @endif
 
         {{-- Delete Confirmation Modal --}}
-        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Driver" :name="$selectedDriverName" onConfirm="deleteDriver"
-            confirmText="Delete Driver" />
+        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Admin" :name="$selectedUserName" onConfirm="deleteUser"
+            confirmText="Delete Admin" />
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
@@ -621,28 +712,29 @@
                                         </path>
                                     </svg>
                                 </div>
-                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Driver</h3>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Admin</h3>
                             </div>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 Are you sure you want to restore <span
-                                    class="font-medium text-gray-900">{{ $selectedDriverName }}</span>?
-                                The driver will be available for use again.
+                                    class="font-medium text-gray-900">{{ $selectedUserName }}</span>?
+                                The admin will be able to access the system again.
                             </p>
                         </div>
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="restoreDriver"
+                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="restoreUser"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="restoreDriver" wire:loading.attr="disabled" wire:target="restoreDriver"
+                            <button wire:click.prevent="restoreUser" wire:loading.attr="disabled" wire:target="restoreUser"
                                 :disabled="$isRestoring"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                <span wire:loading.remove wire:target="restoreDriver">Restore Driver</span>
-                                <span wire:loading wire:target="restoreDriver" class="inline-flex items-center gap-2">
+                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span wire:loading.remove wire:target="restoreUser">Restore Admin</span>
+                                <span wire:loading wire:target="restoreUser" class="inline-flex items-center gap-2">
                                     Restoring...
                                 </span>
                             </button>

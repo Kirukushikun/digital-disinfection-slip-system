@@ -354,9 +354,8 @@ class PlateNumbers extends Component
         $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->create_plate_number);
         
         // Validate non-space character count (max 7 non-space characters)
-        $nonSpaceCount = strlen(str_replace(' ', '', $plateNumber));
-        if ($nonSpaceCount > 7) {
-            $this->addError('create_plate_number', 'Plate number must not exceed 7 non-space characters.');
+        if (!preg_match('/^[A-Z]{3}-[0-9]{4}$/', strtoupper($plateNumber))) {
+            $this->addError('create_plate_number', 'Plate number must be in the format ABC-1234.');
             return;
         }
 

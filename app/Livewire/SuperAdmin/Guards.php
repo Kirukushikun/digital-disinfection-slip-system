@@ -844,7 +844,7 @@ class Guards extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.superadmin.guards', [
+        return view('livewire.super-admin.guards', [
             'users' => $users,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,

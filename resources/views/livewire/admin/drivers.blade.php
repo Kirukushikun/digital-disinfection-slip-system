@@ -352,6 +352,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -445,6 +446,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 @if ($selectedDriverDisabled)
                                     Are you sure you want to enable this driver? The driver will be available for use
@@ -500,6 +502,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span

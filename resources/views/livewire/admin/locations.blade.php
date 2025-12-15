@@ -364,6 +364,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                            @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Location Name <span
@@ -514,6 +515,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 @if ($selectedLocationDisabled)
                                     Are you sure you want to enable this location? The location will be available for
@@ -570,6 +572,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 {{-- Location Name --}}
                                 <div>

@@ -205,7 +205,7 @@ class Settings extends Component
 
     public function render()
     {
-        return view('livewire.superadmin.settings');
+        return view('livewire.super-admin.settings');
     }
 }
 

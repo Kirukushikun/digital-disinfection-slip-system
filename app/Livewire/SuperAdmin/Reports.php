@@ -478,7 +478,7 @@ class Reports extends Component
     {
         $reports = $this->getFilteredReportsQuery()->paginate(15);
         
-        return view('livewire.superadmin.reports', [
+        return view('livewire.super-admin.reports', [
             'reports' => $reports,
             'availableStatuses' => $this->availableStatuses,
         ]);

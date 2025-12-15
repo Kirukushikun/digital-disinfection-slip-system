@@ -2048,7 +2048,7 @@ class Trucks extends Component
             })
             ->paginate(10);
 
-        return view('livewire.superadmin.trucks', [
+        return view('livewire.super-admin.trucks', [
             'slips' => $slips,
             'locations' => $this->locations,
             'drivers' => $this->drivers,

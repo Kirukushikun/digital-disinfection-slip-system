@@ -375,6 +375,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -468,6 +469,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 @if ($selectedUserDisabled)
                                     Are you sure you want to enable this guard? The guard will be able to access the
@@ -533,6 +535,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 Are you sure you want to reset this guard's password? The password will be reset to the
                                 default password "<span
@@ -574,6 +577,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span

@@ -436,7 +436,7 @@ class AuditTrail extends Component
     {
         $logs = $this->getFilteredLogsQuery()->paginate(15);
         
-        return view('livewire.superadmin.audit-trail', [
+        return view('livewire.super-admin.audit-trail', [
             'logs' => $logs,
             'filterActionOptions' => $this->filterActionOptions,
             'filterModelTypeOptions' => $this->filterModelTypeOptions,

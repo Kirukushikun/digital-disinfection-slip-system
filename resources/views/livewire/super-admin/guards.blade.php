@@ -1,11 +1,19 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal && !$showDeleteModal && !$showResetPasswordModal && !$showRestoreModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (
+    !$showFilters &&
+        !$showDeleted &&
+        !$showCreateModal &&
+        !$showEditModal &&
+        !$showDisableModal &&
+        !$showResetPasswordModal &&
+        !$showDeleteModal &&
+        !$showRestoreModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
         {{-- Simple Header --}}
         <div class="mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Admins</h1>
-                    <p class="text-gray-600 text-sm mt-1">Manage all admins in the system</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Guards</h1>
+                    <p class="text-gray-600 text-sm mt-1">Manage all guards in the system</p>
                 </div>
 
                 {{-- Search and Filter Bar --}}
@@ -55,7 +63,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                                 </path>
                             </svg>
-                            Create Admin
+                            Create Guard
                         </x-buttons.submit-button>
                     @endif
 
@@ -204,48 +212,50 @@
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
-                                    <span>Created Date</span>
-                                    <button wire:click.prevent="applySort('created_at')" type="button"
-                                        class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
-                                        title="Sort by Created Date">
-                                        @php
-                                            $dateDir = $this->getSortDirection('created_at');
-                                        @endphp
-                                        @if ($dateDir === 'asc')
-                                            <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @elseif ($dateDir === 'desc')
-                                            <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @else
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @endif
-                                    </button>
+                                    <span>{{ $showDeleted ? 'Deleted Date' : 'Created Date' }}</span>
+                                    @if (!$showDeleted)
+                                        <button wire:click.prevent="applySort('created_at')" type="button"
+                                            class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
+                                            title="Sort by Created Date">
+                                            @php
+                                                $dateDir = $this->getSortDirection('created_at');
+                                            @endphp
+                                            @if ($dateDir === 'asc')
+                                                <svg class="w-3 h-3 text-green-600" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-gray-300" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @elseif ($dateDir === 'desc')
+                                                <svg class="w-3 h-3 text-gray-300" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-red-600" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @else
+                                                <svg class="w-3 h-3 text-gray-400" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-gray-400" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    @endif
                                 </div>
                             </th>
                             <th scope="col"
@@ -378,13 +388,13 @@
                                                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                                             </path>
                                         </svg>
-                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No admins found</h3>
+                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No guards found</h3>
                                         <p class="text-sm text-gray-500">
                                             @if ($search)
                                                 No results match your search "<span
                                                     class="font-medium text-gray-700">{{ $search }}</span>".
                                             @else
-                                                No admins available in the system.
+                                                No guards available in the system.
                                             @endif
                                         </p>
                                         @if ($search)
@@ -410,7 +420,7 @@
         {{-- Filter Modal --}}
         <x-modals.filter-modal>
             <x-slot name="filters">
-                <x-modals.filter-admins-body :availableStatuses="$availableStatuses" />
+                <x-modals.filter-guards-body :availableStatuses="$availableStatuses" />
             </x-slot>
         </x-modals.filter-modal>
 
@@ -426,10 +436,11 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Edit Admin</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Edit Guard</h3>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -468,7 +479,7 @@
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                             <button wire:click="closeModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
                             </button>
                             <button wire:click.prevent="updateUser" wire:loading.attr="disabled" wire:target="updateUser"
@@ -507,7 +518,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Admin</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Guard</h3>
                                 @else
                                     <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
                                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
@@ -517,18 +528,19 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Admin</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Guard</h3>
                                 @endif
                             </div>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 @if ($selectedUserDisabled)
-                                    Are you sure you want to enable this admin? The admin will be able to access the
+                                    Are you sure you want to enable this guard? The guard will be able to access the
                                     system again.
                                 @else
-                                    Are you sure you want to disable this admin? The admin will not be able to access
+                                    Are you sure you want to disable this guard? The guard will not be able to access
                                     the system.
                                 @endif
                             </p>
@@ -542,7 +554,7 @@
                             @if ($selectedUserDisabled)
                                 <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleUserStatus">Enable Admin</span>
+                                    <span wire:loading.remove wire:target="toggleUserStatus">Enable Guard</span>
                                     <span wire:loading wire:target="toggleUserStatus" class="inline-flex items-center gap-2">
                                         Enabling...
                                     </span>
@@ -550,7 +562,7 @@
                             @else
                                 <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleUserStatus">Disable Admin</span>
+                                    <span wire:loading.remove wire:target="toggleUserStatus">Disable Guard</span>
                                     <span wire:loading wire:target="toggleUserStatus" class="inline-flex items-center gap-2">
                                         Disabling...
                                     </span>
@@ -588,8 +600,9 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
-                                Are you sure you want to reset this admin's password? The password will be reset to the
+                                Are you sure you want to reset this guard's password? The password will be reset to the
                                 default password "<span
                                     class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
                             </p>
@@ -603,7 +616,7 @@
                             <button wire:click="resetPassword" wire:loading.attr="disabled" wire:target="resetPassword"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                                 <span wire:loading.remove wire:target="resetPassword">Reset Password</span>
-                                <span wire:loading wire:target="resetPassword" class="inline-flex items-center gap-2">          
+                                <span wire:loading wire:target="resetPassword" class="inline-flex items-center gap-2">
                                     Resetting...
                                 </span>
                             </button>
@@ -613,7 +626,7 @@
             </div>
         @endif
 
-        {{-- Create Admin Modal --}}
+        {{-- Create Guard Modal --}}
         @if ($showCreateModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
@@ -625,10 +638,11 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Create Admin</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Create Guard</h3>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
@@ -670,10 +684,10 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="createAdmin" wire:loading.attr="disabled" wire:target="createAdmin"
+                            <button wire:click.prevent="createGuard" wire:loading.attr="disabled" wire:target="createGuard"
                                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading.remove wire:target="createAdmin">Create Admin</span>
-                                <span wire:loading wire:target="createAdmin" class="inline-flex items-center gap-2">
+                                <span wire:loading.remove wire:target="createGuard">Create Guard</span>
+                                <span wire:loading wire:target="createGuard" class="inline-flex items-center gap-2">
                                     Creating...
                                 </span>
                             </button>
@@ -684,8 +698,8 @@
         @endif
 
         {{-- Delete Confirmation Modal --}}
-        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Admin" :name="$selectedUserName" onConfirm="deleteUser"
-            confirmText="Delete Admin" />
+        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Guard" :name="$selectedUserName" onConfirm="deleteUser"
+            confirmText="Delete Guard" />
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
@@ -708,15 +722,16 @@
                                         </path>
                                     </svg>
                                 </div>
-                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Admin</h3>
+                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Guard</h3>
                             </div>
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 Are you sure you want to restore <span
                                     class="font-medium text-gray-900">{{ $selectedUserName }}</span>?
-                                The admin will be able to access the system again.
+                                The guard will be able to access the system again.
                             </p>
                         </div>
 
@@ -728,7 +743,7 @@
                             <button wire:click.prevent="restoreUser" wire:loading.attr="disabled" wire:target="restoreUser"
                                 :disabled="$isRestoring"
                                 class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading.remove wire:target="restoreUser">Restore Admin</span>
+                                <span wire:loading.remove wire:target="restoreUser">Restore Guard</span>
                                 <span wire:loading wire:target="restoreUser" class="inline-flex items-center gap-2">
                                     Restoring...
                                 </span>

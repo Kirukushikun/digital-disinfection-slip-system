@@ -153,7 +153,7 @@ class SuperAdminDashboard extends Component
 
     public function render()
     {
-        return view('livewire.superadmin.superadmin-dashboard');
+        return view('livewire.super-admin.super-admin-dashboard');
     }
 }
 

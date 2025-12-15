@@ -835,7 +835,7 @@ class Admins extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.superadmin.admins', [
+        return view('livewire.super-admin.admins', [
             'users' => $users,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,

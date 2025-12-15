@@ -357,6 +357,7 @@
                         </div>
 
                         <div class="px-6 py-4">
+                    @csrf
                             <p class="text-sm text-gray-600">
                                 Are you sure you want to restore this report <span
                                     class="font-medium text-gray-900">{{ $selectedReportName }}</span>?
