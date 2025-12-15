@@ -741,7 +741,7 @@
                                 Cancel
                             </button>
                             <button wire:click.prevent="restoreUser" wire:loading.attr="disabled" wire:target="restoreUser"
-                                :disabled="@entangle('isRestoring')"
+                                x-bind:disabled="$wire.isRestoring"
                                 class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span wire:loading.remove wire:target="restoreUser">Restore Guard</span>
                                 <span wire:loading wire:target="restoreUser" class="inline-flex items-center gap-2">

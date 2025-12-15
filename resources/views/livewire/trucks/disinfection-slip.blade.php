@@ -348,7 +348,7 @@
                 Cancel
             </x-buttons.submit-button>
             <x-buttons.submit-button wire:click.prevent="submitReport" color="red" wire:loading.attr="disabled" wire:target="submitReport"
-                :disabled="@entangle('isSubmitting')">
+                x-bind:disabled="$wire.isSubmitting">
                 <span wire:loading.remove wire:target="submitReport">Submit Report</span>
                 <span wire:loading wire:target="submitReport" class="inline-flex items-center gap-2">
                     Submitting...
