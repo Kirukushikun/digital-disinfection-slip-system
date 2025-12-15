@@ -593,7 +593,7 @@
                                 Cancel
                             </button>
                             <button wire:click.prevent="restorePlateNumber" wire:loading.attr="disabled" wire:target="restorePlateNumber"
-                                :disabled="$isRestoring"
+                                :disabled="@entangle('isRestoring')"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                                 <span wire:loading.remove wire:target="restorePlateNumber">Restore Plate Number</span>
                                 <span wire:loading wire:target="restorePlateNumber" class="inline-flex items-center gap-2">

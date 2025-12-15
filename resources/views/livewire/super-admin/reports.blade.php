@@ -371,7 +371,7 @@
                                 Cancel
                             </button>
                             <button wire:click.prevent="restoreReport" wire:loading.attr="disabled" wire:target="restoreReport"
-                                :disabled="$isRestoring"
+                                :disabled="@entangle('isRestoring')"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                                 <span wire:loading.remove wire:target="restoreReport">Restore Report</span>
                                 <span wire:loading wire:target="restoreReport" class="inline-flex items-center gap-2">
@@ -481,13 +481,13 @@
 
                         @if (!$selectedReport->resolved_at)
                             <x-buttons.submit-button wire:click.prevent="resolveReport" color="green" wire:loading.attr="disabled" wire:target="resolveReport"
-                                :disabled="$isResolving">
+                                :disabled="@entangle('isResolving')">
                                 <span wire:loading.remove wire:target="resolveReport">Resolve</span>
                                 <span wire:loading wire:target="resolveReport">Resolving...</span>
                             </x-buttons.submit-button>
                         @else
                             <x-buttons.submit-button wire:click.prevent="unresolveReport" color="orange" wire:loading.attr="disabled" wire:target="unresolveReport"
-                                :disabled="$isResolving">
+                                :disabled="@entangle('isResolving')">
                                 <span wire:loading.remove wire:target="unresolveReport">Unresolve</span>
                                 <span wire:loading wire:target="unresolveReport">Unresolving...</span>
                             </x-buttons.submit-button>
