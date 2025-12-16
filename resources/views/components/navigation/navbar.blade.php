@@ -70,15 +70,35 @@
                     </svg>
                     <span>Change Password</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" x-data="{ submitting: false, showConfirm: false }" @submit.prevent="showConfirm = true">
                     @csrf
-                    <button type="submit" @click="userMenuOpen = false"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors text-left cursor-pointer hover:cursor-pointer">
+                    <button type="button" @click="userMenuOpen = false; showConfirm = true" :disabled="submitting"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors text-left cursor-pointer hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         <span>Logout</span>
                     </button>
+                    
+                    <!-- Confirmation Dialog -->
+                    <div x-show="showConfirm" x-cloak
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                        @click.self="showConfirm = false">
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Logout</h3>
+                            <p class="text-gray-600 mb-6">Are you sure you want to logout?</p>
+                            <div class="flex justify-end gap-3">
+                                <button type="button" @click="showConfirm = false"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer hover:cursor-pointer">
+                                    Cancel
+                                </button>
+                                <button type="submit" @click="submitting = true; showConfirm = false" :disabled="submitting"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer">
+                                    <span x-text="submitting ? 'Logging out...' : 'Logout'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -152,15 +172,35 @@
                         </svg>
                         <span>Change Password</span>
                     </a>
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('logout') }}" x-data="{ submitting: false, showConfirm: false }" @submit.prevent="showConfirm = true">
                         @csrf
-                        <button type="submit" @click="userMenuOpen = false"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors text-left cursor-pointer hover:cursor-pointer">
+                        <button type="button" @click="userMenuOpen = false; showConfirm = true" :disabled="submitting"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors text-left cursor-pointer hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             <span>Logout</span>
                         </button>
+                        
+                        <!-- Confirmation Dialog -->
+                        <div x-show="showConfirm" x-cloak
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                            @click.self="showConfirm = false">
+                            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Logout</h3>
+                                <p class="text-gray-600 mb-6">Are you sure you want to logout?</p>
+                                <div class="flex justify-end gap-3">
+                                    <button type="button" @click="showConfirm = false"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer hover:cursor-pointer">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" @click="submitting = true; showConfirm = false" :disabled="submitting"
+                                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer">
+                                        <span x-text="submitting ? 'Logging out...' : 'Logout'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>

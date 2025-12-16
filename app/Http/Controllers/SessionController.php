@@ -50,10 +50,10 @@ class SessionController extends Controller
             "password"=> ['required'],
         ]);
 
-        // Find user by username (case-insensitive)
+        // Find user by username (case-insensitive) - SoftDeletes automatically excludes deleted users
         $user = User::whereRaw('LOWER(username) = ?', [strtolower($attributes['username'])])->first();
 
-        // Verify password and attempt login
+        // Verify user exists and password is correct
         if (!$user || !Hash::check($attributes['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'username'=> 'Sorry, those credentials are incorrect',
@@ -61,12 +61,16 @@ class SessionController extends Controller
             ]);
         }
 
-        // Log the user in
-        Auth::login($user);
+        // Check if user is deleted (explicit check, though SoftDeletes should handle this)
+        if ($user->trashed()) {
+            throw ValidationException::withMessages([
+                'username' => 'Your account has been deleted. Please contact an administrator.',
+                'password' => '',
+            ]);
+        }
 
-        // Check if user is disabled
+        // Check if user is disabled BEFORE logging in
         if ($user->disabled) {
-            Auth::logout();
             throw ValidationException::withMessages([
                 'username' => 'Your account has been disabled. Please contact an administrator.',
                 'password' => '',
@@ -75,7 +79,6 @@ class SessionController extends Controller
 
         // If location login is being used, only allow regular users (type 0)
         if ($location && $user->user_type !== 0) {
-            Auth::logout();
             throw ValidationException::withMessages([
                 'username' => 'Only guards can login through locations. Admins must use the admin login.',
                 'password' => '',
@@ -84,13 +87,16 @@ class SessionController extends Controller
 
         // If no location (admin login), only allow admin (1) or superadmin (2)
         if (!$location && $user->user_type === 0) {
-            Auth::logout();
             throw ValidationException::withMessages([
                 'username' => 'Guards must login through a location',
                 'password' => '',
             ]);
         }
 
+        // All validations passed - now log the user in
+        Auth::login($user);
+
+        // Regenerate session to prevent session fixation
         request()->session()->regenerate();
 
         // Store location in session if provided (for regular users)
@@ -100,18 +106,21 @@ class SessionController extends Controller
             $request->session()->put('location_name', $locationModel->location_name);
         }
 
+        // Ensure session is saved before redirecting
+        $request->session()->save();
+
         return redirect()->route($user->dashboardRoute());
     }
 
-    public function destroy()
+    public function destroy(Request $request)
     {
-        // Create redirect response first to avoid 404 errors
+        // Redirect to landing page first (before ending session)
         $redirect = redirect('/');
         
         // Then clear the session
         Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     
         return $redirect;
     }
