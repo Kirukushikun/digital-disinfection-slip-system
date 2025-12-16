@@ -134,6 +134,154 @@ class Reports extends Component
         return $this->cachedGuards;
     }
     
+    // Helper method to ensure selected values are always included in filtered options
+    private function ensureSelectedInOptions($options, $selectedValue, $allOptions)
+    {
+        if (empty($selectedValue)) {
+            return $options;
+        }
+        
+        $allOptionsArray = is_array($allOptions) ? $allOptions : $allOptions->toArray();
+        $optionsArray = is_array($options) ? $options : $options->toArray();
+        
+        if (isset($allOptionsArray[$selectedValue]) && !isset($optionsArray[$selectedValue])) {
+            $optionsArray[$selectedValue] = $allOptionsArray[$selectedValue];
+        }
+        
+        return is_array($options) ? $optionsArray : collect($optionsArray);
+    }
+    
+    // Computed properties for edit modal filtered options
+    public function getEditTruckOptionsProperty()
+    {
+        $trucks = $this->getCachedTrucks();
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
+        
+        if (!empty($this->searchEditTruck)) {
+            $searchTerm = strtolower($this->searchEditTruck);
+            $options = $options->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            $options = $this->ensureSelectedInOptions($options, $this->editTruckId, $allOptions);
+        }
+        
+        return $options->toArray();
+    }
+    
+    public function getEditDriverOptionsProperty()
+    {
+        $drivers = $this->getCachedDrivers();
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
+        
+        if (!empty($this->searchEditDriver)) {
+            $searchTerm = strtolower($this->searchEditDriver);
+            $options = $options->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            $options = $this->ensureSelectedInOptions($options, $this->editDriverId, $allOptions);
+        }
+        
+        return $options->toArray();
+    }
+    
+    public function getEditGuardOptionsProperty()
+    {
+        $guards = $this->getCachedGuards();
+        $allOptions = $guards;
+        
+        if ($this->editReceivedGuardId) {
+            $guards = $guards->filter(function ($value, $key) {
+                return $key != $this->editReceivedGuardId;
+            });
+        }
+        
+        if (!empty($this->searchEditHatcheryGuard)) {
+            $searchTerm = strtolower($this->searchEditHatcheryGuard);
+            $guards = $guards->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            if ($this->editHatcheryGuardId && $this->editHatcheryGuardId != $this->editReceivedGuardId) {
+                $guards = $this->ensureSelectedInOptions($guards, $this->editHatcheryGuardId, $allOptions);
+            }
+        }
+        
+        return $guards->toArray();
+    }
+    
+    public function getEditReceivedGuardOptionsProperty()
+    {
+        $guards = $this->getCachedGuards();
+        $allOptions = $guards;
+        
+        if ($this->editHatcheryGuardId) {
+            $guards = $guards->filter(function ($value, $key) {
+                return $key != $this->editHatcheryGuardId;
+            });
+        }
+        
+        if (!empty($this->searchEditReceivedGuard)) {
+            $searchTerm = strtolower($this->searchEditReceivedGuard);
+            $guards = $guards->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            if ($this->editReceivedGuardId && $this->editReceivedGuardId != $this->editHatcheryGuardId) {
+                $guards = $this->ensureSelectedInOptions($guards, $this->editReceivedGuardId, $allOptions);
+            }
+        }
+        
+        return $guards->toArray();
+    }
+    
+    public function getEditAvailableOriginsOptionsProperty()
+    {
+        $locations = $this->getCachedLocations();
+        
+        $originOptions = $locations;
+        if ($this->editDestinationId) {
+            $originOptions = $originOptions->where('id', '!=', $this->editDestinationId);
+        }
+        $originOptions = $originOptions->pluck('location_name', 'id');
+        
+        if (!empty($this->searchEditOrigin)) {
+            $searchTerm = strtolower($this->searchEditOrigin);
+            $originOptions = $originOptions->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            if ($this->editLocationId && $this->editLocationId != $this->editDestinationId) {
+                $allOptions = $locations->pluck('location_name', 'id');
+                $originOptions = $this->ensureSelectedInOptions($originOptions, $this->editLocationId, $allOptions);
+            }
+        }
+        
+        return $originOptions->toArray();
+    }
+    
+    public function getEditAvailableDestinationsOptionsProperty()
+    {
+        $locations = $this->getCachedLocations();
+        
+        $destinationOptions = $locations;
+        if ($this->editLocationId) {
+            $destinationOptions = $destinationOptions->where('id', '!=', $this->editLocationId);
+        }
+        $destinationOptions = $destinationOptions->pluck('location_name', 'id');
+        
+        if (!empty($this->searchEditDestination)) {
+            $searchTerm = strtolower($this->searchEditDestination);
+            $destinationOptions = $destinationOptions->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            if ($this->editDestinationId && $this->editDestinationId != $this->editLocationId) {
+                $allOptions = $locations->pluck('location_name', 'id');
+                $destinationOptions = $this->ensureSelectedInOptions($destinationOptions, $this->editDestinationId, $allOptions);
+            }
+        }
+        
+        return $destinationOptions->toArray();
+    }
+    
     protected $queryString = ['search'];
     
     public function updatedFilterResolved($value)
