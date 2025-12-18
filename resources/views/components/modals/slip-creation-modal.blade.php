@@ -149,6 +149,7 @@
                             + Add More
                         </button>
                     </div>
+                @else
                     <button @click="showCameraModal = true; startCamera()"
                         class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
                         Add Attachment
