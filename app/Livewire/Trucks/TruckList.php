@@ -96,8 +96,8 @@ class TruckList extends Component
         $this->filterSortDirection = $this->sortDirection; // Initialize filter sort with current sort
         $this->checkFiltersActive();
 
-        // Check if we should open create modal from route parameter
-        if (request()->has('openCreate') && $this->type === 'outgoing') {
+        // Check if we should open create modal from route parameter (only if location allows)
+        if (request()->has('openCreate') && $this->type === 'outgoing' && $this->canCreateSlip) {
             $this->showCreateModal = true;
         }
     }
@@ -262,6 +262,12 @@ class TruckList extends Component
 
     public function openCreateModal()
     {
+        // Authorization check: Only allow if location permits slip creation
+        if (!$this->canCreateSlip) {
+            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
+            return;
+        }
+        
         $this->resetCreateForm();
         $this->showCreateModal = true;
     }
@@ -343,6 +349,12 @@ class TruckList extends Component
         $this->isCreating = true;
 
         try {
+        // Authorization check: Only allow if location permits slip creation
+        if (!$this->canCreateSlip) {
+            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
+            return;
+        }
+        
         // Check if user is disabled
         if ($this->isUserDisabled()) {
             $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
@@ -444,6 +456,12 @@ class TruckList extends Component
     public function uploadAttachment($imageData)
     {
         try {
+            // Authorization check: Only allow if location permits slip creation
+            if (!$this->canCreateSlip) {
+                $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
+                return;
+            }
+            
             if ($this->isUserDisabled()) {
                 $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
                 return;
@@ -526,6 +544,12 @@ class TruckList extends Component
 
     public function confirmRemovePendingAttachment($attachmentId)
     {
+        // Authorization check: Only allow if location permits slip creation
+        if (!$this->canCreateSlip) {
+            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
+            return;
+        }
+        
         $this->pendingAttachmentToDelete = $attachmentId;
         $this->showRemovePendingAttachmentConfirmation = true;
     }
@@ -533,6 +557,12 @@ class TruckList extends Component
     public function removePendingAttachment()
     {
         try {
+            // Authorization check: Only allow if location permits slip creation
+            if (!$this->canCreateSlip) {
+                $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
+                return;
+            }
+            
             if (!$this->pendingAttachmentToDelete) {
                 $this->dispatch('toast', message: 'No attachment specified to remove.', type: 'error');
                 $this->showRemovePendingAttachmentConfirmation = false;

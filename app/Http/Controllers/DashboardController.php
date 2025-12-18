@@ -27,7 +27,16 @@ class DashboardController extends Controller
 
     public function user(): View
     {
-        return view('user.dashboard');
+        // Check if current location allows creating slips
+        $canCreateSlip = false;
+        $currentLocationId = session('location_id');
+        
+        if ($currentLocationId) {
+            $location = \App\Models\Location::find($currentLocationId);
+            $canCreateSlip = $location && ($location->create_slip ?? false);
+        }
+        
+        return view('user.dashboard', compact('canCreateSlip'));
     }
 
     public function admin(): View

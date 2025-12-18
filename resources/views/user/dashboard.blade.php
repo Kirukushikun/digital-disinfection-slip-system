@@ -5,7 +5,7 @@
 
         <div class="max-w-7xl mx-auto">
             <!-- Stats Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 {{ ($canCreateSlip ?? false) ? 'lg:grid-cols-3' : '' }} gap-6 mb-8">
 
                 <!-- Incoming Trucks Card -->
                 <a href="{{ route('user.incoming-trucks') }}"
@@ -79,42 +79,44 @@
                     </div>
                 </a>
 
-                <!-- Create Slip Action Card -->
-                <a href="{{ route('user.outgoing-trucks', ['openCreate' => true]) }}"
-                    class="group relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-blue-400 hover:scale-105">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div class="flex items-start justify-between mb-4">
-                            <div
-                                class="p-3 bg-white/20 backdrop-blur-sm rounded-xl group-hover:bg-white/30 transition-colors">
-                                <svg xmlns="https://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                <!-- Create Slip Action Card (Only if location allows creating slips) -->
+                @if ($canCreateSlip ?? false)
+                    <a href="{{ route('user.outgoing-trucks', ['openCreate' => true]) }}"
+                        class="group relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-blue-400 hover:scale-105">
+                        <div class="p-6 h-full flex flex-col justify-between">
+                            <div class="flex items-start justify-between mb-4">
+                                <div
+                                    class="p-3 bg-white/20 backdrop-blur-sm rounded-xl group-hover:bg-white/30 transition-colors">
+                                    <svg xmlns="https://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </div>
+                                <div
+                                    class="h-8 w-8 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                    <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white mb-2">Create New Slip</h3>
+                                <p class="text-blue-100 text-sm">Add a new disinfection slip for outgoing trucks</p>
+                            </div>
+                            <div class="mt-4 flex items-center text-white text-sm font-medium">
+                                <span class="mr-2">Quick Action</span>
+                                <svg class="h-4 w-4 group-hover:translate-x-1 transition-transform" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                 </svg>
                             </div>
-                            <div
-                                class="h-8 w-8 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                                <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    stroke-width="3">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-2">Create New Slip</h3>
-                            <p class="text-blue-100 text-sm">Add a new disinfection slip for outgoing trucks</p>
-                        </div>
-                        <div class="mt-4 flex items-center text-white text-sm font-medium">
-                            <span class="mr-2">Quick Action</span>
-                            <svg class="h-4 w-4 group-hover:translate-x-1 transition-transform" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 bg-white/10 rounded-full blur-2xl"></div>
-                    <div class="absolute bottom-0 left-0 -mb-4 -ml-4 h-20 w-20 bg-white/10 rounded-full blur-xl"></div>
-                </a>
+                        <div class="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 h-20 w-20 bg-white/10 rounded-full blur-xl"></div>
+                    </a>
+                @endif
 
             </div>
 

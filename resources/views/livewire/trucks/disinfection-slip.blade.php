@@ -235,27 +235,27 @@
                                 
                                 <div class="fixed inset-0 bg-black/80" @click="showCameraModal = false; stopCamera()"></div>
                                 
-                                <div class="relative min-h-screen flex items-center justify-center p-4">
-                                    <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+                                <div class="relative min-h-screen flex items-start sm:items-center justify-center p-2 sm:p-4">
+                                    <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-4 sm:p-6 my-4 sm:my-8 max-h-[95vh] overflow-y-auto">
                                         
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h3 class="text-lg font-semibold text-gray-900">Add Attachment</h3>
-                                            <button @click="showCameraModal = false; stopCamera()" class="text-gray-400 hover:text-gray-600">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2">
+                                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Add Attachment</h3>
+                                            <button @click="showCameraModal = false; stopCamera()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                 </svg>
                                             </button>
                                         </div>
 
-                                        <div class="flex flex-col items-center space-y-4">
+                                        <div class="flex flex-col items-center space-y-3 sm:space-y-4">
                                             {{-- Status --}}
-                                            <div class="w-full text-center py-2 px-4 rounded-lg font-medium text-sm"
+                                            <div class="w-full text-center py-2 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm"
                                                 :class="uploading ? 'bg-blue-100 text-blue-700' : (cameraActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700')">
                                                 <span x-text="uploading ? 'Uploading...' : (cameraActive ? 'Camera is active' : 'Click Start Camera to begin')"></span>
                                             </div>
                                             
                                             {{-- Camera Preview --}}
-                                            <div class="relative w-80 h-80 bg-gray-900 rounded-lg overflow-hidden"
+                                            <div class="relative w-full max-w-sm aspect-square bg-gray-900 rounded-lg overflow-hidden"
                                                 x-show="cameraActive">
                                                 <video x-ref="video" class="w-full h-full object-cover" autoplay playsinline></video>
                                                 <canvas x-ref="canvas" class="hidden"></canvas>
@@ -263,13 +263,13 @@
 
                                             {{-- Photos Grid --}}
                                             <div class="w-full" x-show="photos.length > 0">
-                                                <h4 class="text-lg font-semibold text-gray-700 mb-3">Captured Photos (<span x-text="photos.length"></span>)</h4>
-                                                <div class="grid grid-cols-3 gap-3">
+                                                <h4 class="text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Captured Photos (<span x-text="photos.length"></span>)</h4>
+                                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 max-h-[40vh] overflow-y-auto pr-1">
                                                     <template x-for="photo in photos" :key="photo.id">
                                                         <div class="relative rounded-lg overflow-hidden shadow-md">
-                                                            <img :src="photo.data" class="w-full h-24 object-cover">
+                                                            <img :src="photo.data" class="w-full h-24 sm:h-32 object-cover">
                                                             <button @click="deletePhoto(photo.id)" 
-                                                                    class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">
+                                                                    class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -279,35 +279,35 @@
                                         </div>
 
                                         {{-- Footer Buttons --}}
-                                        <div class="flex justify-end gap-2 mt-6">
+                                        <div class="flex flex-wrap justify-center sm:justify-end gap-2 mt-4 sm:mt-6 sticky bottom-0 bg-white pt-2 pb-1 border-t border-gray-100">
                                             <button @click="showCameraModal = false; stopCamera()" 
                                                     :disabled="uploading"
-                                                    class="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
                                                 Cancel
                                             </button>
                                             
                                             <button @click="startCamera()" 
                                                     x-show="!cameraActive && !uploading"
-                                                    class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                                                    class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-500 text-white rounded-md hover:bg-blue-600">
                                                 Start Camera
                                             </button>
                                             
                                             <button @click="capturePhoto()" 
                                                     x-show="cameraActive && !uploading"
-                                                    class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                                                    class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-green-500 text-white rounded-md hover:bg-green-600">
                                                 Capture Photo
                                             </button>
                                             
                                             <button @click="stopCamera()" 
                                                     x-show="cameraActive && !uploading"
-                                                    class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">
+                                                    class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-orange-500 text-white rounded-md hover:bg-orange-600">
                                                 Stop Camera
                                             </button>
                                             
                                             <button @click="uploadPhotos()" 
                                                     x-show="photos.length > 0 && !uploading"
                                                     :disabled="uploading"
-                                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
                                                 <span x-show="!uploading">Upload <span x-text="photos.length"></span> Photo<span x-show="photos.length > 1">s</span></span>
                                                 <span x-show="uploading">Uploading...</span>
                                             </button>

@@ -1,6 +1,6 @@
 @props(['show', 'selectedSlip' => null])
 
-<x-modals.modal-template :show="$show" title="Attachments" max-width="max-w-4xl" backdrop-opacity="40">
+<x-modals.modal-template :show="$show" title="Attachments" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
 
     @php
         $attachments = $selectedSlip?->attachments() ?? collect([]);
@@ -15,15 +15,15 @@
     @if ($totalAttachments > 0)
         <div class="relative" x-data="{ currentIndex: @entangle('currentAttachmentIndex') }">
             {{-- Carousel Container --}}
-            <div class="relative overflow-hidden rounded-lg bg-gray-100 min-h-[400px] flex items-center justify-center">
+            <div class="relative overflow-hidden rounded-lg bg-gray-100 min-h-[300px] sm:min-h-[400px] flex items-center justify-center">
                 {{-- Previous Button --}}
                 @if ($totalAttachments > 1)
                     <button 
                         wire:click="previousAttachment"
                         x-show="currentIndex > 0"
-                        class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                        class="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all"
                         :class="{ 'opacity-50 cursor-not-allowed': currentIndex === 0 }">
-                        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
@@ -39,18 +39,18 @@
                             $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                             $isImage = in_array($extension, $imageExtensions);
                         @endphp
-                        <div class="w-full shrink-0 px-4 py-4" style="min-width: 100%">
+                        <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4" style="min-width: 100%">
                             @if ($isImage)
                                 <img src="{{ $fileUrl }}" 
-                                     class="border shadow-md max-h-[60vh] max-w-full object-contain mx-auto rounded-lg"
+                                     class="border shadow-md max-h-[50vh] sm:max-h-[60vh] max-w-full w-auto object-contain mx-auto rounded-lg"
                                      alt="Attachment {{ $index + 1 }}">
                             @else
-                                <div class="text-center p-8">
-                                    <p class="text-sm text-gray-600 mb-4">
+                                <div class="text-center p-4 sm:p-8">
+                                    <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
                                         This file type cannot be previewed.
                                     </p>
                                     <a href="{{ $fileUrl }}" target="_blank" 
-                                       class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer">
+                                       class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer text-sm sm:text-base">
                                         Download attachment
                                     </a>
                                 </div>
@@ -64,9 +64,9 @@
                     <button 
                         wire:click="nextAttachment"
                         x-show="currentIndex < {{ $totalAttachments - 1 }}"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                        class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all"
                         :class="{ 'opacity-50 cursor-not-allowed': currentIndex >= {{ $totalAttachments - 1 }} }">
-                        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </button>
@@ -75,13 +75,13 @@
 
             {{-- Indicators/Dots --}}
             @if ($totalAttachments > 1)
-                <div class="flex justify-center mt-4 space-x-2">
+                <div class="flex justify-center mt-3 sm:mt-4 space-x-1.5 sm:space-x-2 overflow-x-auto max-w-full px-2">
                     @foreach ($attachments as $index => $attachment)
                         <button 
                             wire:click="openAttachmentModal({{ $index }})"
-                            class="w-2 h-2 rounded-full transition-all"
-                            :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-6' : 'bg-gray-300'"
-                            x-bind:class="currentIndex === {{ $index }} ? 'bg-orange-500 w-6' : 'bg-gray-300'">
+                            class="w-2 h-2 rounded-full transition-all shrink-0"
+                            :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'"
+                            x-bind:class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'">
                         </button>
                     @endforeach
                 </div>
@@ -89,7 +89,7 @@
 
             {{-- Photo Counter --}}
             @if ($totalAttachments > 1)
-                <div class="text-center mt-2 text-sm text-gray-600">
+                <div class="text-center mt-2 text-xs sm:text-sm text-gray-600">
                     Photo <span x-text="currentIndex + 1"></span> of {{ $totalAttachments }}
                 </div>
             @endif
@@ -115,32 +115,31 @@
     @endphp
 
     <x-slot name="footer">
-        <div class="flex justify-between items-center w-full">
+        <div class="flex justify-between items-center w-full flex-wrap gap-2">
             {{-- Delete Current Photo Button (only if user can manage attachments AND (uploaded the current photo OR is admin/superadmin)) --}}
-            @if ($canManage && $totalAttachments > 0)
+            @if (($canManage || $isAdminOrSuperAdmin) && $totalAttachments > 0)
                 <div x-data="{ 
-                    currentIndex: @entangle('currentAttachmentIndex'),
+                    currentIndex: @entangle('currentAttachmentIndex').live,
                     attachments: @js($attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all()),
                     currentUserId: @js($currentUserId),
-                    isAdminOrSuperAdmin: @js($isAdminOrSuperAdmin)
-                }">
+                    isAdminOrSuperAdmin: @js($isAdminOrSuperAdmin),
+                    canShowDelete() {
+                        const attachment = this.attachments[this.currentIndex];
+                        return attachment && (this.isAdminOrSuperAdmin || attachment.user_id === this.currentUserId);
+                    },
+                    deleteCurrentPhoto() {
+                        const attachment = this.attachments[this.currentIndex];
+                        if (attachment) {
+                            $wire.call('confirmRemoveAttachment', attachment.id);
+                        }
+                    }
+                }" 
+                x-init="$watch('currentIndex', () => $nextTick())">
                     <x-buttons.submit-button 
-                        x-bind:wire:click="`confirmRemoveAttachment(${attachments[currentIndex]?.id})`"
+                        @click="deleteCurrentPhoto()"
                         color="red"
-                        x-show="currentIndex < attachments.length && (isAdminOrSuperAdmin || attachments[currentIndex]?.user_id === currentUserId)">
-                        Delete
-                    </x-buttons.submit-button>
-                </div>
-            @elseif ($isAdminOrSuperAdmin && $totalAttachments > 0)
-                {{-- Admin/SuperAdmin can delete even if canManage is false --}}
-                <div x-data="{ 
-                    currentIndex: @entangle('currentAttachmentIndex'),
-                    attachments: @js($attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all())
-                }">
-                    <x-buttons.submit-button 
-                        x-bind:wire:click="`confirmRemoveAttachment(${attachments[currentIndex]?.id})`"
-                        color="red"
-                        x-show="currentIndex < attachments.length">
+                        x-show="canShowDelete()"
+                        class="transition-all">
                         Delete
                     </x-buttons.submit-button>
                 </div>
