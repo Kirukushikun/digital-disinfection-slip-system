@@ -139,47 +139,21 @@
                     $pendingCount = count($pendingAttachmentIds ?? []);
                 @endphp
                 @if ($pendingCount > 0)
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-xs text-gray-600">{{ $pendingCount }} photo(s) attached</span>
+                    <div class="flex items-center gap-2">
+                        <button wire:click="openPendingAttachmentModal(0)"
+                            class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
+                            See Attachments ({{ $pendingCount }})
+                        </button>
                         <button @click="showCameraModal = true; startCamera()"
                             class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
                             + Add More
                         </button>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-                        @foreach ($pendingAttachmentIds ?? [] as $attachmentId)
-                            @php
-                                $attachment = \App\Models\Attachment::find($attachmentId);
-                                $currentUser = \Illuminate\Support\Facades\Auth::user();
-                                $currentRoute = \Illuminate\Support\Facades\Request::path();
-                                
-                                // Check if user has admin/superadmin privileges in current context
-                                // On /user routes (guards), even superadmins should only have guard privileges
-                                $isOnUserRoute = str_starts_with($currentRoute, 'user');
-                                $isAdminOrSuperAdmin = !$isOnUserRoute && $currentUser && in_array($currentUser->user_type, [1, 2]); // 1 = Admin, 2 = SuperAdmin
-                                
-                                // Can delete if admin/superadmin (and not on user route) OR if user uploaded it
-                                $canDelete = $attachment && ($isAdminOrSuperAdmin || $attachment->user_id === \Illuminate\Support\Facades\Auth::id());
-                            @endphp
-                            @if ($attachment)
-                                <div class="relative rounded-lg overflow-hidden shadow-lg border border-gray-200 aspect-square">
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($attachment->file_path) }}" 
-                                         class="w-full h-full object-contain bg-gray-50">
-                                    @if ($canDelete)
-                                        <button wire:click="confirmRemovePendingAttachment({{ $attachmentId }})" 
-                                                class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md shadow-md transition-colors">
-                                            Remove
-                                        </button>
-                                    @endif
-                                </div>
-                            @endif
-                        @endforeach
-                    </div>
+                    <button @click="showCameraModal = true; startCamera()"
+                        class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
+                        Add Attachment
+                    </button>
                 @endif
-                <button @click="showCameraModal = true; startCamera()"
-                    class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
-                    {{ $pendingCount > 0 ? 'Add More Attachment' : 'Add Attachment' }}
-                </button>
 
                 {{-- Camera Modal --}}
                 <div x-show="showCameraModal" 
@@ -312,3 +286,151 @@
 <x-modals.delete-confirmation show="showRemovePendingAttachmentConfirmation" title="DELETE PHOTO?"
     message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
     onConfirm="removePendingAttachment" confirmText="Delete" cancelText="Cancel" />
+
+{{-- Pending Attachments Carousel Modal --}}
+<x-modals.modal-template show="showPendingAttachmentModal" title="Attachments" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
+    @php
+        $pendingAttachments = collect($pendingAttachmentIds ?? [])->map(function($id) {
+            return \App\Models\Attachment::find($id);
+        })->filter();
+        $totalPendingAttachments = $pendingAttachments->count();
+    @endphp
+
+    @if ($totalPendingAttachments > 0)
+        <div class="relative" x-data="{ currentIndex: @entangle('currentPendingAttachmentIndex').live }">
+            {{-- Carousel Container --}}
+            <div class="relative overflow-hidden rounded-lg bg-gray-100 min-h-[300px] sm:min-h-[400px] flex items-center justify-center">
+                {{-- Previous Button --}}
+                @if ($totalPendingAttachments > 1)
+                    <button 
+                        @click="$wire.previousPendingAttachment()"
+                        x-show="currentIndex > 0"
+                        class="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                @endif
+
+                {{-- Images Container --}}
+                <div class="flex transition-transform duration-300 ease-in-out w-full" 
+                     :style="`transform: translateX(-${currentIndex * 100}%)`">
+                    @foreach ($pendingAttachments as $index => $attachment)
+                        @php
+                            $fileUrl = \Illuminate\Support\Facades\Storage::url($attachment->file_path);
+                            $extension = strtolower(pathinfo($attachment->file_path ?? '', PATHINFO_EXTENSION));
+                            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                            $isImage = in_array($extension, $imageExtensions);
+                        @endphp
+                        <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4 flex flex-col" style="min-width: 100%">
+                            @if ($isImage)
+                                <img src="{{ $fileUrl }}" 
+                                     class="border shadow-md max-h-[45vh] sm:max-h-[55vh] max-w-full w-auto object-contain mx-auto rounded-lg"
+                                     alt="Attachment {{ $index + 1 }}">
+                            @else
+                                <div class="text-center p-4 sm:p-8">
+                                    <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
+                                        This file type cannot be previewed.
+                                    </p>
+                                    <a href="{{ $fileUrl }}" target="_blank" 
+                                       class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer text-sm sm:text-base">
+                                        Download attachment
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Next Button --}}
+                @if ($totalPendingAttachments > 1)
+                    <button 
+                        @click="$wire.nextPendingAttachment()"
+                        x-show="currentIndex < {{ $totalPendingAttachments - 1 }}"
+                        class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                @endif
+            </div>
+
+            {{-- Indicators/Dots --}}
+            @if ($totalPendingAttachments > 1)
+                <div class="flex justify-center mt-3 sm:mt-4 space-x-1.5 sm:space-x-2 overflow-x-auto max-w-full px-2">
+                    @foreach ($pendingAttachments as $index => $attachment)
+                        <button 
+                            @click="$wire.openPendingAttachmentModal({{ $index }})"
+                            class="w-2 h-2 rounded-full transition-all shrink-0"
+                            :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Photo Counter --}}
+            @if ($totalPendingAttachments > 1)
+                <div class="text-center mt-2 text-xs sm:text-sm text-gray-600">
+                    Photo <span x-text="currentIndex + 1"></span> of {{ $totalPendingAttachments }}
+                </div>
+            @endif
+        </div>
+    @else
+        <div class="text-center p-8 text-gray-500">
+            No attachments available.
+        </div>
+    @endif
+
+    @php
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $currentRoute = \Illuminate\Support\Facades\Request::path();
+        $isOnUserRoute = str_starts_with($currentRoute, 'user');
+        $isAdminOrSuperAdmin = !$isOnUserRoute && $currentUser && in_array($currentUser->user_type, [1, 2]);
+        $currentUserId = \Illuminate\Support\Facades\Auth::id();
+    @endphp
+
+    <x-slot name="footer">
+        <div class="flex justify-between items-center w-full flex-wrap gap-2">
+            {{-- Delete Current Photo Button --}}
+            @if ($totalPendingAttachments > 0)
+                @php
+                    $attachmentsData = $pendingAttachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all();
+                @endphp
+                <div x-data="{
+                    attachments: @js($attachmentsData),
+                    currentUserId: @js($currentUserId),
+                    isAdminOrSuperAdmin: @js($isAdminOrSuperAdmin),
+                    getCurrentAttachment() {
+                        const index = $wire.get('currentPendingAttachmentIndex');
+                        return this.attachments[index] || null;
+                    },
+                    canShowDelete() {
+                        const attachment = this.getCurrentAttachment();
+                        return attachment && (this.isAdminOrSuperAdmin || attachment.user_id === this.currentUserId);
+                    },
+                    deleteCurrentPhoto() {
+                        const attachment = this.getCurrentAttachment();
+                        if (attachment) {
+                            $wire.call('confirmRemovePendingAttachment', attachment.id);
+                        }
+                    }
+                }" x-init="$watch(() => $wire.currentPendingAttachmentIndex, () => {})">
+                    <x-buttons.submit-button 
+                        @click="deleteCurrentPhoto()"
+                        color="red"
+                        x-show="canShowDelete()"
+                        class="transition-all">
+                        Delete
+                    </x-buttons.submit-button>
+                </div>
+            @else
+                <div></div>
+            @endif
+
+            {{-- Back Button --}}
+            <x-buttons.submit-button @click="$wire.closePendingAttachmentModal()" color="white">
+                Back
+            </x-buttons.submit-button>
+        </div>
+    </x-slot>
+</x-modals.modal-template>

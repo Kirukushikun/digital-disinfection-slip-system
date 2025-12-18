@@ -68,6 +68,10 @@ class TruckList extends Component
     public $pendingAttachmentIds = []; // Store attachment IDs before slip is created
     public $showRemovePendingAttachmentConfirmation = false;
     public $pendingAttachmentToDelete = null;
+    
+    // Pending Attachment Modal (for viewing pending attachments)
+    public $showPendingAttachmentModal = false;
+    public $currentPendingAttachmentIndex = 0;
 
     // Search properties for dropdowns
     public $searchTruck = '';
@@ -327,6 +331,8 @@ class TruckList extends Component
         $this->showAddAttachmentModal = false;
         $this->showRemovePendingAttachmentConfirmation = false;
         $this->pendingAttachmentToDelete = null;
+        $this->showPendingAttachmentModal = false;
+        $this->currentPendingAttachmentIndex = 0;
         $this->resetErrorBag();
     }
 
@@ -609,6 +615,34 @@ class TruckList extends Component
             $this->dispatch('toast', message: 'Failed to remove photo. Please try again.', type: 'error');
             $this->showRemovePendingAttachmentConfirmation = false;
             $this->pendingAttachmentToDelete = null;
+        }
+    }
+
+    // Pending Attachment Modal Methods
+    public function openPendingAttachmentModal($index = 0)
+    {
+        $this->currentPendingAttachmentIndex = $index;
+        $this->showPendingAttachmentModal = true;
+    }
+
+    public function closePendingAttachmentModal()
+    {
+        $this->showPendingAttachmentModal = false;
+        $this->currentPendingAttachmentIndex = 0;
+    }
+
+    public function nextPendingAttachment()
+    {
+        $totalAttachments = count($this->pendingAttachmentIds);
+        if ($this->currentPendingAttachmentIndex < $totalAttachments - 1) {
+            $this->currentPendingAttachmentIndex++;
+        }
+    }
+
+    public function previousPendingAttachment()
+    {
+        if ($this->currentPendingAttachmentIndex > 0) {
+            $this->currentPendingAttachmentIndex--;
         }
     }
 
