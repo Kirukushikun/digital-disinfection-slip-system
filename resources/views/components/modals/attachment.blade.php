@@ -38,12 +38,21 @@
                             $extension = strtolower(pathinfo($attachment->file_path ?? '', PATHINFO_EXTENSION));
                             $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                             $isImage = in_array($extension, $imageExtensions);
+                            $uploader = $attachment->user;
+                            $uploaderName = $uploader ? ($uploader->first_name . ' ' . $uploader->last_name) : 'Unknown';
+                            $uploaderUsername = $uploader ? $uploader->username : 'N/A';
                         @endphp
-                        <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4" style="min-width: 100%">
+                        <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4 flex flex-col" style="min-width: 100%">
                             @if ($isImage)
                                 <img src="{{ $fileUrl }}" 
-                                     class="border shadow-md max-h-[50vh] sm:max-h-[60vh] max-w-full w-auto object-contain mx-auto rounded-lg"
+                                     class="border shadow-md max-h-[45vh] sm:max-h-[55vh] max-w-full w-auto object-contain mx-auto rounded-lg"
                                      alt="Attachment {{ $index + 1 }}">
+                                {{-- Uploaded By Information --}}
+                                <div class="text-center mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
+                                    <span class="font-semibold">Uploaded by:</span> 
+                                    <span class="text-gray-800">{{ $uploaderName }}</span>
+                                    <span class="text-gray-500">({{ $uploaderUsername }})</span>
+                                </div>
                             @else
                                 <div class="text-center p-4 sm:p-8">
                                     <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">
@@ -53,6 +62,12 @@
                                        class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer text-sm sm:text-base">
                                         Download attachment
                                     </a>
+                                    {{-- Uploaded By Information for non-images --}}
+                                    <div class="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
+                                        <span class="font-semibold">Uploaded by:</span> 
+                                        <span class="text-gray-800">{{ $uploaderName }}</span>
+                                        <span class="text-gray-500">({{ $uploaderUsername }})</span>
+                                    </div>
                                 </div>
                             @endif
                         </div>

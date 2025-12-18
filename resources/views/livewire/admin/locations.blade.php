@@ -234,16 +234,24 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($locations as $location)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center justify-center w-16 h-16">
-                                        @if ($location->attachment_id && $location->attachment)
-                                            <img src="{{ asset('storage/' . $location->attachment->file_path) }}"
-                                                alt="{{ $location->location_name }}"
-                                                class="max-w-full max-h-full object-contain">
-                                        @else
-                                            <img src="{{ asset('storage/' . $defaultLogoPath) }}"
-                                                alt="{{ $location->location_name }}"
-                                                class="max-w-full max-h-full object-contain">
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="w-16 h-16 mb-1">
+                                            @if ($location->attachment_id && $location->attachment)
+                                                <img src="{{ asset('storage/' . $location->attachment->file_path) }}"
+                                                    alt="{{ $location->location_name }}"
+                                                    class="max-w-full max-h-full object-contain">
+                                            @else
+                                                <img src="{{ asset('storage/' . $defaultLogoPath) }}"
+                                                    alt="{{ $location->location_name }}"
+                                                    class="max-w-full max-h-full object-contain">
+                                            @endif
+                                        </div>
+                                        @if ($location->attachment_id && $location->attachment && $location->attachment->user)
+                                            <div class="text-xs text-gray-500 text-center">
+                                                <div class="font-medium text-gray-600">{{ $location->attachment->user->first_name }} {{ $location->attachment->user->last_name }}</div>
+                                                <div class="text-gray-400">({{ $location->attachment->user->username }})</div>
+                                            </div>
                                         @endif
                                     </div>
                                 </td>
