@@ -173,7 +173,7 @@ class Locations extends Component
         $location = Location::findOrFail($locationId);
         $this->selectedLocationId = $locationId;
         $this->location_name = $location->location_name;
-        $this->create_slip = $location->create_slip ?? false;
+        $this->create_slip = (bool) ($location->create_slip ?? false);
         $this->edit_logo = null;
         $this->remove_logo = false;
         

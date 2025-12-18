@@ -17,6 +17,14 @@ class Location extends Model
         'create_slip',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'create_slip' => 'boolean',
+            'disabled' => 'boolean',
+        ];
+    }
+
     // Logo attachment (images/logos/)
     public function attachment()
     {

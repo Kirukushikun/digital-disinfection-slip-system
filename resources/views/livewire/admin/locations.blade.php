@@ -474,9 +474,11 @@
                                 {{-- Create Slip Toggle --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Allow Create Slip</label>
-                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ createSlip: @entangle('create_slip') }">
-                                        <input type="checkbox" x-model="createSlip" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" :class="createSlip ? 'bg-blue-600' : 'bg-gray-200'"></div>
+                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ createSlip: @entangle('create_slip').live }" x-init="createSlip = @js($create_slip ?? false)">
+                                        <input type="checkbox" x-model="createSlip" :checked="createSlip" class="sr-only">
+                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="createSlip ? 'bg-blue-600' : 'bg-gray-200'">
+                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="createSlip ? 'translate-x-5' : 'translate-x-0'"></div>
+                                        </div>
                                         <span class="ml-3 text-sm text-gray-700" x-text="createSlip ? 'Enabled - Guards can create slips on outgoing trucks' : 'Disabled - Guards cannot create slips on outgoing trucks'"></span>
                                     </label>
                                 </div>
@@ -671,9 +673,11 @@
                                 {{-- Create Slip Toggle --}}
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Allow Create Slip</label>
-                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ createSlip: @entangle('create_create_slip') }">
-                                        <input type="checkbox" x-model="createSlip" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" :class="createSlip ? 'bg-blue-600' : 'bg-gray-200'"></div>
+                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ createSlip: @entangle('create_create_slip').live }" x-init="createSlip = @js($create_create_slip ?? false)">
+                                        <input type="checkbox" x-model="createSlip" :checked="createSlip" class="sr-only">
+                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="createSlip ? 'bg-blue-600' : 'bg-gray-200'">
+                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="createSlip ? 'translate-x-5' : 'translate-x-0'"></div>
+                                        </div>
                                         <span class="ml-3 text-sm text-gray-700" x-text="createSlip ? 'Enabled - Guards can create slips on outgoing trucks' : 'Disabled - Guards cannot create slips on outgoing trucks'"></span>
                                     </label>
                                 </div>
