@@ -192,6 +192,19 @@ class PlateNumbers extends Component
             return;
         }
 
+        // Sanitize and uppercase input BEFORE validation
+        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number ?? '');
+        
+        // Basic validation - just ensure it's not empty after sanitization
+        if (empty(trim($plateNumber))) {
+            $this->addError('plate_number', 'Plate number is required.');
+            return;
+        }
+
+        // Update the property with sanitized value for validation
+        $this->plate_number = $plateNumber;
+
+        // Validate with sanitized value
         $this->validate([
             'plate_number' => ['required', 'string', 'max:20', 'unique:trucks,plate_number,' . $this->selectedTruckId],
         ], [
@@ -201,15 +214,6 @@ class PlateNumbers extends Component
         ], [
             'plate_number' => 'Plate Number',
         ]);
-
-        // Sanitize and uppercase input
-        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number);
-        
-        // Basic validation - just ensure it's not empty after sanitization
-        if (empty(trim($plateNumber))) {
-            $this->addError('plate_number', 'Plate number is required.');
-            return;
-        }
 
         $truck = Truck::findOrFail($this->selectedTruckId);
         
@@ -412,6 +416,19 @@ class PlateNumbers extends Component
             abort(403, 'Unauthorized action.');
         }
 
+        // Sanitize and uppercase input BEFORE validation
+        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->create_plate_number);
+        
+        // Basic validation - just ensure it's not empty after sanitization
+        if (empty(trim($plateNumber))) {
+            $this->addError('create_plate_number', 'Plate number is required.');
+            return;
+        }
+
+        // Update the property with sanitized value for validation
+        $this->create_plate_number = $plateNumber;
+
+        // Validate with sanitized value
         $this->validate([
             'create_plate_number' => ['required', 'string', 'max:20', 'unique:trucks,plate_number'],
         ], [
@@ -421,15 +438,6 @@ class PlateNumbers extends Component
         ], [
             'create_plate_number' => 'Plate Number',
         ]);
-
-        // Sanitize and uppercase input
-        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->create_plate_number);
-        
-        // Basic validation - just ensure it's not empty after sanitization
-        if (empty(trim($plateNumber))) {
-            $this->addError('create_plate_number', 'Plate number is required.');
-            return;
-        }
 
         // Create truck
         $truck = Truck::create([
