@@ -133,23 +133,27 @@
         <div class="flex justify-between items-center w-full flex-wrap gap-2">
             {{-- Delete Current Photo Button (only if user can manage attachments AND (uploaded the current photo OR is admin/superadmin)) --}}
             @if (($canManage || $isAdminOrSuperAdmin) && $totalAttachments > 0)
-                <div x-data="{ 
-                    currentIndex: @entangle('currentAttachmentIndex').live,
-                    attachments: @js($attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all()),
+                @php
+                    $attachmentsData = $attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all();
+                @endphp
+                <div x-data="{
+                    attachments: @js($attachmentsData),
                     currentUserId: @js($currentUserId),
                     isAdminOrSuperAdmin: @js($isAdminOrSuperAdmin),
+                    getCurrentAttachment() {
+                        return this.attachments[this.$parent.currentIndex] || null;
+                    },
                     canShowDelete() {
-                        const attachment = this.attachments[this.currentIndex];
+                        const attachment = this.getCurrentAttachment();
                         return attachment && (this.isAdminOrSuperAdmin || attachment.user_id === this.currentUserId);
                     },
                     deleteCurrentPhoto() {
-                        const attachment = this.attachments[this.currentIndex];
+                        const attachment = this.getCurrentAttachment();
                         if (attachment) {
                             $wire.call('confirmRemoveAttachment', attachment.id);
                         }
                     }
-                }" 
-                x-init="$watch('currentIndex', () => $nextTick())">
+                }">
                     <x-buttons.submit-button 
                         @click="deleteCurrentPhoto()"
                         color="red"
