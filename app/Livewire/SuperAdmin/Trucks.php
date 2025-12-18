@@ -100,6 +100,8 @@ class Trucks extends Component
     public $selectedSlipId = null;
     public $selectedSlipName = null;
     public $attachmentFile = null;
+    public $currentAttachmentIndex = 0;
+    public $attachmentToDelete = null;
 
     // Protection flags
     public $isDeleting = false;
@@ -1813,25 +1815,36 @@ class Trucks extends Component
         $this->searchEditReceivedGuard = '';
     }
 
-    public function openAttachmentModal($file)
+    public function openAttachmentModal($index = 0)
     {
-        $this->attachmentFile = $file;
+        $this->currentAttachmentIndex = (int) $index;
         $this->showAttachmentModal = true;
     }
 
     public function closeAttachmentModal()
     {
         $this->showAttachmentModal = false;
-        $this->js('setTimeout(() => $wire.clearAttachment(), 300)');
+        $this->currentAttachmentIndex = 0;
     }
 
-    public function clearAttachment()
+    public function nextAttachment()
     {
-        $this->attachmentFile = null;
+        $attachments = $this->selectedSlip->attachments();
+        if ($this->currentAttachmentIndex < $attachments->count() - 1) {
+            $this->currentAttachmentIndex++;
+        }
     }
 
-    public function confirmRemoveAttachment()
+    public function previousAttachment()
     {
+        if ($this->currentAttachmentIndex > 0) {
+            $this->currentAttachmentIndex--;
+        }
+    }
+
+    public function confirmRemoveAttachment($attachmentId)
+    {
+        $this->attachmentToDelete = $attachmentId;
         $this->showRemoveAttachmentConfirmation = true;
     }
 
@@ -1843,49 +1856,63 @@ class Trucks extends Component
                 return;
             }
 
-            // Get current attachment IDs
-            $attachmentIds = $this->selectedSlip->attachment_ids ?? [];
-            
-            if (empty($attachmentIds)) {
-                $this->dispatch('toast', message: 'No attachments found to remove.', type: 'error');
+            if (!$this->attachmentToDelete) {
+                $this->dispatch('toast', message: 'No attachment specified to remove.', type: 'error');
                 return;
             }
 
-            // Delete all attachments
-            foreach ($attachmentIds as $attachmentId) {
-                $attachment = Attachment::find($attachmentId);
-                
-                if ($attachment) {
-                    // Delete the physical file from storage (except BGC.png logo)
-                    if ($attachment->file_path !== 'images/logo/BGC.png') {
-                        if (Storage::disk('public')->exists($attachment->file_path)) {
-                            Storage::disk('public')->delete($attachment->file_path);
-                        }
-                    }
-
-                    // Hard delete the attachment record (except BGC.png logo)
-                    if ($attachment->file_path !== 'images/logo/BGC.png') {
-                        $attachment->forceDelete();
-                    }
-                }
+            // Get current attachment IDs
+            $attachmentIds = $this->selectedSlip->attachment_ids ?? [];
+            
+            if (empty($attachmentIds) || !in_array($this->attachmentToDelete, $attachmentIds)) {
+                $this->dispatch('toast', message: 'Attachment not found.', type: 'error');
+                return;
             }
 
-            // Remove all attachment references from slip
-            $this->selectedSlip->update([
-                'attachment_ids' => null,
-            ]);
+            // Get the attachment record
+            $attachment = Attachment::find($this->attachmentToDelete);
+
+            if ($attachment) {
+                // Delete the physical file from storage (except BGC.png logo)
+                if ($attachment->file_path !== 'images/logo/BGC.png') {
+                    if (Storage::disk('public')->exists($attachment->file_path)) {
+                        Storage::disk('public')->delete($attachment->file_path);
+                    }
+                }
+
+                // Remove attachment ID from array
+                $attachmentIds = array_values(array_filter($attachmentIds, fn($id) => $id != $this->attachmentToDelete));
+
+                // Update slip with remaining attachment IDs (or null if empty)
+                $this->selectedSlip->update([
+                    'attachment_ids' => empty($attachmentIds) ? null : $attachmentIds,
+                ]);
+
+                // Hard delete the attachment record (except BGC.png logo)
+                if ($attachment->file_path !== 'images/logo/BGC.png') {
+                    $attachment->forceDelete();
+                }
+            }
 
             // Refresh the slip
             $this->selectedSlip->refresh();
 
-            // Close attachment modal and confirmation
-            $this->showAttachmentModal = false;
+            // Adjust current index if needed
+            $attachments = $this->selectedSlip->attachments();
+            if ($this->currentAttachmentIndex >= $attachments->count() && $attachments->count() > 0) {
+                $this->currentAttachmentIndex = $attachments->count() - 1;
+            } elseif ($attachments->count() === 0) {
+                // No more attachments, close modal
+                $this->showAttachmentModal = false;
+                $this->currentAttachmentIndex = 0;
+            }
+
+            // Close confirmation modal
             $this->showRemoveAttachmentConfirmation = false;
-            $this->attachmentFile = null;
+            $this->attachmentToDelete = null;
 
             $slipId = $this->selectedSlip->slip_id;
-            $attachmentCount = count($attachmentIds);
-            $this->dispatch('toast', message: "{$slipId}'s {$attachmentCount} attachment(s) have been removed.", type: 'success');
+            $this->dispatch('toast', message: "Attachment has been removed from {$slipId}.", type: 'success');
 
         } catch (\Exception $e) {
             Log::error('Attachment removal error: ' . $e->getMessage());

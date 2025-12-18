@@ -98,10 +98,7 @@
                             $attachmentCount = $attachments->count();
                         @endphp
                         @if ($attachmentCount > 0)
-                            @php
-                                $firstAttachment = $attachments->first();
-                            @endphp
-                            <button wire:click="openAttachmentModal('{{ $firstAttachment->file_path }}')"
+                            <button wire:click="openAttachmentModal(0)"
                                 class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
                                 See Attachment{{ $attachmentCount > 1 ? 's (' . $attachmentCount . ')' : '' }}
                             </button>
@@ -161,67 +158,13 @@
 
     </x-modals.modal-template>
 
-    {{-- Attachment Modal --}}
-    @if ($attachmentFile)
-        @php
-            $fileUrl = Storage::url($attachmentFile);
-            $extension = strtolower(pathinfo($attachmentFile ?? '', PATHINFO_EXTENSION));
-            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        @endphp
-
-        <x-modals.modal-template show="showAttachmentModal" title="Attachment Preview" max-width="max-w-xl">
-
-            @if (in_array($extension, $imageExtensions))
-                {{-- IMAGE PREVIEW ONLY --}}
-                <img src="{{ $fileUrl }}"
-                    class="border shadow-md max-h-[50vh] max-w-full object-contain mx-auto rounded-lg"
-                    alt="Attachment Preview">
-            @else
-                {{-- NO PREVIEW – ONLY LINK --}}
-                <p class="text-sm text-gray-600 text-center p-4">
-                    This file type cannot be previewed.<br>
-                    <a href="{{ $fileUrl }}" target="_blank" class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer">
-                        Download attachment
-                    </a>
-                </p>
-            @endif
-
-            <x-slot name="footer">
-                <div class="flex justify-end space-x-3 w-full">
-
-                    {{-- Back Button (always visible) --}}
-                    <x-buttons.submit-button wire:click="closeAttachmentModal" color="white">
-                        Back
-                    </x-buttons.submit-button>
-
-                    {{-- Remove Attachment button (only if admin and not completed) --}}
-                    @if ($this->canRemoveAttachment())
-                        <x-buttons.submit-button wire:click="confirmRemoveAttachment" color="red">
-                            Remove Attachment
-                        </x-buttons.submit-button>
-                    @endif
-
-                </div>
-            </x-slot>
-
-        </x-modals.modal-template>
+    {{-- Attachment Carousel Modal --}}
+    @if ($showAttachmentModal && $selectedSlip)
+        <x-modals.attachment :show="$showAttachmentModal" :selectedSlip="$selectedSlip" />
     @endif
 
     {{-- Remove Attachment Confirmation Modal --}}
-    <x-modals.modal-template show="showRemoveAttachmentConfirmation" title="REMOVE ATTACHMENT?" max-width="max-w-md">
-        <div class="text-center py-4">
-            <p class="text-gray-700 mb-2">Are you sure you want to remove this attachment?</p>
-            <p class="text-sm text-red-600 font-semibold">This action cannot be undone!</p>
-            <p class="text-sm text-gray-600">The file will be permanently deleted.</p>
-        </div>
-
-        <x-slot name="footer">
-            <x-buttons.submit-button wire:click="$set('showRemoveAttachmentConfirmation', false)" color="white">
-                Cancel
-            </x-buttons.submit-button>
-            <x-buttons.submit-button wire:click="removeAttachment" color="red">
-                Yes, Remove Attachment
-            </x-buttons.submit-button>
-        </x-slot>
-    </x-modals.modal-template>
+    <x-modals.delete-confirmation show="showRemoveAttachmentConfirmation" title="DELETE PHOTO?"
+        message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
+        onConfirm="removeAttachment" confirmText="Yes, Delete Photo" cancelText="Cancel" />
 @endif
