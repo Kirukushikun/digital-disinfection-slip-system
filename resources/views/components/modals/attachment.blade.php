@@ -13,13 +13,13 @@
     @endphp
 
     @if ($totalAttachments > 0)
-        <div class="relative" x-data="{ currentIndex: @entangle('currentAttachmentIndex') }">
+        <div class="relative" x-data="{ currentIndex: @entangle('currentAttachmentIndex').live }">
             {{-- Carousel Container --}}
             <div class="relative overflow-hidden rounded-lg bg-gray-100 min-h-[300px] sm:min-h-[400px] flex items-center justify-center">
                 {{-- Previous Button --}}
                 @if ($totalAttachments > 1)
                     <button 
-                        wire:click="previousAttachment"
+                        @click="$wire.previousAttachment()"
                         x-show="currentIndex > 0"
                         class="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all"
                         :class="{ 'opacity-50 cursor-not-allowed': currentIndex === 0 }">
@@ -66,7 +66,7 @@
                                     <div class="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
                                         <span class="font-semibold">Uploaded by:</span> 
                                         <span class="text-gray-800">{{ $uploaderName }}</span>
-                                        <span class="text-gray-500">({{ $uploaderUsername }})</span>
+                                        <span class="text-gray-500">(<span>@</span>{{ $uploaderUsername }})</span>
                                     </div>
                                 </div>
                             @endif
@@ -77,7 +77,7 @@
                 {{-- Next Button --}}
                 @if ($totalAttachments > 1)
                     <button 
-                        wire:click="nextAttachment"
+                        @click="$wire.nextAttachment()"
                         x-show="currentIndex < {{ $totalAttachments - 1 }}"
                         class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white rounded-full p-1.5 sm:p-2 shadow-lg transition-all"
                         :class="{ 'opacity-50 cursor-not-allowed': currentIndex >= {{ $totalAttachments - 1 }} }">
@@ -93,10 +93,9 @@
                 <div class="flex justify-center mt-3 sm:mt-4 space-x-1.5 sm:space-x-2 overflow-x-auto max-w-full px-2">
                     @foreach ($attachments as $index => $attachment)
                         <button 
-                            wire:click="openAttachmentModal({{ $index }})"
+                            @click="$wire.openAttachmentModal({{ $index }})"
                             class="w-2 h-2 rounded-full transition-all shrink-0"
-                            :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'"
-                            x-bind:class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'">
+                            :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'">
                         </button>
                     @endforeach
                 </div>
@@ -168,7 +167,7 @@
             @endif
 
             {{-- Back Button (always visible) --}}
-            <x-buttons.submit-button wire:click="closeAttachmentModal" color="white">
+            <x-buttons.submit-button @click="$wire.closeAttachmentModal()" color="white">
                 Back
             </x-buttons.submit-button>
         </div>
