@@ -875,6 +875,21 @@ class Reports extends Component
         $this->showAttachmentModal = false;
         $this->attachmentFile = null;
     }
+
+    public function nextAttachment()
+    {
+        $attachments = $this->selectedSlip->attachments();
+        if ($this->currentAttachmentIndex < $attachments->count() - 1) {
+            $this->currentAttachmentIndex++;
+        }
+    }
+
+    public function previousAttachment()
+    {
+        if ($this->currentAttachmentIndex > 0) {
+            $this->currentAttachmentIndex--;
+        }
+    }
     
     public function canRemoveAttachment()
     {
