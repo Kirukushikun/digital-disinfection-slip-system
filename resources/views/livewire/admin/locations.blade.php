@@ -124,7 +124,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
                                 Logo
                             </th>
                             <th scope="col"
@@ -226,7 +226,7 @@
                                 Create Slip
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                                 Actions
                             </th>
                         </tr>
@@ -235,8 +235,8 @@
                         @forelse($locations as $location)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <div class="w-16 h-16 mb-1">
+                                    <div class="flex items-center justify-center">
+                                        <div class="w-28 h-20">
                                             @if ($location->attachment_id && $location->attachment)
                                                 <img src="{{ asset('storage/' . $location->attachment->file_path) }}"
                                                     alt="{{ $location->location_name }}"
@@ -247,12 +247,6 @@
                                                     class="max-w-full max-h-full object-contain">
                                             @endif
                                         </div>
-                                        @if ($location->attachment_id && $location->attachment && $location->attachment->user)
-                                            <div class="text-xs text-gray-500 text-center">
-                                                <div class="font-medium text-gray-600">{{ $location->attachment->user->first_name }} {{ $location->attachment->user->last_name }}</div>
-                                                <div class="text-gray-400">({{ $location->attachment->user->username }})</div>
-                                            </div>
-                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -400,75 +394,88 @@
                                     @enderror
                                 </div>
 
-                                {{-- Logo Section (matching Settings pattern exactly) --}}
+                                {{-- Logo Section --}}
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">Logo <span
-                                            class="text-gray-400">(Optional)</span></label>
+                                    <div class="mb-3">
+                                        <label class="text-sm font-medium text-gray-700">Logo <span
+                                                class="text-gray-400">(Optional)</span>
+                                        
+                                        {{-- Remove/Cancel/Clear buttons after Optional --}}
+                                        @if ($edit_logo)
+                                            {{-- Clear button for newly selected file --}}
+                                            <button wire:click="clearLogo('edit')" type="button"
+                                                class="ml-2 text-xs text-red-600 hover:text-red-800 hover:cursor-pointer cursor-pointer">
+                                                Clear
+                                            </button>
+                                        @elseif ($this->editLogoPath && $this->editLogoPath !== $defaultLogoPath)
+                                            @if (!$remove_logo)
+                                                <button wire:click="removeLogo" type="button"
+                                                    class="ml-2 text-xs text-red-600 hover:text-red-800 hover:cursor-pointer cursor-pointer">
+                                                    Remove Logo
+                                                </button>
+                                            @else
+                                                <button wire:click="cancelRemoveLogo" type="button"
+                                                    class="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer cursor-pointer">
+                                                    Cancel Remove
+                                                </button>
+                                            @endif
+                                        @endif
+                                        </label>
+                                    </div>
 
                                     <div class="space-y-3">
-                                        <label
-                                            class="cursor-pointer inline-flex items-center justify-center w-full px-4 py-2.5 bg-white border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                </path>
-                                            </svg>
-                                            Choose Image
-                                            <input type="file" wire:model="edit_logo" class="hidden"
-                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                                        </label>
+                                        {{-- Choose Image Button - Hide when file is selected --}}
+                                        @if (!$edit_logo)
+                                            @if (!$this->editLogoPath || $remove_logo || $this->editLogoPath === $defaultLogoPath)
+                                                <label
+                                                    class="cursor-pointer inline-flex items-center justify-center w-full px-4 py-2.5 bg-white border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                        </path>
+                                                    </svg>
+                                                    Choose Image
+                                                    <input type="file" wire:model="edit_logo" class="hidden"
+                                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                                </label>
+                                            @endif
+                                        @endif
 
-                                        {{-- File Info --}}
+                                        {{-- Logo Preview - Only show if there's an actual logo (not default) --}}
                                         @if ($edit_logo)
-                                            <div
-                                                class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-gray-200">
-                                                <p class="text-sm text-gray-700 truncate flex-1"
+                                            <div class="flex items-center justify-center bg-white rounded-lg p-4 border border-gray-200 h-48">
+                                                <img src="{{ $edit_logo->temporaryUrl() }}" alt="Logo preview"
+                                                    class="max-w-full max-h-full w-auto h-auto object-contain">
+                                            </div>
+                                            
+                                            {{-- File Info for newly selected file - Below preview --}}
+                                            <div class="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-gray-700 truncate"
                                                     title="{{ $edit_logo->getClientOriginalName() }}">
                                                     {{ $edit_logo->getClientOriginalName() }}
                                                 </p>
-                                                <button wire:click="clearLogo('edit')" type="button"
-                                                    class="ml-2 text-xs text-red-600 hover:text-red-800 font-medium">
-                                                    Clear
-                                                </button>
                                             </div>
-                                        @elseif ($this->editLogoPath && !$remove_logo)
-                                            <div class="bg-white rounded-md px-3 py-2 border border-gray-200">
-                                                <p class="text-sm text-gray-700 truncate"
+                                        @elseif ($this->editLogoPath && !$remove_logo && $this->editLogoPath !== $defaultLogoPath)
+                                            <div class="flex items-center justify-center bg-white rounded-lg p-4 border border-gray-200 h-48">
+                                                <img src="{{ asset('storage/' . $this->editLogoPath) }}"
+                                                    alt="Current logo" class="max-w-full max-h-full w-auto h-auto object-contain">
+                                            </div>
+                                            
+                                            {{-- Combined File Info and Uploaded By Box - Under preview --}}
+                                            <div class="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                                                <p class="text-sm text-gray-700 truncate mb-2"
                                                     title="{{ $this->editLogoPath }}">
                                                     Current: {{ basename($this->editLogoPath) }}
                                                 </p>
-                                                <button wire:click="removeLogo" type="button"
-                                                    class="mt-1 text-xs text-red-600 hover:text-red-800">
-                                                    Remove Logo
-                                                </button>
-                                            </div>
-                                        @elseif ($remove_logo)
-                                            <div class="bg-white rounded-md px-3 py-2 border border-gray-200">
-                                                <p class="text-sm text-red-600">Logo will be removed</p>
-                                                <button wire:click="cancelRemoveLogo" type="button"
-                                                    class="mt-1 text-xs text-blue-600 hover:text-blue-800">
-                                                    Cancel Remove
-                                                </button>
+                                                @if ($currentLocation && $currentLocation->attachment_id && $currentLocation->attachment && $currentLocation->attachment->user)
+                                                    <div class="text-xs text-gray-500 pt-2 border-t border-gray-200">
+                                                        <div class="font-medium text-gray-600">Uploaded by: {{ $currentLocation->attachment->user->first_name }} {{ $currentLocation->attachment->user->last_name }}</div>
+                                                        <div class="text-gray-400">({{ $currentLocation->attachment->user->username }})</div>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endif
-
-                                        {{-- Logo Preview --}}
-                                        <div
-                                            class="flex items-center justify-center bg-white rounded-lg p-3 border border-gray-200">
-                                            @if ($edit_logo)
-                                                <img src="{{ $edit_logo->temporaryUrl() }}" alt="Logo preview"
-                                                    class="max-w-full max-h-28 object-contain">
-                                            @elseif ($this->editLogoPath && !$remove_logo)
-                                                <img src="{{ asset('storage/' . $this->editLogoPath) }}"
-                                                    alt="Current logo" class="max-w-full max-h-28 object-contain">
-                                            @else
-                                                <div
-                                                    class="w-full h-28 flex items-center justify-center bg-gray-50 rounded-md">
-                                                    <span class="text-xs text-gray-400">No image selected</span>
-                                                </div>
-                                            @endif
-                                        </div>
                                     </div>
 
                                     @error('edit_logo')
