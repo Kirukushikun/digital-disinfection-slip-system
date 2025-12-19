@@ -35,7 +35,7 @@ class TruckCountCard extends Component
         // Apply filters based on type
         switch ($this->type) {
             case 'incoming':
-                // Incoming trucks today - Status 2 (Ongoing) only
+                // Incoming trucks today - Status 2 (In-Transit) only
                 $query->whereDate('created_at', today())
                       ->where('destination_id', $locationId)
                       ->where('location_id', '!=', $locationId)
@@ -43,7 +43,7 @@ class TruckCountCard extends Component
                 break;
 
             case 'outgoing':
-                // Outgoing trucks today - Status 0, 1, 2 (Pending, Disinfecting, Ongoing) - only show slips created by the current user
+                // Outgoing trucks today - Status 0, 1, 2 (Pending, Disinfecting, In-Transit) - only show slips created by the current user
                 $query->whereDate('created_at', today())
                       ->where('location_id', $locationId)
                       ->where('hatchery_guard_id', Auth::id())

@@ -26,12 +26,12 @@ class LocationCards extends Component
     
         // Get all ongoing slip counts in a single query for better performance
         // Only query if there are locations to avoid empty whereIn
-        // Status 2 (Ongoing) - incoming slips ready for completion
+        // Status 2 (In-Transit) - incoming slips ready for completion
         $ongoingCounts = collect();
         if ($locations->isNotEmpty()) {
             $ongoingCounts = DisinfectionSlip::whereIn('destination_id', $locations->pluck('id'))
                 ->whereDate('created_at', today())
-                ->where('status', 2) // Ongoing - incoming slips
+                ->where('status', 2) // In-Transit - incoming slips
                 ->selectRaw('destination_id, COUNT(*) as count')
                 ->groupBy('destination_id')
                 ->pluck('count', 'destination_id');

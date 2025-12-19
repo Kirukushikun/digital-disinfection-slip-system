@@ -160,7 +160,7 @@
                 $statusMap = [
                     0 => ['label' => 'Pending', 'color' => 'border-gray-500 bg-gray-50'],
                     1 => ['label' => 'Disinfecting', 'color' => 'border-orange-500 bg-orange-50'],
-                    2 => ['label' => 'Ongoing', 'color' => 'border-red-500 bg-red-50'],
+                    2 => ['label' => 'In-Transit', 'color' => 'border-red-500 bg-red-50'],
                     3 => ['label' => 'Completed', 'color' => 'border-green-500 bg-green-50'],
                 ];
                 $status = $slip->status;

@@ -116,7 +116,7 @@
 
                     @if (!is_null($appliedReportType))
                         <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-black">
                             Type: {{ $appliedReportType === 'slip' ? 'Slip' : 'Miscellaneous' }}
                             <button wire:click="removeFilter('report_type')"
                                 class="ml-1.5 inline-flex items-center hover:cursor-pointer">
@@ -216,7 +216,7 @@
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        #{{ $report->id }}
+                                        {{ $report->id }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -234,13 +234,19 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        @if ($report->slip_id && $report->slip)
-                                            <button wire:click="openSlipDetailsModal({{ $report->slip->id }})" 
-                                                class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
-                                                Slip: {{ $report->slip->slip_id ?? 'N/A' }}
-                                            </button>
-                                        @elseif ($report->slip_id)
-                                            <span class="text-blue-600">Slip: {{ $report->slip_id ?? 'N/A' }}</span>
+                                        @if ($report->slip_id)
+                                            @if ($report->slip && !(method_exists($report->slip, 'trashed') && $report->slip->trashed()))
+                                                <button wire:click="openSlipDetailsModal({{ $report->slip->id }})"
+                                                    class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
+                                                    Slip: {{ $report->slip->slip_id ?? 'N/A' }}
+                                                </button>
+                                            @elseif ($report->slip)
+                                                <span class="text-gray-900 font-semibold">Slip: {{ $report->slip->slip_id ?? $report->slip_id }}</span>
+                                                <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                            @else
+                                                <span class="text-gray-900 font-semibold">Slip: {{ $report->slip_id }}</span>
+                                                <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                            @endif
                                         @else
                                             <span class="text-gray-500 italic">Miscellaneous</span>
                                         @endif
@@ -269,43 +275,17 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center gap-2">
-                                        @if (!$showDeleted)
-                                            <button wire:click="openDetailsModal({{ $report->id }})"
-                                                class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                                View Details
-                                            </button>
-                                        @endif
-
-                                        @if ($showDeleted)
-                                            <button wire:click="openRestoreModal({{ $report->id }})"
-                                                class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                                Restore
-                                            </button>
-                                        @else
-                                            <button wire:click="confirmDelete({{ $report->id }})"
-                                                class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                                Delete
-                                            </button>
-                                        @endif
+                                        <button wire:click="openDetailsModal({{ $report->id }})"
+                                            class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            View Details
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -341,9 +321,7 @@
             </x-slot>
         </x-modals.filter-modal>
 
-        {{-- Delete Confirmation Modal --}}
-        <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE REPORT?"
-            message="Delete this report?" warning="This action cannot be undone!" onConfirm="deleteReport" />
+        {{-- Delete/Restore actions removed to make Reports view-only --}}
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
@@ -447,7 +425,15 @@
                             <div class="font-semibold text-gray-500">Type:</div>
                             <div class="text-gray-900">
                                 @if ($selectedReport->slip_id)
-                                    <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                    @if ($selectedReport->slip && !(method_exists($selectedReport->slip, 'trashed') && $selectedReport->slip->trashed()))
+                                        <span class="text-black font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                    @elseif ($selectedReport->slip)
+                                        <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? $selectedReport->slip_id }}</span>
+                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                    @else
+                                        <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip_id }}</span>
+                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                    @endif
                                 @else
                                     <span class="text-gray-500 italic">Miscellaneous</span>
                                 @endif
@@ -511,8 +497,8 @@
             </x-modals.modal-template>
         @endif
 
-        {{-- Slip Details Modal --}}
-        @include('livewire.admin.slip-details-modal')
+        {{-- Slip Details Modal - VIEW ONLY for reports --}}
+        @include('livewire.admin.slip-details-modal-view-only')
 
         {{-- Admin Edit Modal --}}
         @if ($selectedSlip && $showEditModal)

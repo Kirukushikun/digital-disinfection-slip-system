@@ -78,7 +78,15 @@
                         </div>
                         <div class="text-base font-bold text-gray-900">
                             @if ($report->slip_id)
-                                {{ $report->slip->slip_id ?? 'N/A' }}
+                                @if ($report->slip && !(method_exists($report->slip, 'trashed') && $report->slip->trashed()))
+                                    <button wire:click="openDetailsModal({{ $report->id }})" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
+                                        {{ $report->slip->slip_id ?? 'N/A' }}
+                                    </button>
+                                @elseif ($report->slip)
+                                    <span class="text-gray-900">{{ $report->slip->slip_id ?? $report->slip_id }}</span><span class="text-red-600"> (Deleted)</span>
+                                @else
+                                    <span class="text-gray-900">{{ $report->slip_id }}</span><span class="text-red-600"> (Deleted)</span>
+                                @endif
                             @else
                                 <span class="italic font-normal">Miscellaneous</span>
                             @endif
@@ -160,7 +168,13 @@
                         </div>
                         <div class="text-gray-900 font-semibold">
                             @if ($selectedReport->slip_id)
-                                {{ $selectedReport->slip->slip_id ?? 'N/A' }}
+                                @if ($selectedReport->slip && !(method_exists($selectedReport->slip, 'trashed') && $selectedReport->slip->trashed()))
+                                    <button class="text-blue-600 font-semibold">{{ $selectedReport->slip->slip_id ?? 'N/A' }}</button>
+                                @elseif ($selectedReport->slip)
+                                    <span class="text-gray-900">{{ $selectedReport->slip->slip_id ?? $selectedReport->slip_id }}</span><span class="text-red-600"> (Deleted)</span>
+                                @else
+                                    <span class="text-gray-900">{{ $selectedReport->slip_id }}</span><span class="text-red-600"> (Deleted)</span>
+                                @endif
                             @else
                                 <span class="italic font-normal">Miscellaneous</span>
                             @endif

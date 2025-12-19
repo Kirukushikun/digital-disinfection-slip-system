@@ -3,7 +3,7 @@
     $isHatcheryAssigned = Auth::id() === $selectedSlip?->hatchery_guard_id;
     $isReceivingGuard = Auth::id() === $selectedSlip?->received_guard_id;
     $status = $selectedSlip?->status ?? null;
-    // Status: 0 = Pending, 1 = Disinfecting, 2 = Ongoing, 3 = Completed
+    // Status: 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
     
     // Header class based on status
     $headerClass = '';
@@ -394,7 +394,7 @@
                         @if ($this->canComplete())
                             <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
                                 @if ($type === 'outgoing')
-                                    Complete Disinfection
+                                Complete Disinfection
                                 @else
                                     Complete Slip
                                 @endif
@@ -446,7 +446,7 @@
         <div class="text-center py-4">
             <p class="text-gray-700 mb-2">Start disinfecting this truck?</p>
             @if ($type === 'incoming')
-                <p class="text-sm text-gray-600">You will be assigned as the receiving guard.</p>
+            <p class="text-sm text-gray-600">You will be assigned as the receiving guard.</p>
             @else
                 <p class="text-sm text-gray-600">The slip status will be updated to disinfecting.</p>
             @endif
@@ -470,7 +470,7 @@
         <div class="text-center py-4">
             @if ($type === 'outgoing')
                 <p class="text-gray-700 mb-2">Complete disinfection for this truck?</p>
-                <p class="text-sm text-gray-600">The slip will be marked as ongoing and ready for destination.</p>
+                <p class="text-sm text-gray-600">The slip will be marked as In-Transit and ready for destination.</p>
             @else
                 <p class="text-gray-700 mb-2">Complete this slip?</p>
                 <p class="text-sm text-gray-600">This will mark the slip as completed. This action cannot be undone.</p>

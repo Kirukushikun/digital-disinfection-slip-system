@@ -52,6 +52,10 @@
             {{-- Active Filters Display --}}
             @if ($filtersActive)
                 <div class="mt-4 flex flex-wrap gap-2">
+                        {{-- Slip Delete Confirmation (for deleting a disinfection slip from the slip-edit modal) --}}
+                        <x-modals.delete-confirmation show="showSlipDeleteConfirmation" title="DELETE SLIP?"
+                            message="Delete this disinfection slip?" details="" warning="This action cannot be undone!" onConfirm="deleteSlip"
+                            confirmText="Yes, Delete" cancelText="Cancel" />
                     <span class="text-sm text-gray-600">Active filters:</span>
 
                     @if (!is_null($appliedResolved))
@@ -204,13 +208,19 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        @if ($report->slip_id && $report->slip)
-                                            <button wire:click="openSlipDetailsModal({{ $report->slip->id }})" 
-                                                class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
-                                                Slip: {{ $report->slip->slip_id ?? 'N/A' }}
-                                            </button>
-                                        @elseif ($report->slip_id)
-                                            <span class="text-blue-600">Slip: {{ $report->slip_id ?? 'N/A' }}</span>
+                                        @if ($report->slip_id)
+                                            @if ($report->slip && !(method_exists($report->slip, 'trashed') && $report->slip->trashed()))
+                                                <button wire:click="openSlipDetailsModal({{ $report->slip->id }})" 
+                                                    class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
+                                                    Slip: {{ $report->slip->slip_id ?? 'N/A' }}
+                                                </button>
+                                            @elseif ($report->slip)
+                                                <span class="text-gray-900 font-semibold">Slip: {{ $report->slip->slip_id ?? $report->slip_id }}</span>
+                                                <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                            @else
+                                                <span class="text-gray-900 font-semibold">Slip: {{ $report->slip_id }}</span>
+                                                <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                            @endif
                                         @else
                                             <span class="text-gray-500 italic">Miscellaneous</span>
                                         @endif
@@ -310,7 +320,11 @@
                                 </div>
                                 <div class="text-gray-900 font-semibold">
                                     @if ($selectedReport->slip_id)
-                                        {{ $selectedReport->slip->slip_id ?? 'N/A' }}
+                                        @if ($selectedReport->slip)
+                                            {{ $selectedReport->slip->slip_id ?? 'N/A' }}
+                                        @else
+                                            <span class="text-red-600">{{ $selectedReport->slip_id }} (Deleted)</span>
+                                        @endif
                                     @else
                                         <span class="italic font-normal">Miscellaneous</span>
                                     @endif
@@ -334,7 +348,15 @@
                             <div class="font-semibold text-gray-500">Type:</div>
                             <div class="text-gray-900">
                                 @if ($selectedReport->slip_id)
-                                    <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                    @if ($selectedReport->slip && !(method_exists($selectedReport->slip, 'trashed') && $selectedReport->slip->trashed()))
+                                        <span class="text-black font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                    @elseif ($selectedReport->slip)
+                                        <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? $selectedReport->slip_id }}</span>
+                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                    @else
+                                        <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip_id }}</span>
+                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                    @endif
                                 @else
                                     <span class="text-gray-500 italic">Miscellaneous</span>
                                 @endif
@@ -399,7 +421,7 @@
         @endif
 
         {{-- Slip Details Modal --}}
-        @include('livewire.admin.slip-details-modal')
+        @include('livewire.admin.slip-details-modal-view-only')
 
         {{-- Admin Edit Modal --}}
         @if ($selectedSlip && $showEditModal)

@@ -84,7 +84,7 @@ class Trucks extends Component
     public $availableStatuses = [
         0 => 'Pending',
         1 => 'Disinfecting',
-        2 => 'Ongoing',
+        2 => 'In-Transit',
         3 => 'Completed',
     ];
 
@@ -2114,7 +2114,7 @@ class Trucks extends Component
             fputcsv($file, ['Slip ID', 'Plate Number', 'Origin', 'Destination', 'Driver', 'Status', 'Hatchery Guard', 'Received Guard', 'Created Date', 'Completed Date']);
             
             foreach ($data as $slip) {
-                $statuses = ['Pending', 'Disinfecting', 'Ongoing', 'Completed'];
+                $statuses = ['Pending', 'Disinfecting', 'In-Transit', 'Completed'];
                 $status = $statuses[$slip->status] ?? 'Unknown';
                 $hatcheryGuard = $slip->hatcheryGuard ? trim(implode(' ', array_filter([$slip->hatcheryGuard->first_name, $slip->hatcheryGuard->middle_name, $slip->hatcheryGuard->last_name]))) : 'N/A';
                 $receivedGuard = $slip->receivedGuard ? trim(implode(' ', array_filter([$slip->receivedGuard->first_name, $slip->receivedGuard->middle_name, $slip->receivedGuard->last_name]))) : 'N/A';

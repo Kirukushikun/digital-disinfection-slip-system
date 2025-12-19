@@ -17,7 +17,7 @@
 @php
     // Use editStatus if available, otherwise fall back to slipStatus
     $status = $editStatus ?? $slipStatus ?? null;
-    // Status: 0 = Pending, 1 = Disinfecting, 2 = Ongoing, 3 = Completed
+    // Status: 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
     
     // Header class based on status
     $headerClass = '';
@@ -64,7 +64,7 @@
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500 hover:cursor-pointer cursor-pointer">
                         <option value="0">Pending</option>
                         <option value="1">Disinfecting</option>
-                        <option value="2">Ongoing</option>
+                        <option value="2">In-Transit</option>
                         <option value="3">Completed</option>
                     </select>
                     @error('editStatus')
@@ -351,10 +351,10 @@
                 <div>
                     <div class="flex items-start justify-between mb-0.5">
                         <div class="font-semibold text-gray-500">
-                            Received By:
+                        Received By:
                             @if ($status == 3)
-                                <span class="text-red-500">*</span>
-                            @endif
+                            <span class="text-red-500">*</span>
+                        @endif
                         </div>
                         @if ($status == 0 || $status == 1 || $status == 2)
                             <div x-data="{ editReceivedGuardId: @entangle('editReceivedGuardId') }">

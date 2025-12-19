@@ -48,7 +48,7 @@ class Report extends Model
 
     public function slip()
     {
-        return $this->belongsTo(DisinfectionSlip::class, 'slip_id');
+        return $this->belongsTo(DisinfectionSlip::class, 'slip_id')->withTrashed();
     }
 
     public function resolvedBy()

@@ -249,7 +249,7 @@ class DisinfectionSlip extends Component
                 && $this->selectedSlip->location_id === $currentLocation;
         }
 
-        // Can complete on INCOMING when status is Ongoing (2)
+        // Can complete on INCOMING when status is In-Transit (2)
         return $this->type === 'incoming'
             && $this->selectedSlip->status == 2 
             && $this->selectedSlip->destination_id === $currentLocation
@@ -290,7 +290,7 @@ class DisinfectionSlip extends Component
 
         $currentLocation = Session::get('location_id');
 
-        // Can manage attachment on INCOMING when status is Ongoing (2)
+        // Can manage attachment on INCOMING when status is In-Transit (2)
         if ($this->type === 'incoming'
             && $this->selectedSlip->status == 2
             && $this->selectedSlip->destination_id === $currentLocation
@@ -406,10 +406,10 @@ class DisinfectionSlip extends Component
             return;
         }
 
-        // For OUTGOING: Status 1 (Disinfecting) -> 2 (Ongoing)
+        // For OUTGOING: Status 1 (Disinfecting) -> 2 (In-Transit)
         if ($this->type === 'outgoing') {
-            $this->selectedSlip->update([
-                'status' => 2, // Ongoing
+        $this->selectedSlip->update([
+                'status' => 2, // In-Transit
             ]);
 
             $slipId = $this->selectedSlip->slip_id;
@@ -426,13 +426,13 @@ class DisinfectionSlip extends Component
             $this->showCompleteConfirmation = false;
             $this->dispatch('toast', message: "{$slipId} is now ongoing.", type: 'success');
         }
-        // For INCOMING: Status 2 (Ongoing) -> 3 (Completed) and set completed_at timestamp and received_guard_id
+        // For INCOMING: Status 2 (In-Transit) -> 3 (Completed) and set completed_at timestamp and received_guard_id
         else {
             $this->selectedSlip->update([
                 'status' => 3,
-                'completed_at' => now(),
+            'completed_at' => now(),
                 'received_guard_id' => Auth::id(),
-            ]);
+        ]);
 
             $slipId = $this->selectedSlip->slip_id;
             

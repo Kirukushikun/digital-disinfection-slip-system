@@ -23,6 +23,10 @@ class Reports extends Component
     public $showFilters = false;
     public $showDetailsModal = false;
     public $selectedReport = null;
+    public $selectedSlip = null;
+    public $showAttachmentModal = false;
+    public $attachmentFile = null;
+    public $currentAttachmentIndex = 0;
     public $sortDirection = null; // null, 'asc', 'desc' (applied)
     public $filterSortDirection = null; // null, 'asc', 'desc' (temporary, in filter modal)
     public $filtersActive = false;

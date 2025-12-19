@@ -20,6 +20,11 @@ class Reports extends Component
 {
     use WithPagination;
 
+    protected $listeners = [
+        'deleteSlip' => 'deleteSlip',
+        'deleteReport' => 'deleteReport',
+    ];
+
     public $search = '';
     public $showFilters = false;
     public $showDeleted = false;
@@ -76,6 +81,7 @@ class Reports extends Component
     public $selectedSlip = null;
     public $showAttachmentModal = false;
     public $attachmentFile = null;
+    public $currentAttachmentIndex = 0;
     
     // Edit Modal
     public $showEditModal = false;
@@ -229,6 +235,11 @@ class Reports extends Component
         ])->find($slipId);
         
         $this->showDetailsModal = true;
+    }
+
+    public function confirmDeleteSlip()
+    {
+        $this->showDeleteConfirmation = true;
     }
     
     public function closeRestoreModal()
@@ -632,7 +643,7 @@ class Reports extends Component
             'editReasonForDisinfection' => 'nullable|string|max:1000',
         ];
 
-        // Status 0 (Ongoing): Origin and Hatchery Guard are required, Receiving Guard is optional
+        // Status handling: Receiving Guard is optional for non-completed statuses; required for Completed (3)
         if ($status == 0) {
             $rules['editLocationId'] = [
                 'required',
@@ -661,6 +672,7 @@ class Reports extends Component
                     }
                 },
             ];
+            // Receiving guard may be null for non-completed statuses
             $rules['editReceivedGuardId'] = [
                 'nullable',
                 'exists:users,id',
@@ -687,8 +699,8 @@ class Reports extends Component
             ];
         }
         
-        // Status 1 (Disinfecting) or 2 (Completed): Origin, Hatchery Guard, and Receiving Guard are all required
-        if ($status == 1 || $status == 2) {
+        // If the slip is being set to Completed (3), require the receiving guard; otherwise it's optional
+        if ($status == 3) {
             $rules['editLocationId'] = [
                 'required',
                 'exists:locations,id',

@@ -52,7 +52,7 @@ class TruckList extends Component
     public $availableStatuses = [
         0 => 'Pending',
         1 => 'Disinfecting',
-        2 => 'Ongoing',
+        2 => 'In-Transit',
     ];
 
     // Create Modal
@@ -694,12 +694,16 @@ class TruckList extends Component
 
         // Apply type-specific filter first (most restrictive)
         if ($this->type === 'incoming') {
-            // Incoming: Status 2 (Ongoing) - shows all ongoing slips at destination
+            // Incoming: Status 2 (In-Transit) - show only unclaimed slips or slips claimed by the current user at destination
             $query->where('destination_id', $location)
                   ->where('location_id', '!=', $location)
-                  ->where('status', 2);
+                  ->where('status', 2)
+                  ->where(function($q) use ($location) {
+                      $q->whereNull('hatchery_guard_id')
+                        ->orWhere('hatchery_guard_id', Auth::id());
+                  });
         } else {
-            // Outgoing: Status 0 (Pending), 1 (Disinfecting), 2 (Ongoing) - only show slips created by the current user
+            // Outgoing: Status 0 (Pending), 1 (Disinfecting), 2 (In-Transit) - only show slips created by the current user
             $query->where('location_id', $location)
                   ->where('hatchery_guard_id', Auth::id())
                   ->whereIn('status', [0, 1, 2]);
