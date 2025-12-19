@@ -3,15 +3,17 @@
     $isHatcheryAssigned = Auth::id() === $selectedSlip?->hatchery_guard_id;
     $isReceivingGuard = Auth::id() === $selectedSlip?->received_guard_id;
     $status = $selectedSlip?->status ?? null;
-    // Status: 0 = Ongoing, 1 = Disinfecting, 2 = Completed
+    // Status: 0 = Pending, 1 = Disinfecting, 2 = Ongoing, 3 = Completed
     
     // Header class based on status
     $headerClass = '';
     if ($status == 0) {
-        $headerClass = 'border-t-4 border-t-red-500 bg-red-50';
+        $headerClass = 'border-t-4 border-t-gray-500 bg-gray-50';
     } elseif ($status == 1) {
         $headerClass = 'border-t-4 border-t-orange-500 bg-orange-50';
     } elseif ($status == 2) {
+        $headerClass = 'border-t-4 border-t-red-500 bg-red-50';
+    } elseif ($status == 3) {
         $headerClass = 'border-t-4 border-t-green-500 bg-green-50';
     }
 @endphp
@@ -106,7 +108,7 @@
                 </div>
 
                 {{-- Completion Date (only when completed) --}}
-                @if ($status == 2 && $selectedSlip->completed_at)
+                @if ($status == 3 && $selectedSlip->completed_at)
                     <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                         <div class="font-semibold text-gray-500">End Date:</div>
                         <div class="text-gray-900">
@@ -118,8 +120,8 @@
 
                 {{-- CAMERA WITH UPLOAD FUNCTIONALITY --}}
                 @if (!$isEditing)
-                    <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 2 && $selectedSlip->completed_at) bg-gray-100 @else bg-white @endif">
-                        <div class="font-semibold text-gray-500">Attachment:</div>
+                    <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 3 && $selectedSlip->completed_at) bg-gray-100 @else bg-white @endif">
+                        <div class="font-semibold text-gray-500">Photos:</div>
                         <div class="text-gray-900" x-data="{ 
                             showCameraModal: false,
                             stream: null,
@@ -209,7 +211,7 @@
                                 <div class="flex items-center gap-2">
                                     <button wire:click="openAttachmentModal(0)"
                                         class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
-                                        See Attachments ({{ $attachmentCount }})
+                                        See Photos ({{ $attachmentCount }})
                                     </button>
                                     @if ($this->canManageAttachment())
                                         <button @click="showCameraModal = true; startCamera()"
@@ -221,7 +223,7 @@
                             @elseif ($this->canManageAttachment())
                                 <button @click="showCameraModal = true; startCamera()"
                                     class="text-blue-500 hover:text-blue-600 underline cursor-pointer">
-                                    Add Attachment
+                                    Add Photos
                                 </button>
                             @else
                                 N/A
@@ -239,7 +241,7 @@
                                     <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-4 sm:p-6 my-4 sm:my-8 max-h-[95vh] overflow-y-auto">
                                         
                                         <div class="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2">
-                                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Add Attachment</h3>
+                                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Add Photos</h3>
                                             <button @click="showCameraModal = false; stopCamera()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
                                                 <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -320,7 +322,7 @@
                 @endif
 
                 {{-- Reason --}}
-                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 2 && $selectedSlip->completed_at && !$isEditing) bg-white @elseif ($status == 2 && $selectedSlip->completed_at && $isEditing) bg-gray-100 @elseif ($isEditing) bg-white @else bg-gray-100 @endif">
+                <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 3 && $selectedSlip->completed_at && !$isEditing) bg-white @elseif ($status == 3 && $selectedSlip->completed_at && $isEditing) bg-gray-100 @elseif ($isEditing) bg-white @else bg-gray-100 @endif">
                     <div class="font-semibold text-gray-500">Reason:</div>
                     <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
                         @if ($isEditing)
@@ -372,17 +374,21 @@
                             </x-buttons.submit-button>
                         @endif
 
-                        {{-- Disinfecting Button (Status 0 -> 1, only on incoming at destination location) --}}
+                        {{-- Start Disinfecting Button (Outgoing Only: Status 0 -> 1) --}}
                         @if ($this->canStartDisinfecting())
-                            <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="blue">
+                            <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', true)" color="orange">
                                 Start Disinfecting
                             </x-buttons.submit-button>
                         @endif
 
-                        {{-- Complete Button (Status 1 -> 2, only on incoming at destination location) --}}
+                        {{-- Complete Button (Outgoing: Status 1 -> 2 | Incoming: Status 2 -> 3) --}}
                         @if ($this->canComplete())
                             <x-buttons.submit-button wire:click="$set('showCompleteConfirmation', true)" color="green">
-                                Complete Disinfection
+                                @if ($type === 'outgoing')
+                                    Complete Disinfection
+                                @else
+                                    Complete Slip
+                                @endif
                             </x-buttons.submit-button>
                         @endif
                 </div>
@@ -430,14 +436,18 @@
     <x-modals.modal-template show="showDisinfectingConfirmation" title="START DISINFECTING?" max-width="max-w-md">
         <div class="text-center py-4">
             <p class="text-gray-700 mb-2">Start disinfecting this truck?</p>
-            <p class="text-sm text-gray-600">You will be assigned as the receiving guard.</p>
+            @if ($type === 'incoming')
+                <p class="text-sm text-gray-600">You will be assigned as the receiving guard.</p>
+            @else
+                <p class="text-sm text-gray-600">The slip status will be updated to disinfecting.</p>
+            @endif
         </div>
 
         <x-slot name="footer">
             <x-buttons.submit-button wire:click="$set('showDisinfectingConfirmation', false)" color="white" wire:loading.attr="disabled" wire:target="startDisinfecting">
                 Cancel
             </x-buttons.submit-button>
-            <x-buttons.submit-button wire:click="startDisinfecting" color="blue" wire:loading.attr="disabled" wire:target="startDisinfecting">
+            <x-buttons.submit-button wire:click="startDisinfecting" color="orange" wire:loading.attr="disabled" wire:target="startDisinfecting">
                 <span wire:loading.remove wire:target="startDisinfecting">Yes, Start Disinfecting</span>
                 <span wire:loading wire:target="startDisinfecting" class="inline-flex items-center gap-2">
                     Starting...
@@ -447,10 +457,15 @@
     </x-modals.modal-template>
 
     {{-- Complete Confirmation Modal --}}
-    <x-modals.modal-template show="showCompleteConfirmation" title="COMPLETE DISINFECTION?" max-width="max-w-md">
+    <x-modals.modal-template show="showCompleteConfirmation" :title="$type === 'outgoing' ? 'COMPLETE DISINFECTION?' : 'COMPLETE SLIP?'" max-width="max-w-md">
         <div class="text-center py-4">
-            <p class="text-gray-700 mb-2">Mark this disinfection as completed?</p>
-            <p class="text-sm text-gray-600">This action cannot be undone.</p>
+            @if ($type === 'outgoing')
+                <p class="text-gray-700 mb-2">Complete disinfection for this truck?</p>
+                <p class="text-sm text-gray-600">The slip will be marked as ongoing and ready for destination.</p>
+            @else
+                <p class="text-gray-700 mb-2">Complete this slip?</p>
+                <p class="text-sm text-gray-600">This will mark the slip as completed. This action cannot be undone.</p>
+            @endif
         </div>
 
         <x-slot name="footer">
@@ -466,10 +481,10 @@
         </x-slot>
     </x-modals.modal-template>
 
-    {{-- Remove Attachment Confirmation Modal --}}
-    <x-modals.modal-template show="showRemoveAttachmentConfirmation" title="REMOVE ATTACHMENT?" max-width="max-w-md">
+    {{-- Remove Photo Confirmation Modal --}}
+    <x-modals.modal-template show="showRemoveAttachmentConfirmation" title="REMOVE PHOTO?" max-width="max-w-md">
         <div class="text-center py-4">
-            <p class="text-gray-700 mb-2">Are you sure you want to remove this attachment?</p>
+            <p class="text-gray-700 mb-2">Are you sure you want to remove this photo?</p>
             <p class="text-sm text-red-600 font-semibold">This action cannot be undone!</p>
             <p class="text-sm text-gray-600">The file will be permanently deleted.</p>
         </div>
@@ -479,15 +494,15 @@
                 Cancel
             </x-buttons.submit-button>
             <x-buttons.submit-button wire:click="removeAttachment" color="red">
-                Yes, Remove Attachment
+                Yes, Remove Photo
             </x-buttons.submit-button>
         </x-slot>
     </x-modals.modal-template>
 
-    {{-- Attachment Modal --}}
+    {{-- Photo Gallery Modal --}}
     <x-modals.attachment show="showAttachmentModal" :selectedSlip="$selectedSlip" />
 
-    {{-- Add Attachment Modal is now inline Alpine.js modal above --}}
+    {{-- Add Photos Modal is now inline Alpine.js modal above --}}
 
     {{-- Report Modal --}}
     <x-modals.modal-template show="showReportModal" title="REPORT DISINFECTION SLIP" max-width="max-w-3xl"

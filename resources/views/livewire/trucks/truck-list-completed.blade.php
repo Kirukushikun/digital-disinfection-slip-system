@@ -158,9 +158,10 @@
         @forelse ($slips as $slip)
             @php
                 $statusMap = [
-                    0 => ['label' => 'Ongoing', 'color' => 'border-red-500 bg-red-50'],
+                    0 => ['label' => 'Pending', 'color' => 'border-gray-500 bg-gray-50'],
                     1 => ['label' => 'Disinfecting', 'color' => 'border-orange-500 bg-orange-50'],
-                    2 => ['label' => 'Completed', 'color' => 'border-green-500 bg-green-50'],
+                    2 => ['label' => 'Ongoing', 'color' => 'border-red-500 bg-red-50'],
+                    3 => ['label' => 'Completed', 'color' => 'border-green-500 bg-green-50'],
                 ];
                 $status = $slip->status;
             @endphp
@@ -202,9 +203,10 @@
                     {{-- Status Badge --}}
                     <span
                         class="px-2 py-0.5 text-[10px] font-semibold rounded-full whitespace-nowrap
-                        {{ $status === 0 ? 'bg-red-100 text-red-700' : '' }}
+                        {{ $status === 0 ? 'bg-gray-100 text-gray-700' : '' }}
                         {{ $status === 1 ? 'bg-orange-100 text-orange-700' : '' }}
-                        {{ $status === 2 ? 'bg-green-100 text-green-700' : '' }}">
+                        {{ $status === 2 ? 'bg-red-100 text-red-700' : '' }}
+                        {{ $status === 3 ? 'bg-green-100 text-green-700' : '' }}">
                         {{ $statusMap[$status]['label'] }}
                     </span>
                 </div>

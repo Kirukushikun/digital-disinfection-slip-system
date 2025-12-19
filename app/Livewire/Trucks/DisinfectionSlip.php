@@ -208,11 +208,11 @@ class DisinfectionSlip extends Component
             return false;
         }
 
-        // Can edit ONLY on OUTGOING
+        // Can edit ONLY on OUTGOING, except when Completed (3)
         return $this->type === 'outgoing'
             && Auth::id() === $this->selectedSlip->hatchery_guard_id 
             && $this->selectedSlip->location_id === Session::get('location_id')
-            && $this->selectedSlip->status != 2;
+            && $this->selectedSlip->status != 3;
     }
 
     public function canStartDisinfecting()
@@ -223,11 +223,15 @@ class DisinfectionSlip extends Component
 
         $currentLocation = Session::get('location_id');
 
-        // Can start ONLY on INCOMING
-        return $this->type === 'incoming'
-            && $this->selectedSlip->status == 0 
-            && $this->selectedSlip->destination_id === $currentLocation
-            && $this->selectedSlip->location_id !== $currentLocation;
+        // Can start ONLY on OUTGOING when status is Pending (0)
+        if ($this->type === 'outgoing') {
+            return $this->selectedSlip->status == 0
+                && Auth::id() === $this->selectedSlip->hatchery_guard_id 
+                && $this->selectedSlip->location_id === $currentLocation;
+        }
+
+        // NOT available on INCOMING anymore
+        return false;
     }
 
     public function canComplete()
@@ -238,10 +242,16 @@ class DisinfectionSlip extends Component
 
         $currentLocation = Session::get('location_id');
 
-        // Can complete ONLY on INCOMING
+        // Can complete on OUTGOING when status is Disinfecting (1)
+        if ($this->type === 'outgoing') {
+            return $this->selectedSlip->status == 1
+                && Auth::id() === $this->selectedSlip->hatchery_guard_id 
+                && $this->selectedSlip->location_id === $currentLocation;
+        }
+
+        // Can complete on INCOMING when status is Ongoing (2)
         return $this->type === 'incoming'
-            && $this->selectedSlip->status == 1 
-            && Auth::id() === $this->selectedSlip->received_guard_id
+            && $this->selectedSlip->status == 2 
             && $this->selectedSlip->destination_id === $currentLocation
             && $this->selectedSlip->location_id !== $currentLocation;
     }
@@ -252,11 +262,11 @@ class DisinfectionSlip extends Component
             return false;
         }
 
-        // Can delete ONLY on OUTGOING
+        // Can delete ONLY on OUTGOING, except when Completed (3)
         return $this->type === 'outgoing'
             && Auth::id() === $this->selectedSlip->hatchery_guard_id 
             && $this->selectedSlip->location_id === Session::get('location_id')
-            && $this->selectedSlip->status != 2;
+            && $this->selectedSlip->status != 3;
     }
 
     public function getHasChangesProperty()
@@ -278,19 +288,21 @@ class DisinfectionSlip extends Component
             return false;
         }
 
-        // Can manage attachment on INCOMING when disinfecting
+        $currentLocation = Session::get('location_id');
+
+        // Can manage attachment on INCOMING when status is Ongoing (2)
         if ($this->type === 'incoming'
-            && Auth::id() === $this->selectedSlip->received_guard_id 
-            && $this->selectedSlip->status == 1
-            && $this->selectedSlip->destination_id === Session::get('location_id')) {
+            && $this->selectedSlip->status == 2
+            && $this->selectedSlip->destination_id === $currentLocation
+            && $this->selectedSlip->location_id !== $currentLocation) {
             return true;
         }
 
-        // Can manage attachment on OUTGOING when editing (hatchery guard can add/edit attachments)
+        // Can manage attachment on OUTGOING, except when Completed (3)
         if ($this->type === 'outgoing'
             && Auth::id() === $this->selectedSlip->hatchery_guard_id 
-            && $this->selectedSlip->location_id === Session::get('location_id')
-            && $this->selectedSlip->status != 2) {
+            && $this->selectedSlip->location_id === $currentLocation
+            && $this->selectedSlip->status != 3) {
             return true;
         }
 
@@ -347,34 +359,17 @@ class DisinfectionSlip extends Component
             return;
         }
 
-        // Atomic update: Only update if status is still 0 (Ongoing) to prevent race conditions
-        // This ensures only one user can claim the slip even if multiple users click simultaneously
+        // Only for OUTGOING: Status 0 (Pending) -> 1 (Disinfecting)
         $updated = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
-            ->where('status', 0) // Only update if still in Ongoing status
-            ->whereNull('received_guard_id') // Additional safety check
-            ->update([
-                'status' => 1,
-                'received_guard_id' => Auth::id(),
-            ]);
+            ->where('status', 0) // Only update if still Pending
+            ->update(['status' => 1]);
 
         if ($updated === 0) {
-            // Another user already claimed this slip
-            $this->dispatch('toast', message: 'This slip has already been claimed by another user. Please refresh the page.', type: 'error');
-            // Refresh the slip to get the latest data
+            $this->dispatch('toast', message: 'This slip status has changed. Please refresh the page.', type: 'error');
             $this->selectedSlip->refresh();
-            $this->selectedSlip->load([
-                'truck',
-                'location',
-                'destination',
-                'driver',
-                'hatcheryGuard',
-                'receivedGuard',
-            ]);
+            $this->selectedSlip->load(['truck', 'location', 'destination', 'driver', 'hatcheryGuard', 'receivedGuard']);
             return;
         }
-
-        // Refresh the slip with relationships
-        $this->selectedSlip->refresh();
 
         // Refresh the slip with relationships
         $this->selectedSlip->refresh();
@@ -394,8 +389,8 @@ class DisinfectionSlip extends Component
             DisinfectionSlipModel::class,
             $this->selectedSlip->id,
             "Started disinfecting slip {$slipId}",
-            ['status' => 0, 'received_guard_id' => null],
-            ['status' => 1, 'received_guard_id' => Auth::id()]
+            ['status' => 0],
+            ['status' => 1]
         );
         
         $this->showDisinfectingConfirmation = false;
@@ -411,11 +406,48 @@ class DisinfectionSlip extends Component
             return;
         }
 
-        // Update status to 2 (completed) and set completed_at timestamp
-        $this->selectedSlip->update([
-            'status' => 2,
-            'completed_at' => now(),
-        ]);
+        // For OUTGOING: Status 1 (Disinfecting) -> 2 (Ongoing)
+        if ($this->type === 'outgoing') {
+            $this->selectedSlip->update([
+                'status' => 2, // Ongoing
+            ]);
+
+            $slipId = $this->selectedSlip->slip_id;
+            
+            // Log the action
+            Logger::update(
+                DisinfectionSlipModel::class,
+                $this->selectedSlip->id,
+                "Completed disinfection for slip {$slipId}, now Ongoing",
+                ['status' => 1],
+                ['status' => 2]
+            );
+            
+            $this->showCompleteConfirmation = false;
+            $this->dispatch('toast', message: "{$slipId} is now ongoing.", type: 'success');
+        }
+        // For INCOMING: Status 2 (Ongoing) -> 3 (Completed) and set completed_at timestamp and received_guard_id
+        else {
+            $this->selectedSlip->update([
+                'status' => 3,
+                'completed_at' => now(),
+                'received_guard_id' => Auth::id(),
+            ]);
+
+            $slipId = $this->selectedSlip->slip_id;
+            
+            // Log the complete disinfection action
+            Logger::update(
+                DisinfectionSlipModel::class,
+                $this->selectedSlip->id,
+                "Completed slip {$slipId}",
+                ['status' => 2, 'completed_at' => null, 'received_guard_id' => $this->selectedSlip->received_guard_id],
+                ['status' => 3, 'completed_at' => now(), 'received_guard_id' => Auth::id()]
+            );
+            
+            $this->showCompleteConfirmation = false;
+            $this->dispatch('toast', message: "{$slipId} has been completed.", type: 'success');
+        }
 
         // Refresh the slip with relationships
         $this->selectedSlip->refresh();
@@ -428,19 +460,6 @@ class DisinfectionSlip extends Component
             'receivedGuard'
         ]);
 
-        $slipId = $this->selectedSlip->slip_id;
-        
-        // Log the complete disinfection action
-        Logger::update(
-            DisinfectionSlipModel::class,
-            $this->selectedSlip->id,
-            "Completed disinfection slip {$slipId}",
-            ['status' => 1, 'completed_at' => null],
-            ['status' => 2, 'completed_at' => now()]
-        );
-        
-        $this->showCompleteConfirmation = false;
-        $this->dispatch('toast', message: "{$slipId} disinfection has been completed.", type: 'success');
         $this->dispatch('slip-updated');
     }
 
@@ -816,8 +835,16 @@ class DisinfectionSlip extends Component
         try {
             // Authorization check using canManageAttachment
             if (!$this->canManageAttachment()) {
-                $this->dispatch('toast', message: 'You are not authorized to add attachments.', type: 'error');
+                $this->dispatch('toast', message: 'You are not authorized to add photos.', type: 'error');
                 return;
+            }
+
+            // For INCOMING: Set received_guard_id if not already set
+            if ($this->type === 'incoming' && !$this->selectedSlip->received_guard_id) {
+                $this->selectedSlip->update([
+                    'received_guard_id' => Auth::id(),
+                ]);
+                $this->selectedSlip->refresh();
             }
 
             // Get current attachment IDs (initialize as empty array if null)

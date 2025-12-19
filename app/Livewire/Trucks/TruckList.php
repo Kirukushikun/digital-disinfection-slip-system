@@ -50,8 +50,9 @@ class TruckList extends Component
     public $filterSortDirection = null; // null, 'asc', 'desc' (temporary, in filter modal)
     
     public $availableStatuses = [
-        0 => 'Ongoing',
+        0 => 'Pending',
         1 => 'Disinfecting',
+        2 => 'Ongoing',
     ];
 
     // Create Modal
@@ -395,7 +396,7 @@ class TruckList extends Component
             'reason_for_disinfection' => $sanitizedReason,
             'location_id' => $currentLocationId,
             'hatchery_guard_id' => Auth::id(),
-            'status' => 0, // Ongoing
+            'status' => 0, // Pending
             'slip_id' => $this->generateSlipId(),
             'attachment_ids' => !empty($this->pendingAttachmentIds) ? $this->pendingAttachmentIds : null,
         ]);
@@ -693,20 +694,15 @@ class TruckList extends Component
 
         // Apply type-specific filter first (most restrictive)
         if ($this->type === 'incoming') {
-            // Incoming: Status 0 (Ongoing) - no auth required, Status 1 (Disinfecting) - only for auth guard
+            // Incoming: Status 2 (Ongoing) - shows all ongoing slips at destination
             $query->where('destination_id', $location)
-                  ->where(function($q) {
-                      $q->where('status', 0) // Ongoing - anyone can see
-                        ->orWhere(function($q2) {
-                            $q2->where('status', 1) // Disinfecting - only for auth guard
-                               ->where('received_guard_id', Auth::id());
-                        });
-                  });
+                  ->where('location_id', '!=', $location)
+                  ->where('status', 2);
         } else {
-            // Outgoing: only show slips created by the current user
+            // Outgoing: Status 0 (Pending), 1 (Disinfecting), 2 (Ongoing) - only show slips created by the current user
             $query->where('location_id', $location)
                   ->where('hatchery_guard_id', Auth::id())
-                  ->whereIn('status', [0, 1]);
+                  ->whereIn('status', [0, 1, 2]);
         }
 
         // Then apply other filters

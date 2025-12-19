@@ -1,6 +1,6 @@
 @props(['show', 'selectedSlip' => null])
 
-<x-modals.modal-template :show="$show" title="Attachments" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
+<x-modals.modal-template :show="$show" title="Photos" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
 
     @php
         $attachments = $selectedSlip?->attachments() ?? collect([]);
@@ -51,7 +51,7 @@
                             @if ($isImage)
                                 <img src="{{ $fileUrl }}" 
                                      class="border shadow-md max-h-[45vh] sm:max-h-[55vh] max-w-full w-auto object-contain mx-auto rounded-lg"
-                                     alt="Attachment {{ $index + 1 }}">
+                                     alt="Photo {{ $index + 1 }}">
                                 {{-- Uploaded By Information --}}
                                 <div class="text-center mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                                     <span class="font-semibold">Uploaded by:</span> 
@@ -65,7 +65,7 @@
                                     </p>
                                     <a href="{{ $fileUrl }}" target="_blank" 
                                        class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer text-sm sm:text-base">
-                                        Download attachment
+                                        Download photo
                                     </a>
                                     {{-- Uploaded By Information for non-images --}}
                                     <div class="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
@@ -115,27 +115,27 @@
         </div>
     @else
         <div class="text-center p-8 text-gray-500">
-            No attachments available.
+            No photos available.
         </div>
     @endif
 
     @php
-        // Check if user can manage attachments (for outgoing editing or incoming disinfecting)
+        // Check if user can manage photos (for outgoing editing or incoming with ongoing status)
         $canManage = false;
         if ($selectedSlip) {
             $isReceivingGuard = \Illuminate\Support\Facades\Auth::id() === $selectedSlip->received_guard_id;
             $isHatcheryGuard = \Illuminate\Support\Facades\Auth::id() === $selectedSlip->hatchery_guard_id;
             $currentLocationId = \Illuminate\Support\Facades\Session::get('location_id');
             
-            // Can manage if receiving guard on incoming (status 1) OR hatchery guard on outgoing (status != 2)
-            $canManage = ($isReceivingGuard && $status == 1 && $selectedSlip->destination_id === $currentLocationId) ||
-                        ($isHatcheryGuard && $selectedSlip->location_id === $currentLocationId && $status != 2);
+            // Can manage if on incoming (status 2) OR hatchery guard on outgoing (status != 3)
+            $canManage = ($status == 2 && $selectedSlip->destination_id === $currentLocationId && $selectedSlip->location_id !== $currentLocationId) ||
+                        ($isHatcheryGuard && $selectedSlip->location_id === $currentLocationId && $status != 3);
         }
     @endphp
 
     <x-slot name="footer">
         <div class="flex justify-between items-center w-full flex-wrap gap-2">
-            {{-- Delete Current Photo Button (only if user can manage attachments AND (uploaded the current photo OR is admin/superadmin)) --}}
+            {{-- Delete Current Photo Button (only if user can manage photos AND (uploaded the current photo OR is admin/superadmin)) --}}
             @if (($canManage || $isAdminOrSuperAdmin) && $totalAttachments > 0)
                 @php
                     $attachmentsData = $attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all();

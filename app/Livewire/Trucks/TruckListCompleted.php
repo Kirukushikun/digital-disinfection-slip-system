@@ -240,7 +240,7 @@ class TruckListCompleted extends Component
             }
         ])
             // COMPLETED ONLY - Only show slips received/completed by the current user
-            ->where('status', 2)
+            ->where('status', 3)
             ->where(function($query) use ($location) {
                 // Outgoing: show if created by current user
                 $query->where(function($q) use ($location) {

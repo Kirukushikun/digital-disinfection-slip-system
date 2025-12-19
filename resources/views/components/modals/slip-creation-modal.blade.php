@@ -51,9 +51,9 @@
             </div>
         </div>
 
-        {{-- Attachments --}}
+        {{-- Photos --}}
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
-            <div class="font-semibold text-gray-500">Attachments:</div>
+            <div class="font-semibold text-gray-500">Photos:</div>
             <div class="text-gray-900" x-data="{ 
                 showCameraModal: false,
                 stream: null,
@@ -142,7 +142,7 @@
                     <div class="flex items-center gap-2">
                         <button wire:click="openPendingAttachmentModal(0)"
                             class="text-orange-500 hover:text-orange-600 underline cursor-pointer">
-                            See Attachments ({{ $pendingCount }})
+                            See Photos ({{ $pendingCount }})
                         </button>
                         <button @click="showCameraModal = true; startCamera()"
                             class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
@@ -152,7 +152,7 @@
                 @else
                     <button @click="showCameraModal = true; startCamera()"
                         class="text-blue-500 hover:text-blue-600 underline cursor-pointer text-xs">
-                        Add Attachment
+                        Add Photos
                     </button>
                 @endif
 
@@ -168,7 +168,7 @@
                         <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
                             
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900">Add Attachment</h3>
+                                <h3 class="text-lg font-semibold text-gray-900">Add Photos</h3>
                                 <button @click="showCameraModal = false; stopCamera()" class="text-gray-400 hover:text-gray-600">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -288,8 +288,8 @@
     message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
     onConfirm="removePendingAttachment" confirmText="Delete" cancelText="Cancel" />
 
-{{-- Pending Attachments Carousel Modal --}}
-<x-modals.modal-template show="showPendingAttachmentModal" title="Attachments" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
+{{-- Pending Photos Carousel Modal --}}
+<x-modals.modal-template show="showPendingAttachmentModal" title="Photos" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
     @php
         $pendingAttachments = collect($pendingAttachmentIds ?? [])->map(function($id) {
             return \App\Models\Attachment::find($id);
@@ -335,7 +335,7 @@
                                     </p>
                                     <a href="{{ $fileUrl }}" target="_blank" 
                                        class="text-orange-500 font-semibold underline hover:cursor-pointer cursor-pointer text-sm sm:text-base">
-                                        Download attachment
+                                        Download photo
                                     </a>
                                 </div>
                             @endif
@@ -378,7 +378,7 @@
         </div>
     @else
         <div class="text-center p-8 text-gray-500">
-            No attachments available.
+            No photos available.
         </div>
     @endif
 
