@@ -88,6 +88,7 @@ class Reports extends Component
     public $showSlipDeleteConfirmation = false;
     // For delete confirmation modal used by admin-slip-edit-modal
     public $showDeleteConfirmation = false;
+    public $selectedReportId = null;
     
     // Cached properties
     private $cachedLocations = null;
@@ -538,7 +539,58 @@ class Reports extends Component
             $this->isResolving = false;
         }
     }
-    
+
+    public function openDeleteConfirmation($reportId)
+    {
+        $this->selectedReportId = $reportId;
+        $this->showDeleteConfirmation = true;
+    }
+
+    public function deleteReport()
+    {
+        // Prevent multiple submissions
+        if ($this->isDeleting) {
+            return;
+        }
+
+        $this->isDeleting = true;
+
+        try {
+            $report = Report::findOrFail($this->selectedReportId);
+            $reportType = $report->slip_id ? "for slip " . ($report->slip->slip_id ?? 'N/A') : "for misc";
+            $oldValues = $report->only(['user_id', 'slip_id', 'description', 'resolved_at']);
+
+            // Atomic delete: Only delete if not already deleted to prevent race conditions
+            $deleted = Report::where('id', $this->selectedReportId)
+                ->whereNull('deleted_at') // Only delete if not already deleted
+                ->update(['deleted_at' => now()]);
+
+            if ($deleted === 0) {
+                // Report was already deleted by another process
+                $report->refresh();
+                $this->showDeleteConfirmation = false;
+                $this->selectedReportId = null;
+                $this->dispatch('toast', message: 'This report was already deleted by another administrator. Please refresh the page.', type: 'error');
+                return;
+            }
+
+            // Log the delete action
+            Logger::delete(
+                Report::class,
+                $report->id,
+                "Deleted report {$reportType}",
+                $oldValues
+            );
+
+            $this->showDeleteConfirmation = false;
+            $this->selectedReportId = null;
+            $this->dispatch('toast', message: "Report #{$report->id} has been deleted.", type: 'success');
+            $this->resetPage();
+        } finally {
+            $this->isDeleting = false;
+        }
+    }
+
     private function getFilteredReportsQuery()
     {
         $query = Report::with(['user', 'slip'])->whereNull('deleted_at');

@@ -323,7 +323,7 @@
                                 }
                             }
                         }" x-init="$watch(() => $wire.currentAttachmentIndex, () => {})">
-                            <x-buttons.submit-button
+                            <x-buttons.submit-button 
                                 @click="deleteCurrentPhoto()"
                                 color="red"
                                 x-show="canShowDelete()"

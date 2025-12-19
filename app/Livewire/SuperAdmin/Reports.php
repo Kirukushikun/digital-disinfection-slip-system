@@ -449,8 +449,8 @@ class Reports extends Component
             return false;
         }
 
-        // SuperAdmin can edit any slip, including completed ones
-        return true;
+        // SuperAdmin slip details are view-only - no editing allowed
+        return false;
     }
     
     public function canDelete()
@@ -459,8 +459,8 @@ class Reports extends Component
             return false;
         }
 
-        // SuperAdmin can delete any slip, including completed ones
-        return true;
+        // SuperAdmin slip details are view-only - no deleting allowed
+        return false;
     }
     
     public function deleteSlip()
@@ -1129,7 +1129,13 @@ class Reports extends Component
             $this->isDeleting = false;
         }
     }
-    
+
+    public function openDeleteConfirmation($reportId)
+    {
+        $this->selectedReportId = $reportId;
+        $this->showDeleteConfirmation = true;
+    }
+
     public function openRestoreModal($reportId)
     {
         $report = Report::onlyTrashed()->with(['slip'])->findOrFail($reportId);
