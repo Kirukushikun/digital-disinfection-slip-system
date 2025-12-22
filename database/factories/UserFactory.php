@@ -39,12 +39,15 @@ class UserFactory extends Factory
                 $firstWordOfLastName = $lastNameWords[0];
                 $expectedPattern = strtoupper(substr($firstName, 0, 1)) . $firstWordOfLastName;
                 
-                // If username matches expected pattern, keep it (was manually set)
+                // If username matches expected pattern (with or without number), keep it
                 // Otherwise, generate new username following guidelines
-                if ($user->username !== $expectedPattern && !preg_match('/^' . preg_quote($expectedPattern, '/') . '\d+$/', $user->username)) {
-                    $username = $this->generateUsername($firstName, $lastName, $user->id);
-                    $user->update(['username' => $username]);
+                if ($user->username === $expectedPattern || preg_match('/^' . preg_quote($expectedPattern, '/') . '\d*$/', $user->username)) {
+                    // Username is already correct, don't regenerate
+                    return;
                 }
+                
+                $username = $this->generateUsername($firstName, $lastName, $user->id);
+                $user->update(['username' => $username]);
             }
         });
     }
