@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserFactory extends Factory
 {
@@ -12,12 +13,14 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
+        $faker = \Faker\Factory::create();
+        
         return [
-            'first_name' => $this->faker->firstName(),
-            'middle_name' => $this->faker->optional(0.4)->firstName(), // 40% chance of having middle name
-            'last_name' => $this->faker->lastName(),
-            'username' => $this->faker->unique()->userName(), // Temporary, will be replaced in afterCreating
-            'user_type' => $this->faker->randomElement([0, 1, 2]), // 0: Guard, 1: Admin, 2: SuperAdmin
+            'first_name' => $faker->firstName(),
+            'middle_name' => $faker->optional(0.4)->firstName(), // 40% chance of having middle name
+            'last_name' => $faker->lastName(),
+            'username' => $faker->unique()->userName(), // Temporary, will be replaced in afterCreating
+            'user_type' => $faker->randomElement([0, 1, 2]), // 0: Guard, 1: Admin, 2: SuperAdmin
             'password' => static::$password ??= Hash::make('brookside25'),
             'disabled' => false, // Default to enabled
         ];
@@ -71,7 +74,7 @@ class UserFactory extends Factory
         // Get first letter of first name (uppercase) and first word of last name
         if (empty($firstName) || empty($lastName)) {
             // Fallback to unique username if names are empty
-            return $this->faker->unique()->userName();
+            return 'user' . Str::random(8);
         }
 
         $firstLetter = strtoupper(substr($firstName, 0, 1));
