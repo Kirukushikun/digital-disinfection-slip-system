@@ -14,11 +14,11 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'first_name' => $this->faker->firstName,
-            'middle_name' => rand(0, 10) < 4 ? $this->faker->firstName : null, // 40% chance
-            'last_name' => $this->faker->lastName,
-            'username' => $this->faker->unique()->userName,
-            'user_type' => [0, 1, 2][array_rand([0, 1, 2])],
+            'first_name' => null,
+            'middle_name' => null,
+            'last_name' => null,
+            'username' => null,
+            'user_type' => 0,
             'password' => static::$password ??= Hash::make('brookside25'),
             'disabled' => false,
         ];
@@ -30,18 +30,10 @@ class UserFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function (User $user) {
-            $firstName = trim($user->first_name);
-            $lastName = trim($user->last_name);
+            $firstName = trim($user->first_name ?? '');
+            $lastName = trim($user->last_name ?? '');
             
-            if (!empty($firstName) && !empty($lastName)) {
-                $lastNameWords = preg_split('/\s+/', $lastName);
-                $firstWordOfLastName = $lastNameWords[0];
-                $expectedPattern = strtoupper(substr($firstName, 0, 1)) . $firstWordOfLastName;
-                
-                if ($user->username === $expectedPattern || preg_match('/^' . preg_quote($expectedPattern, '/') . '\d*$/', $user->username)) {
-                    return;
-                }
-                
+            if (!empty($firstName) && !empty($lastName) && empty($user->username)) {
                 $username = $this->generateUsername($firstName, $lastName, $user->id);
                 $user->update(['username' => $username]);
             }
