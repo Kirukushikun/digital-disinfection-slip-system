@@ -85,31 +85,14 @@
                     console.log('Capturing photo...');
                     const video = this.$refs.video;
                     const canvas = this.$refs.canvas;
-                    
-                    // Force canvas to 640x640
-                    canvas.width = 640;
-                    canvas.height = 640;
-                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
                     const ctx = canvas.getContext('2d');
-                    
-                    // Calculate aspect ratio crop
-                    const videoAspect = video.videoWidth / video.videoHeight;
-                    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-                    
-                    if (videoAspect > 1) {
-                        // Wider than tall - crop sides
-                        sw = video.videoHeight;
-                        sx = (video.videoWidth - sw) / 2;
-                    } else {
-                        // Taller than wide - crop top/bottom
-                        sh = video.videoWidth;
-                        sy = (video.videoHeight - sh) / 2;
-                    }
-                    
-                    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, 640, 640);
+                    ctx.drawImage(video, 0, 0);
                     const imageData = canvas.toDataURL('image/jpeg', 0.85);
                     this.photos.push({ id: Date.now(), data: imageData });
-                }
+                    console.log('Photo captured! Total photos:', this.photos.length);
+                },
                 stopCamera() {
                     console.log('Stopping camera...');
                     if (this.stream) {
