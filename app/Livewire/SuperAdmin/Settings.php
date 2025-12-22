@@ -25,6 +25,12 @@ class Settings extends Component
     public $default_logo_file;
     public $current_logo_path;
 
+    // Cleanup confirmation modals
+    public $showAttachmentCleanupModal = false;
+    public $showReportsCleanupModal = false;
+    public $showSoftDeleteCleanupModal = false;
+    public $showLogsCleanupModal = false;
+
     // Original values for change detection
     public $original_attachment_retention_days;
     public $original_default_guard_password;
@@ -221,6 +227,131 @@ class Settings extends Component
     public function getDefaultLogoPathProperty()
     {
         return $this->current_logo_path;
+    }
+
+    // Manual cleanup methods
+    public function runAttachmentCleanup()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            // Use Artisan::call() instead of direct instantiation
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('clean:attachments');
+
+            if ($exitCode === 0) {
+                Logger::create(
+                    \App\Models\Attachment::class,
+                    null,
+                    "Manually ran attachment cleanup",
+                    null,
+                    ['user_id' => Auth::id()]
+                );
+
+                $this->dispatch('toast', message: 'Attachment cleanup completed successfully.', type: 'success');
+            } else {
+                $this->dispatch('toast', message: 'Attachment cleanup failed. Check logs for details.', type: 'error');
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('toast', message: 'Error running attachment cleanup: ' . $e->getMessage(), type: 'error');
+        }
+
+        $this->showAttachmentCleanupModal = false;
+    }
+
+    public function runReportsCleanup()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            // Use Artisan::call() instead of direct instantiation
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('clean:reports');
+
+            if ($exitCode === 0) {
+                Logger::create(
+                    \App\Models\Report::class,
+                    null,
+                    "Manually ran resolved reports cleanup",
+                    null,
+                    ['user_id' => Auth::id()]
+                );
+
+                $this->dispatch('toast', message: 'Reports cleanup completed successfully.', type: 'success');
+            } else {
+                $this->dispatch('toast', message: 'Reports cleanup failed. Check logs for details.', type: 'error');
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('toast', message: 'Error running reports cleanup: ' . $e->getMessage(), type: 'error');
+        }
+
+        $this->showReportsCleanupModal = false;
+    }
+
+    public function runSoftDeleteCleanup()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            // Use Artisan::call() instead of direct instantiation
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('clean:soft-deleted');
+
+            if ($exitCode === 0) {
+                Logger::create(
+                    \App\Models\User::class,
+                    null,
+                    "Manually ran soft-deleted records cleanup",
+                    null,
+                    ['user_id' => Auth::id()]
+                );
+
+                $this->dispatch('toast', message: 'Soft-deleted records cleanup completed successfully.', type: 'success');
+            } else {
+                $this->dispatch('toast', message: 'Soft-deleted records cleanup failed. Check logs for details.', type: 'error');
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('toast', message: 'Error running soft-deleted records cleanup: ' . $e->getMessage(), type: 'error');
+        }
+
+        $this->showSoftDeleteCleanupModal = false;
+    }
+
+    public function runLogsCleanup()
+    {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            // Use Artisan::call() instead of direct instantiation
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('clean:logs');
+
+            if ($exitCode === 0) {
+                Logger::create(
+                    \App\Models\Log::class,
+                    null,
+                    "Manually ran audit logs cleanup",
+                    null,
+                    ['user_id' => Auth::id()]
+                );
+
+                $this->dispatch('toast', message: 'Logs cleanup completed successfully.', type: 'success');
+            } else {
+                $this->dispatch('toast', message: 'Logs cleanup failed. Check logs for details.', type: 'error');
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('toast', message: 'Error running logs cleanup: ' . $e->getMessage(), type: 'error');
+        }
+
+        $this->showLogsCleanupModal = false;
     }
 
     public function render()

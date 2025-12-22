@@ -50,109 +50,109 @@ class SessionController extends Controller
     }
 
     public function store(Request $request, $location = null){
-            $attributes = request()->validate([
-                "username"=> ['required'],
-                "password"=> ['required'],
+        $attributes = request()->validate([
+            "username"=> ['required'],
+            "password"=> ['required'],
+        ]);
+
+        // Trim @ symbol from the beginning of username if present
+        $username = ltrim($attributes['username'], '@');
+
+        // Find user by username (case-insensitive) - SoftDeletes automatically excludes deleted users
+        $user = User::whereRaw('LOWER(username) = ?', [strtolower($username)])->first();
+
+        // Verify user exists and password is correct
+        if (!$user || !Hash::check($attributes['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'username'=> 'Sorry, those credentials are incorrect',
+                'password'=> '',
             ]);
+        }
 
-            // Trim @ symbol from the beginning of username if present
-            $username = ltrim($attributes['username'], '@');
+        // Check if user is deleted (explicit check, though SoftDeletes should handle this)
+        if ($user->trashed()) {
+            throw ValidationException::withMessages([
+                'username' => 'Your account has been deleted. Please contact an administrator.',
+                'password' => '',
+            ]);
+        }
 
-            // Find user by username (case-insensitive) - SoftDeletes automatically excludes deleted users
-            $user = User::whereRaw('LOWER(username) = ?', [strtolower($username)])->first();
+        // Check if user is disabled BEFORE logging in
+        if ($user->disabled) {
+            throw ValidationException::withMessages([
+                'username' => 'Your account has been disabled. Please contact an administrator.',
+                'password' => '',
+            ]);
+        }
 
-            // Verify user exists and password is correct
-            if (!$user || !Hash::check($attributes['password'], $user->password)) {
+        // If location login is being used, validate location and user type
+        if ($location) {
+            $locationModel = Location::find($location);
+            
+            // Check if location exists
+            if (!$locationModel) {
                 throw ValidationException::withMessages([
-                    'username'=> 'Sorry, those credentials are incorrect',
-                    'password'=> '',
-                ]);
-            }
-
-            // Check if user is deleted (explicit check, though SoftDeletes should handle this)
-            if ($user->trashed()) {
-                throw ValidationException::withMessages([
-                    'username' => 'Your account has been deleted. Please contact an administrator.',
+                    'username' => 'This location does not exist.',
                     'password' => '',
                 ]);
             }
-
-            // Check if user is disabled BEFORE logging in
-            if ($user->disabled) {
+            
+            // Check if location is deleted
+            if ($locationModel->trashed()) {
                 throw ValidationException::withMessages([
-                    'username' => 'Your account has been disabled. Please contact an administrator.',
+                    'username' => 'This location has been removed. Please contact an administrator.',
                     'password' => '',
                 ]);
             }
-
-            // If location login is being used, validate location and user type
-            if ($location) {
-                $locationModel = Location::find($location);
-
-                // Check if location exists
-                if (!$locationModel) {
-                    throw ValidationException::withMessages([
-                        'username' => 'This location does not exist.',
-                        'password' => '',
-                    ]);
-                }
-
-                // Check if location is deleted
-                if ($locationModel->trashed()) {
-                    throw ValidationException::withMessages([
-                        'username' => 'This location has been removed. Please contact an administrator.',
-                        'password' => '',
-                    ]);
-                }
-
-                // Check if location is disabled
-                if ($locationModel->disabled) {
-                    throw ValidationException::withMessages([
-                        'username' => 'This location has been disabled. Please contact an administrator.',
-                        'password' => '',
-                    ]);
-                }
-
-                // Only allow regular users (type 0) or superadmins (type 2) for location login
-                if ($user->user_type !== 0 && $user->user_type !== 2) {
-                    throw ValidationException::withMessages([
-                        'username' => 'Only guards and superadmins can login through locations. Admins must use the admin login.',
-                        'password' => '',
-                    ]);
-                }
-            }
-
-            // If no location (admin login), only allow admin (1) or superadmin (2)
-            if (!$location && $user->user_type === 0) {
+            
+            // Check if location is disabled
+            if ($locationModel->disabled) {
                 throw ValidationException::withMessages([
-                    'username' => 'Guards must login through a location',
+                    'username' => 'This location has been disabled. Please contact an administrator.',
                     'password' => '',
                 ]);
             }
-
-            // All validations passed - now log the user in
-            Auth::login($user);
-
-            // Regenerate session to prevent session fixation
-            request()->session()->regenerate();
-
-            // Store location in session if provided (for regular users and superadmins)
-            // Location is already validated above, so we can safely use it
-            if ($location && isset($locationModel)) {
-                $request->session()->put('location_id', $locationModel->id);
-                $request->session()->put('location_name', $locationModel->location_name);
+            
+            // Only allow regular users (type 0) or superadmins (type 2) for location login
+            if ($user->user_type !== 0 && $user->user_type !== 2) {
+                throw ValidationException::withMessages([
+                    'username' => 'Only guards and superadmins can login through locations. Admins must use the admin login.',
+                    'password' => '',
+                ]);
             }
+        }
 
-            // Ensure session is saved before redirecting
-            $request->session()->save();
+        // If no location (admin login), only allow admin (1) or superadmin (2)
+        if (!$location && $user->user_type === 0) {
+            throw ValidationException::withMessages([
+                'username' => 'Guards must login through a location',
+                'password' => '',
+            ]);
+        }
 
-            // If superadmin logged in through a location, redirect to guard dashboard
-            // Otherwise, use their normal dashboard route
-            if ($user->user_type === 2 && $location && isset($locationModel)) {
-                return redirect()->route('user.dashboard');
-            }
+        // All validations passed - now log the user in
+        Auth::login($user);
 
-            return redirect()->route($user->dashboardRoute());
+        // Regenerate session to prevent session fixation
+        request()->session()->regenerate();
+
+        // Store location in session if provided (for regular users and superadmins)
+        // Location is already validated above, so we can safely use it
+        if ($location && isset($locationModel)) {
+            $request->session()->put('location_id', $locationModel->id);
+            $request->session()->put('location_name', $locationModel->location_name);
+        }
+
+        // Ensure session is saved before redirecting
+        $request->session()->save();
+
+        // If superadmin logged in through a location, redirect to guard dashboard
+        // Otherwise, use their normal dashboard route
+        if ($user->user_type === 2 && $location && isset($locationModel)) {
+            return redirect()->route('user.dashboard');
+        }
+
+        return redirect()->route($user->dashboardRoute());
     }
 
     public function destroy(Request $request)

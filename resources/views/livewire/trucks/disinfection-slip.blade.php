@@ -34,7 +34,7 @@
                 <div class="grid grid-cols-[1fr_1fr_auto] gap-4 items-start text-xs">
                     <div>
                         <div class="font-semibold text-gray-500 mb-0.5">Date:</div>
-                        <div class="text-gray-900">{{ $selectedSlip->created_at->format('M d, Y') }}</div>
+                        <div class="text-gray-900">{{ $selectedSlip->created_at->format('M d, Y - h:i A') }}</div>
                 </div>
                     <div>
                         <div class="font-semibold text-gray-500 mb-0.5">Slip No:</div>
@@ -522,7 +522,7 @@
                 <div class="grid grid-cols-2 gap-4 items-start text-xs">
                     <div>
                         <div class="font-semibold text-gray-500 mb-0.5">Date:</div>
-                        <div class="text-gray-900">{{ $selectedSlip->created_at->format('M d, Y') }}</div>
+                        <div class="text-gray-900">{{ $selectedSlip->created_at->format('M d, Y - h:i A') }}</div>
                     </div>
                     <div>
                         <div class="font-semibold text-gray-500 mb-0.5">Slip No:</div>

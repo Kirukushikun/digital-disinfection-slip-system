@@ -205,6 +205,147 @@
                     </button>
                 </div>
             </form>
+</div>
+<div class="mt-8 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            {{-- Manual Cleanup Operations Section --}}
+            <div>
+                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                    {{-- Header --}}
+                    <div class="px-6 py-5 bg-gray-50 border-b border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-900">Manual Cleanup Operations</h2>
+                        <p class="text-gray-600 text-sm mt-1">Run cleanup operations manually</p>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- Attachment Cleanup --}}
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Attachment Cleanup</h3>
+                                        <p class="text-sm text-gray-600 leading-relaxed">
+                                            Delete attachments older than the retention period. This removes uploaded photos and documents that are no longer needed.
+                                        </p>
+                                        <div class="mt-3 text-xs text-gray-500">
+                                            <span class="font-medium">Retention:</span> {{ $attachment_retention_days }} days
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <button wire:click="$set('showAttachmentCleanupModal', true)"
+                                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clean Up
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Reports Cleanup --}}
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Reports Cleanup</h3>
+                                        <p class="text-sm text-gray-600 leading-relaxed">
+                                            Delete resolved reports older than the retention period to keep the system clean and focused on active issues.
+                                        </p>
+                                        <div class="mt-3 text-xs text-gray-500">
+                                            <span class="font-medium">Retention:</span> {{ $resolved_reports_retention_months }} months
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <button wire:click="$set('showReportsCleanupModal', true)"
+                                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clean Up
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Soft-Deleted Records Cleanup --}}
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Soft-Deleted Records Cleanup</h3>
+                                        <p class="text-sm text-gray-600 leading-relaxed">
+                                            Permanently delete soft-deleted records (users, trucks, drivers, locations, slips) older than the retention period.
+                                        </p>
+                                        <div class="mt-3 text-xs text-gray-500">
+                                            <span class="font-medium">Retention:</span> {{ $soft_deleted_retention_months }} months
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <button wire:click="$set('showSoftDeleteCleanupModal', true)"
+                                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clean Up
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Audit Logs Cleanup --}}
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Audit Logs Cleanup</h3>
+                                        <p class="text-sm text-gray-600 leading-relaxed">
+                                            Delete audit trail logs older than the retention period to manage database size and focus on recent activities.
+                                        </p>
+                                        <div class="mt-3 text-xs text-gray-500">
+                                            <span class="font-medium">Retention:</span> {{ $log_retention_months }} months
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <button wire:click="$set('showLogsCleanupModal', true)"
+                                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clean Up
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- CONFIRMATION MODALS --}}
+            {{-- Attachment Cleanup Modal --}}
+            <x-modals.delete-confirmation show="showAttachmentCleanupModal" title="Clean Up Attachments"
+                message="Are you sure you want to run attachment cleanup?"
+                :details="'This will permanently delete attachments older than <strong>' . $attachment_retention_days . ' days</strong>.'"
+                onConfirm="runAttachmentCleanup"
+                confirmText="Run Cleanup" cancelText="Cancel" />
+
+            {{-- Reports Cleanup Modal --}}
+            <x-modals.delete-confirmation show="showReportsCleanupModal" title="Clean Up Resolved Reports"
+                message="Are you sure you want to run reports cleanup?"
+                :details="'This will permanently delete resolved reports older than <strong>' . $resolved_reports_retention_months . ' months</strong>.'"
+                onConfirm="runReportsCleanup"
+                confirmText="Run Cleanup" cancelText="Cancel" />
+
+            {{-- Soft-Delete Cleanup Modal --}}
+            <x-modals.delete-confirmation show="showSoftDeleteCleanupModal" title="Clean Up Soft-Deleted Records"
+                message="Are you sure you want to run soft-deleted records cleanup?"
+                :details="'This will permanently delete soft-deleted records (users, trucks, drivers, locations, slips, reports) older than <strong>' . $soft_deleted_retention_months . ' months</strong>.'"
+                onConfirm="runSoftDeleteCleanup"
+                confirmText="Run Cleanup" cancelText="Cancel" />
+
+            {{-- Logs Cleanup Modal --}}
+            <x-modals.delete-confirmation show="showLogsCleanupModal" title="Clean Up Audit Logs"
+                message="Are you sure you want to run audit logs cleanup?"
+                :details="'This will permanently delete audit trail logs older than <strong>' . $log_retention_months . ' months</strong>.'"
+                onConfirm="runLogsCleanup"
+                confirmText="Run Cleanup" cancelText="Cancel" />
         </div>
     </div>
 </div>

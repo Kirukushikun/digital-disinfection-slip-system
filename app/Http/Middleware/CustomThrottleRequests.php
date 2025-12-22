@@ -25,7 +25,7 @@ class CustomThrottleRequests
             $maxAttempts,
             function () use ($next, $request) {
                 // Rate limit not exceeded, proceed with request
-                return $next($request);
+        return $next($request);
             },
             $decayMinutes * 60 // Convert minutes to seconds
         );
