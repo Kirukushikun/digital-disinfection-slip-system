@@ -94,28 +94,28 @@
                 </div>
 
                 {{-- From Date Input --}}
-                <div x-data="{ toDate: @entangle('filterCompletedTo'), fromDate: @entangle('filterCompletedFrom') }">
+                <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700">From Date</label>
-                        <button type="button" wire:click="$set('filterCompletedFrom', null)" x-show="fromDate"
+                        <button type="button" wire:click="$set('filterCompletedFrom', null)" wire:target="filterCompletedFrom"
                             class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                             Clear
                         </button>
                     </div>
-                    <input type="date" wire:model="filterCompletedFrom" :max="toDate || '{{ date('Y-m-d') }}'"
+                    <input type="date" wire:model.live="filterCompletedFrom"
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
                 </div>
 
                 {{-- To Date Input --}}
-                <div x-data="{ fromDate: @entangle('filterCompletedFrom'), toDate: @entangle('filterCompletedTo') }">
+                <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700">To Date</label>
-                        <button type="button" wire:click="$set('filterCompletedTo', null)" x-show="toDate"
+                        <button type="button" wire:click="$set('filterCompletedTo', null)" wire:target="filterCompletedTo"
                             class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                             Clear
                         </button>
                     </div>
-                    <input type="date" wire:model="filterCompletedTo" :min="fromDate" max="{{ date('Y-m-d') }}"
+                    <input type="date" wire:model.live="filterCompletedTo"
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
                 </div>
             </div>

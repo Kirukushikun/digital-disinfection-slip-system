@@ -180,28 +180,30 @@
     </div>
 
     {{-- From Date Input --}}
-    <div x-data="{ toDate: @entangle('filterCreatedTo'), fromDate: @entangle('filterCreatedFrom') }">
+    <div>
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">From Date</label>
-            <button type="button" wire:click="$set('filterCreatedFrom', null)" x-show="fromDate"
+            <button type="button" wire:click="$set('filterCreatedFrom', null)"
+                wire:target="filterCreatedFrom"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
         </div>
-        <input type="date" wire:model="filterCreatedFrom" :max="toDate || '{{ date('Y-m-d') }}'"
+        <input type="date" wire:model.live="filterCreatedFrom"
             class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
     </div>
 
     {{-- To Date Input --}}
-    <div x-data="{ fromDate: @entangle('filterCreatedFrom'), toDate: @entangle('filterCreatedTo') }">
+    <div>
         <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700">To Date</label>
-            <button type="button" wire:click="$set('filterCreatedTo', null)" x-show="toDate"
+            <button type="button" wire:click="$set('filterCreatedTo', null)"
+                wire:target="filterCreatedTo"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                 Clear
             </button>
         </div>
-        <input type="date" wire:model="filterCreatedTo" :min="fromDate" max="{{ date('Y-m-d') }}"
+        <input type="date" wire:model.live="filterCreatedTo"
             class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
     </div>
 
