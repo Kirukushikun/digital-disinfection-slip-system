@@ -88,9 +88,9 @@
             @if ($totalAttachments > 1)
                 <div class="flex justify-center mt-3 sm:mt-4 space-x-1.5 sm:space-x-2 overflow-x-auto max-w-full px-2">
                     @foreach ($attachments as $index => $attachment)
-                        <button 
+                        <button
                             @click="$wire.openAttachmentModal({{ $index }})"
-                            class="w-2 h-2 rounded-full transition-all shrink-0"
+                            class="w-2 h-2 rounded-full transition-all shrink-0 mouse-pointer"
                             :class="currentIndex === {{ $index }} ? 'bg-orange-500 w-4 sm:w-6' : 'bg-gray-300'">
                         </button>
                     @endforeach
@@ -118,7 +118,7 @@
                 <x-buttons.submit-button
                     wire:click="confirmRemoveCurrentAttachment"
                     color="red"
-                    class="transition-all"
+                    class="transition-all mouse-pointer"
                     wire:loading.attr="disabled"
                     wire:target="confirmRemoveCurrentAttachment">
                     Delete
@@ -128,7 +128,7 @@
             @endif
 
             {{-- Back Button (always visible) --}}
-            <x-buttons.submit-button @click="$wire.closeAttachmentModal()" color="white">
+            <x-buttons.submit-button @click="$wire.closeAttachmentModal()" color="white" class="mouse-pointer">
                 Back
             </x-buttons.submit-button>
         </div>
