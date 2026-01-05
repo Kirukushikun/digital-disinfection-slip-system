@@ -814,19 +814,20 @@ class DisinfectionSlip extends Component
         $userType = $user->user_type ?? 0;
         $status = $this->selectedSlip->status;
 
-        // Check if user is superadmin - can delete anything, anytime
+        // COMPLETED SLIPS: Only Superadmin can delete photos
+        if ($status === 3) {
+            return $userType === 2; // Only Superadmin
+        }
+
+        // ACTIVE SLIPS: Check permissions based on user type
         if ($userType === 2) {
+            // Superadmin can always delete
             return true;
         }
 
-        // Check if user is admin - can delete any photo but NOT from completed slips
-        if ($userType === 1 && $status !== 3) {
+        if ($userType === 1) {
+            // Admin can delete any photo from active slips
             return true;
-        }
-
-        // SPECIAL RESTRICTION: Users/Guards (type 0) cannot delete photos from completed slips
-        if ($userType === 0 && $status === 3) {
-            return false;
         }
 
         // Check if user can manage attachments (for guards/users)
