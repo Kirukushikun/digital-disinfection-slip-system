@@ -113,14 +113,14 @@
 
     <x-slot name="footer">
         <div class="flex justify-between items-center w-full flex-wrap gap-2">
-            {{-- Delete Current Photo Button (only if user can delete the current attachment) --}}
-            @if ($totalAttachments > 0 && $this->canDeleteCurrentAttachment)
+            {{-- Delete Current Photo Button --}}
+            @if ($totalAttachments > 0)
                 <x-buttons.submit-button
-                    wire:click="confirmRemoveAttachment($wire.getCurrentAttachmentId())"
+                    wire:click="confirmRemoveCurrentAttachment"
                     color="red"
                     class="transition-all"
                     wire:loading.attr="disabled"
-                    wire:target="confirmRemoveAttachment">
+                    wire:target="confirmRemoveCurrentAttachment">
                     Delete
                 </x-buttons.submit-button>
             @else

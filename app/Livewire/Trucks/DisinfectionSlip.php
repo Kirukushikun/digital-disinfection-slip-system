@@ -750,14 +750,41 @@ class DisinfectionSlip extends Component
         $this->showAddAttachmentModal = false;
     }
 
+    public function confirmRemoveCurrentAttachment()
+    {
+        $attachmentId = $this->getCurrentAttachmentId();
+        if (!$attachmentId) {
+            $this->dispatch('toast', message: 'No attachment selected.', type: 'error');
+            return;
+        }
+
+        // Check permissions before showing confirmation
+        if (!$this->canDeleteCurrentAttachment) {
+            $this->dispatch('toast', message: 'You are not authorized to delete this attachment.', type: 'error');
+            return;
+        }
+
+        $this->attachmentToDelete = $attachmentId;
+        $this->showRemoveAttachmentConfirmation = true;
+    }
+
     public function confirmRemoveAttachment($attachmentId)
     {
+        if (!$attachmentId) {
+            $this->dispatch('toast', message: 'No attachment selected.', type: 'error');
+            return;
+        }
+
         $this->attachmentToDelete = $attachmentId;
         $this->showRemoveAttachmentConfirmation = true;
     }
 
     public function getCurrentAttachmentId()
     {
+        if (!$this->selectedSlip) {
+            return null;
+        }
+
         $attachments = $this->selectedSlip->attachments();
         if ($this->currentAttachmentIndex >= 0 && $this->currentAttachmentIndex < $attachments->count()) {
             return $attachments[$this->currentAttachmentIndex]->id;
@@ -767,6 +794,12 @@ class DisinfectionSlip extends Component
 
     public function getCanDeleteCurrentAttachmentProperty()
     {
+        // First check if we can even get a current attachment ID
+        $currentAttachmentId = $this->getCurrentAttachmentId();
+        if (!$currentAttachmentId) {
+            return false;
+        }
+
         if (!$this->selectedSlip) {
             return false;
         }
