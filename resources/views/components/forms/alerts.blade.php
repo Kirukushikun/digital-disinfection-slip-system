@@ -60,12 +60,12 @@
 
             {{-- CLOSE BUTTON --}}
             <div class="ml-4 shrink-0 flex">
-                <button @click="show = false" 
+                <button @click="dismiss()"
                         class="inline-flex rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
                     <span class="sr-only">Close</span>
                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" 
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" 
+                        <path fill-rule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                               clip-rule="evenodd" />
                     </svg>
                 </button>
@@ -73,17 +73,4 @@
         </div>
     </div>
 
-    {{-- Progress bar animation (optional) --}}
-    <div class="h-1 bg-gray-100">
-        <div x-show="show" 
-             class="h-full transition-all duration-2500ms ease-linear"
-             :class="{
-                'bg-green-500': type === 'success',
-                'bg-red-500': type === 'error',
-                'bg-yellow-500': type === 'warning',
-                'bg-blue-500': type === 'info',
-             }"
-             x-init="setTimeout(() => $el.style.width = '0%', 10); $el.style.width = '100%'">
-        </div>
-    </div>
 </div>

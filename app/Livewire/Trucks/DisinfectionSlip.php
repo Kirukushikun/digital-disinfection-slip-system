@@ -414,7 +414,16 @@ class DisinfectionSlip extends Component
             ]);
 
             $slipId = $this->selectedSlip->slip_id;
-            
+
+            // Dispatch global event for truck arrival notification
+            if ($this->selectedSlip->destination_id) {
+                $this->dispatch('truckArrival', [
+                    'locationId' => $this->selectedSlip->destination_id,
+                    'slipId' => $slipId,
+                    'truckCount' => 1 // Each slip represents one truck
+                ]);
+            }
+
             // Log the action
             Logger::update(
                 DisinfectionSlipModel::class,
@@ -423,7 +432,7 @@ class DisinfectionSlip extends Component
                 ['status' => 1],
                 ['status' => 2]
             );
-            
+
             $this->showCompleteConfirmation = false;
             $this->dispatch('toast', message: "{$slipId} is now ongoing.", type: 'success');
         }

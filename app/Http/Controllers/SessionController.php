@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use App\Models\Location;
 use App\Models\Setting;
@@ -132,6 +133,10 @@ class SessionController extends Controller
 
         // All validations passed - now log the user in
         Auth::login($user);
+
+        // Clear the rate limiter for this IP address after successful login
+        $rateLimiterKey = 'login:' . request()->ip();
+        RateLimiter::clear($rateLimiterKey);
 
         // Regenerate session to prevent session fixation
         request()->session()->regenerate();

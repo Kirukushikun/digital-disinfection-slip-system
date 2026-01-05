@@ -1,6 +1,9 @@
 <x-layout>
     <x-navigation.navbar module="Dashboard" />
 
+    <!-- Truck Arrival Monitor -->
+    <livewire:truck-arrival-monitor />
+
     <div class="p-4 sm:p-6 lg:p-8 bg-linear-to-br from-gray-50 to-gray-100 min-h-screen">
 
         <div class="max-w-7xl mx-auto">

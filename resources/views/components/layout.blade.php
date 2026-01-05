@@ -1540,23 +1540,62 @@
         message: '',
         type: 'info',
         timeout: null,
-    
+        persistent: false,
+        currentUserType: {{ auth()->check() ? (int)auth()->user()->user_type : 'null' }},
+        currentLocationId: {{ session('location_id') ? (int)session('location_id') : 'null' }},
+
         init() {
             // Listen to Livewire dispatched events
             Livewire.on('toast', (event) => {
                 const data = Array.isArray(event) ? event[0] : event;
-    
+
                 if (data && data.message) {
                     this.message = data.message;
                     this.type = data.type || 'info';
+                    this.persistent = data.persistent || false;
                     this.show = true;
-    
+
+                    // Clear any existing timeout
                     clearTimeout(this.timeout);
-                    this.timeout = setTimeout(() => {
-                        this.show = false;
-                    }, 2500);
+
+                    // Only set timeout if not persistent
+                    if (!this.persistent) {
+                        this.timeout = setTimeout(() => {
+                            this.show = false;
+                        }, 2500);
+                    }
                 }
             });
+
+            // Listen for truck arrival polling events (only for guards at locations)
+            Livewire.on('truckArrivalPoll', (event) => {
+                const data = Array.isArray(event) ? event[0] : event;
+
+                if (data && data.truckCount && data.truckCount > 0) {
+                    // Only show to guards (user_type 0) who are at the location
+                    if (this.currentUserType === 0 && this.currentLocationId !== 'null') {
+                        // Update existing notification if it's already shown and persistent, otherwise create new
+                        if (this.show && this.persistent) {
+                            // Update existing notification with new count
+                            this.message = data.truckCount + ' truck' + (data.truckCount > 1 ? 's' : '') + ' expected to arrive';
+                        } else {
+                            // Create new notification
+                            this.message = data.truckCount + ' truck' + (data.truckCount > 1 ? 's' : '') + ' expected to arrive';
+                            this.type = 'info';
+                            this.persistent = true;
+                            this.show = true;
+                        }
+                    }
+                }
+            });
+        },
+
+        dismiss() {
+            this.show = false;
+            this.persistent = false;
+
+            // Notify the monitor component that notification was dismissed
+            Livewire.dispatch('notificationDismissed');
         }
     }"
         class="fixed top-20 left-1/2 -translate-x-1/2 z-9999 w-full flex justify-center px-4 pointer-events-none">
@@ -1566,6 +1605,19 @@
             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0" style="display: none;" class="pointer-events-auto">
             <x-forms.alerts />
+            {{-- Progress bar animation (only for non-persistent toasts) --}}
+            <div x-show="!persistent" class="h-1 bg-gray-100">
+                <div x-show="show"
+                     class="h-full transition-all duration-2500ms ease-linear"
+                     :class="{
+                        'bg-green-500': type === 'success',
+                        'bg-red-500': type === 'error',
+                        'bg-yellow-500': type === 'warning',
+                        'bg-blue-500': type === 'info',
+                     }"
+                     x-init="setTimeout(() => $el.style.width = '0%', 10); $el.style.width = '100%'">
+                </div>
+            </div>
         </div>
     </div>
 
