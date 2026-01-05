@@ -9,7 +9,36 @@
     @endphp
 
     @if ($totalAttachments > 0)
-        <div class="relative" x-data="{ currentIndex: @entangle('currentAttachmentIndex').live }">
+        <div class="relative" x-data="{
+            currentIndex: @entangle('currentAttachmentIndex').live,
+            init() {
+                // Preload adjacent images for better performance
+                this.$nextTick(() => {
+                    this.preloadAdjacentImages();
+                });
+            },
+            preloadAdjacentImages() {
+                const images = @js($attachments->map(fn($a) => Storage::url($a->file_path))->toArray());
+                const current = this.currentIndex;
+                const preloadIndices = [current - 1, current, current + 1, current + 2].filter(i => i >= 0 && i < images.length);
+
+                preloadIndices.forEach(index => {
+                    const img = new Image();
+                    img.src = images[index];
+                    img.onload = () => {
+                        // Image is now cached - update the UI
+                        const imgElement = document.querySelector(`[data-attachment-index="${index}"]`);
+                        if (imgElement) {
+                            imgElement.style.opacity = '1';
+                            const loadingOverlay = imgElement.parentElement.querySelector('.loading-overlay');
+                            if (loadingOverlay) {
+                                loadingOverlay.style.display = 'none';
+                            }
+                        }
+                    };
+                });
+            }
+        }" x-init="init(); $watch('currentIndex', () => preloadAdjacentImages())" @attachment-removed.window="preloadAdjacentImages()">
             {{-- Carousel Container --}}
             <div class="relative overflow-hidden rounded-lg bg-gray-100 min-h-[300px] sm:min-h-[400px] flex items-center justify-center">
                 {{-- Previous Button --}}
@@ -40,12 +69,22 @@
                         @endphp
                         <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4 flex flex-col" style="min-width: 100%">
                             @if ($isImage)
-                                <img src="{{ $fileUrl }}" 
-                                     class="border shadow-md max-h-[45vh] sm:max-h-[55vh] max-w-full w-auto object-contain mx-auto rounded-lg"
-                                     alt="Photo {{ $index + 1 }}">
+                                <div class="relative">
+                                    <img src="{{ $fileUrl }}"
+                                         data-attachment-index="{{ $index }}"
+                                         class="border shadow-md max-h-[45vh] sm:max-h-[55vh] max-w-full w-auto object-contain mx-auto rounded-lg transition-opacity duration-200"
+                                         alt="Photo {{ $index + 1 }}"
+                                         loading="lazy"
+                                         @if($index <= 2) onload="this.style.opacity='1'" style="opacity: {{ $index <= 2 ? '1' : '0.3' }}" @endif>
+                                    @if($index > 2)
+                                        <div class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg loading-overlay">
+                                            <div class="text-gray-500 text-sm">Loading...</div>
+                                        </div>
+                                    @endif
+                                </div>
                                 {{-- Uploaded By Information --}}
                                 <div class="text-center mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
-                                    <span class="font-semibold">Uploaded by:</span> 
+                                    <span class="font-semibold">Uploaded by:</span>
                                     <span class="text-gray-800">{{ $uploaderName }}</span>
                                     <span class="text-gray-500">({{ $uploaderUsername }})</span>
                                 </div>
