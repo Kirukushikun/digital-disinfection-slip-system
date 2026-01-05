@@ -214,7 +214,7 @@ class DisinfectionSlip extends Component
 
         // Can edit ONLY on OUTGOING, except when Completed (3)
         return $this->type === 'outgoing'
-            && Auth::id() === $this->selectedSlip->hatchery_guard_id 
+            && Auth::id() === $this->selectedSlip->hatchery_guard_id
             && $this->selectedSlip->location_id === Session::get('location_id')
             && $this->selectedSlip->status != 3;
     }
@@ -269,7 +269,7 @@ class DisinfectionSlip extends Component
 
         // Can delete ONLY on OUTGOING, except when Completed (3)
         return $this->type === 'outgoing'
-            && Auth::id() === $this->selectedSlip->hatchery_guard_id 
+            && Auth::id() === $this->selectedSlip->hatchery_guard_id
             && $this->selectedSlip->location_id === Session::get('location_id')
             && $this->selectedSlip->status != 3;
     }
@@ -548,7 +548,7 @@ class DisinfectionSlip extends Component
                 },
             ],
             'driver_id'               => 'required|exists:drivers,id',
-            'reason_for_disinfection' => 'required|string|max:500',
+            'reason_for_disinfection' => 'nullable|string|max:1000',
         ]);
 
         // Sanitize reason_for_disinfection

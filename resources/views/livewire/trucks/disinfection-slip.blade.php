@@ -63,13 +63,16 @@
                         <x-forms.searchable-dropdown wire-model="truck_id" :options="$this->truckOptions"
                             search-property="searchTruck" placeholder="Select plate number..."
                             search-placeholder="Search plates..." />
+                        @error('truck_id')
+                            <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                        @enderror
                     @else
                         {{ $selectedSlip->truck->plate_number ?? 'N/A' }}
                     @endif
                 </div>
             </div>
 
-            {{-- Driver --}}
+                {{-- Driver --}}
                 <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
                     <div class="font-semibold text-gray-500">Driver:</div>
                     <div class="text-gray-900">
@@ -77,6 +80,9 @@
                         <x-forms.searchable-dropdown wire-model="driver_id" :options="$this->driverOptions"
                             search-property="searchDriver" placeholder="Select driver..."
                             search-placeholder="Search drivers..." />
+                        @error('driver_id')
+                            <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                        @enderror
                     @else
                         {{ $selectedSlip->driver?->first_name . ' ' . $selectedSlip->driver?->last_name ?? 'N/A' }}
                     @endif
@@ -101,6 +107,9 @@
                             <x-forms.searchable-dropdown wire-model="destination_id" :options="$this->locationOptions"
                                 search-property="searchDestination" placeholder="Select destination..."
                                 search-placeholder="Search locations..." />
+                            @error('destination_id')
+                                <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                            @enderror
                         @else
                             {{ $selectedSlip->destination->location_name ?? 'N/A' }}
                         @endif
@@ -342,6 +351,9 @@
                     <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
                         @if ($isEditing)
                             <textarea wire:model.live="reason_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                            @error('reason_for_disinfection')
+                                <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                            @enderror
                         @else
                             <div class="whitespace-pre-wrap">{{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}</div>
                         @endif
