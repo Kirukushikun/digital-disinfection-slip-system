@@ -114,7 +114,7 @@
     <x-slot name="footer">
         <div class="flex justify-between items-center w-full flex-wrap gap-2">
             {{-- Delete Current Photo Button --}}
-            @if ($totalAttachments > 0)
+            @if ($totalAttachments > 0 && $this->canDeleteCurrentAttachment)
                 <x-buttons.submit-button
                     wire:click="confirmRemoveCurrentAttachment"
                     color="red"
