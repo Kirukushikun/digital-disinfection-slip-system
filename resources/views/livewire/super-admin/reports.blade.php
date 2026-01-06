@@ -181,7 +181,7 @@
         </div>
 
         {{-- Table Card --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" wire:poll.keep-alive>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
