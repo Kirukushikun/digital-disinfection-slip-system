@@ -49,6 +49,7 @@ class AuditTrail extends Component
     
     public $availableModelTypes = [
         'App\\Models\\DisinfectionSlip' => 'Disinfection Slip',
+        'App\\Models\\Attachment' => 'Attachment',
         'App\\Models\\User' => 'User',
         'App\\Models\\Driver' => 'Driver',
         'App\\Models\\Location' => 'Location',

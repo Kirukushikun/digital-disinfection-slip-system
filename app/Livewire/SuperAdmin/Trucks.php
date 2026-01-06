@@ -1049,11 +1049,11 @@ class Trucks extends Component
     {
         $this->selectedSlip = DisinfectionSlipModel::with([
             'truck' => function($q) { $q->withTrashed(); },
-            'location',
-            'destination',
-            'driver',
-            'hatcheryGuard',
-            'receivedGuard'
+            'location' => function($q) { $q->withTrashed(); },
+            'destination' => function($q) { $q->withTrashed(); },
+            'driver' => function($q) { $q->withTrashed(); },
+            'hatcheryGuard' => function($q) { $q->withTrashed(); },
+            'receivedGuard' => function($q) { $q->withTrashed(); }
         ])->find($id);
 
         $this->showDetailsModal = true;

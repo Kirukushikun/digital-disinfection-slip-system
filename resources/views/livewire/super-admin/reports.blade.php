@@ -504,13 +504,17 @@
                         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                             <div class="font-semibold text-gray-500">Name:</div>
                             <div class="text-gray-900">
-                                @if ($selectedReport->user && !(method_exists($selectedReport->user, 'trashed') && $selectedReport->user->trashed()))
-                                    {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
-                                    <div class="text-xs text-gray-500 mt-0.5">&#64;{{ $selectedReport->user->username }}</div>
-                                @elseif ($selectedReport->user)
-                                    <span class="text-gray-900">{{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}</span>
+                                @if ($selectedReport->user)
+                                {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
+                                @if ($selectedReport->user->trashed())
                                     <span class="text-red-600 font-semibold"> (Deleted)</span>
-                                    <div class="text-xs text-gray-500 mt-0.5">&#64;{{ $selectedReport->user->username }}</div>
+                                @endif
+                                    <div class="text-xs text-gray-500 mt-0.5">
+                                        &#64;{{ $selectedReport->user->username }}
+                                        @if ($selectedReport->user->trashed())
+                                            <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-gray-500 italic">User Deleted</span>
                                     <div class="text-xs text-gray-500 mt-0.5"><span class="text-gray-500 italic">@user-deleted</span></div>

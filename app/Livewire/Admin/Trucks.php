@@ -1013,11 +1013,11 @@ class Trucks extends Component
     {
         $this->selectedSlip = DisinfectionSlipModel::with([
             'truck' => function($q) { $q->withTrashed(); },
-            'location',
-            'destination',
-            'driver',
-            'hatcheryGuard',
-            'receivedGuard'
+            'location' => function($q) { $q->withTrashed(); },
+            'destination' => function($q) { $q->withTrashed(); },
+            'driver' => function($q) { $q->withTrashed(); },
+            'hatcheryGuard' => function($q) { $q->withTrashed(); },
+            'receivedGuard' => function($q) { $q->withTrashed(); }
         ])->find($id);
 
         $this->showDetailsModal = true;
@@ -1050,7 +1050,12 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin can delete any slip, including completed ones (unless truck is soft-deleted)
+        // Admin cannot delete completed (status 3) or incomplete (status 4) slips
+        if ($this->selectedSlip->status == 3 || $this->selectedSlip->status == 4) {
+            return false;
+        }
+
+        // Admin can delete slips with status 0, 1, or 2
         return true;
     }
 
