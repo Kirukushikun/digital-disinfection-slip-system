@@ -48,6 +48,13 @@ class DatabaseSeeder extends Seeder
             'username' => 'RRoque',
             'user_type' => '2',
         ]);
+        User::factory()->create([
+            'first_name' => 'Jenny',
+            'middle_name' => null,
+            'last_name' => 'Santos',
+            'username' => 'JSantos',
+            'user_type' => '2',
+        ]);
 
         // Create default settings
         $defaultSettings = [
