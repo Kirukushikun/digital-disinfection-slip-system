@@ -80,7 +80,7 @@ class AuditTrail extends Component
         if (!is_array($this->sortColumns)) {
             $this->sortColumns = [];
         }
-        
+
         // Toggle sort direction
         if (isset($this->sortColumns[$column])) {
             $currentDir = $this->sortColumns[$column];
@@ -92,14 +92,14 @@ class AuditTrail extends Component
         } else {
             $this->sortColumns[$column] = 'asc';
         }
-        
+
         // Ensure at least one sort column
         if (empty($this->sortColumns)) {
             $this->sortColumns = ['created_at' => 'desc'];
         }
 
-        // Don't reset page on sorting, only on filtering
-        // $this->resetPage();
+        // Reset page when sorting changes
+        $this->resetPage();
     }
     
     public function getSortDirection($column)

@@ -1183,7 +1183,7 @@ class Trucks extends Component
         
         // Validate status
         $this->validate([
-            'editStatus' => 'required|in:0,1,2,3',
+            'editStatus' => 'required|in:0,1,2,3,4',
         ], [], [
             'editStatus' => 'Status',
         ]);
