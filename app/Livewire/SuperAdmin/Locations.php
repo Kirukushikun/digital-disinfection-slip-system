@@ -410,6 +410,15 @@ class Locations extends Component
         $locationName = $location->location_name;
         $message = !$wasDisabled ? "{$locationName} has been disabled." : "{$locationName} has been enabled.";
 
+        // Log the status change
+        Logger::update(
+            Location::class,
+            $location->id,
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " \"{$locationName}\"",
+            ['disabled' => $wasDisabled],
+            ['disabled' => $newStatus]
+        );
+
         $this->showDisableModal = false;
         $this->reset(['selectedLocationId', 'selectedLocationDisabled']);
         $this->dispatch('toast', message: $message, type: 'success');

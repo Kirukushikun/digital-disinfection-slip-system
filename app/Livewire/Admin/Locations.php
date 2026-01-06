@@ -407,12 +407,12 @@ class Locations extends Component
         $message = !$wasDisabled ? "{$locationName} has been disabled." : "{$locationName} has been enabled.";
         
         // Log the status change
-        Logger::custom(
-            !$wasDisabled ? 'disable' : 'enable',
-            !$wasDisabled ? "Disabled location {$locationName}" : "Enabled location {$locationName}",
+        Logger::update(
             Location::class,
             $location->id,
-            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " location \"{$locationName}\"",
+            ['disabled' => $wasDisabled],
+            ['disabled' => $newStatus]
         );
 
         $this->showDisableModal = false;

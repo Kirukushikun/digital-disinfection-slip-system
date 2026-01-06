@@ -315,12 +315,12 @@ class Drivers extends Component
         $message = !$wasDisabled ? "{$driverName} has been disabled." : "{$driverName} has been enabled.";
         
         // Log the status change
-        Logger::custom(
-            !$wasDisabled ? 'disable' : 'enable',
-            !$wasDisabled ? "Disabled driver {$driverName}" : "Enabled driver {$driverName}",
+        Logger::update(
             Driver::class,
             $driver->id,
-            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " driver \"{$driverName}\"",
+            ['disabled' => $wasDisabled],
+            ['disabled' => $newStatus]
         );
 
         $this->showDisableModal = false;

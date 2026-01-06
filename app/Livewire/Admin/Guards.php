@@ -368,12 +368,12 @@ class Guards extends Component
         $message = !$wasDisabled ? "{$guardName} has been disabled." : "{$guardName} has been enabled.";
         
         // Log the status change
-        Logger::custom(
-            !$wasDisabled ? 'disable' : 'enable',
-            !$wasDisabled ? "Disabled guard {$guardName}" : "Enabled guard {$guardName}",
+        Logger::update(
             User::class,
             $user->id,
-            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " guard \"{$guardName}\"",
+            ['disabled' => $wasDisabled],
+            ['disabled' => $newStatus]
         );
 
         $this->showDisableModal = false;

@@ -278,12 +278,12 @@ class PlateNumbers extends Component
         $message = !$wasDisabled ? "Plate number {$plateNumber} has been disabled." : "Plate number {$plateNumber} has been enabled.";
         
         // Log the status change
-        Logger::custom(
-            !$wasDisabled ? 'disable' : 'enable',
-            !$wasDisabled ? "Disabled plate number {$plateNumber}" : "Enabled plate number {$plateNumber}",
+        Logger::update(
             Truck::class,
             $truck->id,
-            ['old_status' => $wasDisabled ? 'enabled' : 'disabled', 'new_status' => $newStatus ? 'disabled' : 'enabled']
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " plate number \"{$plateNumber}\"",
+            ['disabled' => $wasDisabled],
+            ['disabled' => $newStatus]
         );
 
         $this->showDisableModal = false;

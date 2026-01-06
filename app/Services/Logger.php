@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Session;
 
 class Logger
 {
@@ -65,6 +66,12 @@ class Logger
             }
         }
         
+        // Add location context if available
+        $locationId = Session::get('location_id');
+        if ($locationId) {
+            $changes['location_context'] = ['location_id' => $locationId];
+        }
+
         // Add any additional information
         if ($additionalInfo !== null) {
             $changes = array_merge($changes, $additionalInfo);
