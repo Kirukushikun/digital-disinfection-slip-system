@@ -196,9 +196,29 @@ class Reports extends Component
     
     public function openDetailsModal($reportId)
     {
-        $this->selectedReport = $this->showDeleted 
-            ? Report::onlyTrashed()->with(['user', 'slip', 'resolvedBy'])->findOrFail($reportId)
-            : Report::with(['user', 'slip', 'resolvedBy'])->findOrFail($reportId);
+        $this->selectedReport = $this->showDeleted
+            ? Report::onlyTrashed()->with([
+                'user' => function($q) {
+                    $q->withTrashed();
+                },
+                'slip' => function($q) {
+                    $q->withTrashed();
+                },
+                'resolvedBy' => function($q) {
+                    $q->withTrashed();
+                }
+            ])->findOrFail($reportId)
+            : Report::with([
+                'user' => function($q) {
+                    $q->withTrashed();
+                },
+                'slip' => function($q) {
+                    $q->withTrashed();
+                },
+                'resolvedBy' => function($q) {
+                    $q->withTrashed();
+                }
+            ])->findOrFail($reportId);
         $this->showDetailsModal = true;
     }
     
@@ -1223,9 +1243,23 @@ class Reports extends Component
     
     private function getFilteredReportsQuery()
     {
-        $query = $this->showDeleted 
-            ? Report::onlyTrashed()->with(['user', 'slip'])
-            : Report::with(['user', 'slip'])->whereNull('deleted_at');
+        $query = $this->showDeleted
+            ? Report::onlyTrashed()->with([
+                'user' => function($q) {
+                    $q->withTrashed();
+                },
+                'slip' => function($q) {
+                    $q->withTrashed();
+                }
+            ])
+            : Report::with([
+                'user' => function($q) {
+                    $q->withTrashed();
+                },
+                'slip' => function($q) {
+                    $q->withTrashed();
+                }
+            ])->whereNull('deleted_at');
         
         // Search
         if (!empty($this->search)) {

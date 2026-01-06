@@ -272,10 +272,23 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
-                                        {{ trim($report->user->first_name . ' ' . ($report->user->middle_name ?? '') . ' ' . $report->user->last_name) }}
+                                        @if ($report->user && !(method_exists($report->user, 'trashed') && $report->user->trashed()))
+                                            {{ trim($report->user->first_name . ' ' . ($report->user->middle_name ?? '') . ' ' . $report->user->last_name) }}
+                                        @elseif ($report->user)
+                                            {{ trim($report->user->first_name . ' ' . ($report->user->middle_name ?? '') . ' ' . $report->user->last_name) }}
+                                            <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                        @else
+                                            <span class="text-gray-500 italic">User Deleted</span>
+                                        @endif
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
-                                        &#64;{{ $report->user->username }}
+                                        @if ($report->user && !(method_exists($report->user, 'trashed') && $report->user->trashed()))
+                                            &#64;{{ $report->user->username }}
+                                        @elseif ($report->user)
+                                            &#64;{{ $report->user->username }} <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @else
+                                            <span class="text-gray-500 italic">@user-deleted</span>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -491,8 +504,17 @@
                         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                             <div class="font-semibold text-gray-500">Name:</div>
                             <div class="text-gray-900">
-                                {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
-                                <div class="text-xs text-gray-500 mt-0.5">&#64;{{ $selectedReport->user->username }}</div>
+                                @if ($selectedReport->user && !(method_exists($selectedReport->user, 'trashed') && $selectedReport->user->trashed()))
+                                    {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
+                                    <div class="text-xs text-gray-500 mt-0.5">&#64;{{ $selectedReport->user->username }}</div>
+                                @elseif ($selectedReport->user)
+                                    {{ trim($selectedReport->user->first_name . ' ' . ($selectedReport->user->middle_name ?? '') . ' ' . $selectedReport->user->last_name) }}
+                                    <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                    <div class="text-xs text-gray-500 mt-0.5">&#64;{{ $selectedReport->user->username }} <span class="text-red-600 font-semibold">(Deleted)</span></div>
+                                @else
+                                    <span class="text-gray-500 italic">User Deleted</span>
+                                    <div class="text-xs text-gray-500 mt-0.5"><span class="text-gray-500 italic">@user-deleted</span></div>
+                                @endif
                             </div>
                         </div>
 

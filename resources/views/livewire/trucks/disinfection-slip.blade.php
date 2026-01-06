@@ -391,15 +391,27 @@
                         <div>
                             <div class="font-semibold text-gray-500 mb-0.5">Hatchery Guard:</div>
                             <div class="text-gray-900">
-                                {{ $selectedSlip->hatcheryGuard?->first_name . ' ' . $selectedSlip->hatcheryGuard?->last_name ?? 'N/A' }}
+                                @if ($selectedSlip->hatcheryGuard && !(method_exists($selectedSlip->hatcheryGuard, 'trashed') && $selectedSlip->hatcheryGuard->trashed()))
+                                    {{ $selectedSlip->hatcheryGuard->first_name . ' ' . ($selectedSlip->hatcheryGuard->middle_name ?? '') . ' ' . $selectedSlip->hatcheryGuard->last_name }}
+                                @elseif ($selectedSlip->hatcheryGuard)
+                                    {{ $selectedSlip->hatcheryGuard->first_name . ' ' . ($selectedSlip->hatcheryGuard->middle_name ?? '') . ' ' . $selectedSlip->hatcheryGuard->last_name }}
+                                    <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                @else
+                                    N/A
+                                @endif
                             </div>
                         </div>
                         <div>
                             <div class="font-semibold text-gray-500 mb-0.5">Received By:</div>
                             <div class="text-gray-900">
-                                {{ $selectedSlip->receivedGuard?->first_name && $selectedSlip->receivedGuard?->last_name
-                                    ? $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name
-                                    : 'N/A' }}
+                                @if ($selectedSlip->receivedGuard && !(method_exists($selectedSlip->receivedGuard, 'trashed') && $selectedSlip->receivedGuard->trashed()))
+                                    {{ $selectedSlip->receivedGuard->first_name . ' ' . ($selectedSlip->receivedGuard->middle_name ?? '') . ' ' . $selectedSlip->receivedGuard->last_name }}
+                                @elseif ($selectedSlip->receivedGuard)
+                                    {{ $selectedSlip->receivedGuard->first_name . ' ' . ($selectedSlip->receivedGuard->middle_name ?? '') . ' ' . $selectedSlip->receivedGuard->last_name }}
+                                    <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                @else
+                                    N/A
+                                @endif
                             </div>
                         </div>
                     </div>
