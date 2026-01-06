@@ -17,7 +17,8 @@ class AuditTrail extends Component
     public $showFilters = false;
     
     // Sorting properties
-    public $sortColumns = ['created_at' => 'desc']; // Default sort by created_at descending
+    public $sortBy = 'created_at';
+    public $sortDirection = 'desc';
     
     // Filter properties
     public $filterAction = [];
@@ -74,34 +75,18 @@ class AuditTrail extends Component
     
     public function applySort($column)
     {
-        if (!is_array($this->sortColumns)) {
-            $this->sortColumns = [];
-        }
-
-        // Toggle sort direction
-        if (isset($this->sortColumns[$column])) {
-            $currentDir = $this->sortColumns[$column];
-            if ($currentDir === 'asc') {
-                $this->sortColumns[$column] = 'desc';
-            } else {
-                unset($this->sortColumns[$column]);
-            }
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            $this->sortColumns[$column] = 'asc';
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
         }
-
-        // Ensure at least one sort column
-        if (empty($this->sortColumns)) {
-            $this->sortColumns = ['created_at' => 'desc'];
-        }
-
-        // Reset page when sorting changes
         $this->resetPage();
     }
     
     public function getSortDirection($column)
     {
-        return $this->sortColumns[$column] ?? null;
+        return $this->sortBy === $column ? $this->sortDirection : null;
     }
     
     public function applyFilters()
@@ -329,7 +314,7 @@ class AuditTrail extends Component
             'created_to' => $this->appliedCreatedTo,
         ];
         
-        $sorting = $this->sortColumns ?? ['created_at' => 'desc'];
+        $sorting = [$this->sortBy => $this->sortDirection];
         
         $token = Str::random(32);
         Session::put("export_data_{$token}", $exportData);
@@ -425,9 +410,7 @@ class AuditTrail extends Component
         }
         
         // Sorting
-        foreach ($this->sortColumns as $column => $direction) {
-            $query->orderBy($column, $direction);
-        }
+        $query->orderBy($this->sortBy, $this->sortDirection);
         
         return $query;
     }
