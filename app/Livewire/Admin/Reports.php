@@ -106,23 +106,35 @@ class Reports extends Component
     private function getCachedLocations()
     {
         if ($this->cachedLocations === null) {
-            $this->cachedLocations = Location::orderBy('location_name')->get();
+            // Admin: Only get non-deleted, non-disabled locations
+            $this->cachedLocations = Location::whereNull('deleted_at')
+                ->where('disabled', false)
+                ->orderBy('location_name')
+                ->get();
         }
         return $this->cachedLocations;
     }
-    
+
     private function getCachedDrivers()
     {
         if ($this->cachedDrivers === null) {
-            $this->cachedDrivers = Driver::orderBy('first_name')->get();
+            // Admin: Only get non-deleted, non-disabled drivers
+            $this->cachedDrivers = Driver::whereNull('deleted_at')
+                ->where('disabled', false)
+                ->orderBy('first_name')
+                ->get();
         }
         return $this->cachedDrivers;
     }
-    
+
     private function getCachedTrucks()
     {
         if ($this->cachedTrucks === null) {
-            $this->cachedTrucks = Truck::orderBy('plate_number')->get();
+            // Admin: Only get non-deleted, non-disabled trucks
+            $this->cachedTrucks = Truck::whereNull('deleted_at')
+                ->where('disabled', false)
+                ->orderBy('plate_number')
+                ->get();
         }
         return $this->cachedTrucks;
     }
@@ -603,71 +615,87 @@ class Reports extends Component
     }
 
     private function getFilteredReportsQuery()
-    {
-        $query = Report::with(['user', 'slip'])->whereNull('deleted_at');
-        
-        // Search
-        if (!empty($this->search)) {
-            $searchTerm = trim($this->search);
-            $isUsernameSearch = str_starts_with($searchTerm, '@');
-            $actualSearchTerm = $isUsernameSearch ? substr($searchTerm, 1) : $searchTerm;
+{
+    $query = Report::with([
+        'user' => function($q) { $q->withTrashed(); },
+        'slip' => function($q) { $q->withTrashed(); },
+        'resolvedBy' => function($q) { $q->withTrashed(); }
+    ])->whereNull('deleted_at');
+    
+    // ADMIN: Exclude reports with deleted users or deleted slips
+    $query->whereHas('user', function($q) {
+        $q->whereNull('deleted_at');
+    })
+    ->where(function($q) {
+        // Either the report has no slip (miscellaneous), or the slip exists and is not deleted
+        $q->whereNull('slip_id')
+          ->orWhereHas('slip', function($slipQ) {
+              $slipQ->whereNull('deleted_at');
+          });
+    });
+    
+    // Search
+    if (!empty($this->search)) {
+        $searchTerm = trim($this->search);
+        $isUsernameSearch = str_starts_with($searchTerm, '@');
+        $actualSearchTerm = $isUsernameSearch ? substr($searchTerm, 1) : $searchTerm;
 
-            $query->where(function ($q) use ($searchTerm, $isUsernameSearch, $actualSearchTerm) {
-                if ($isUsernameSearch && !empty($actualSearchTerm)) {
-                    // If search starts with @, only search by username
-                    $q->whereHas('user', function ($userQuery) use ($actualSearchTerm) {
-                          $userQuery->where('username', 'like', '%' . $actualSearchTerm . '%');
-                      });
-                } else {
-                    // Regular search by name, slip, report ID, or misc
-                    $q->whereHas('user', function ($userQuery) use ($searchTerm) {
-                          $userQuery->where('first_name', 'like', '%' . $searchTerm . '%')
-                                    ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
-                                    ->orWhere('username', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('slip', function ($slipQuery) use ($searchTerm) {
-                          $slipQuery->where('slip_id', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhere('id', 'like', '%' . $searchTerm . '%') // Search by report ID
-                      ->orWhere(function ($miscQuery) use ($searchTerm) {
-                          if (stripos($searchTerm, 'miscellaneous') !== false || stripos($searchTerm, 'misc') !== false) {
-                              $miscQuery->whereNull('slip_id');
-                          }
-                      });
-                }
-            });
-        }
-        
-        // Filters
-        if (!is_null($this->appliedReportType) && $this->appliedReportType !== '') {
-            if ($this->appliedReportType === 'slip') {
-                $query->whereNotNull('slip_id');
-            } elseif ($this->appliedReportType === 'misc') {
-                $query->whereNull('slip_id');
-            }
-        }
-        
-        if (!is_null($this->appliedResolved) && $this->appliedResolved !== '') {
-            if ($this->appliedResolved == '1' || $this->appliedResolved === 1) {
-                $query->whereNotNull('resolved_at');
+        $query->where(function ($q) use ($searchTerm, $isUsernameSearch, $actualSearchTerm) {
+            if ($isUsernameSearch && !empty($actualSearchTerm)) {
+                // If search starts with @, only search by username
+                $q->whereHas('user', function ($userQuery) use ($actualSearchTerm) {
+                      $userQuery->where('username', 'like', '%' . $actualSearchTerm . '%');
+                  });
             } else {
-                $query->whereNull('resolved_at');
+                // Regular search by name, slip, report ID, or misc
+                $q->whereHas('user', function ($userQuery) use ($searchTerm) {
+                      $userQuery->where('first_name', 'like', '%' . $searchTerm . '%')
+                                ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
+                                ->orWhere('username', 'like', '%' . $searchTerm . '%');
+                  })
+                  ->orWhereHas('slip', function ($slipQuery) use ($searchTerm) {
+                      $slipQuery->where('slip_id', 'like', '%' . $searchTerm . '%');
+                  })
+                  ->orWhere('id', 'like', '%' . $searchTerm . '%') // Search by report ID
+                  ->orWhere(function ($miscQuery) use ($searchTerm) {
+                      if (stripos($searchTerm, 'miscellaneous') !== false || stripos($searchTerm, 'misc') !== false) {
+                          $miscQuery->whereNull('slip_id');
+                      }
+                  });
             }
-        }
-        
-        if (!empty($this->appliedCreatedFrom)) {
-            $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
-        }
-        
-        if (!empty($this->appliedCreatedTo)) {
-            $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
-        }
-        
-        // Sorting
-        $query->orderBy($this->sortBy, $this->sortDirection);
-        
-        return $query;
+        });
     }
+    
+    // Filters
+    if (!is_null($this->appliedReportType) && $this->appliedReportType !== '') {
+        if ($this->appliedReportType === 'slip') {
+            $query->whereNotNull('slip_id');
+        } elseif ($this->appliedReportType === 'misc') {
+            $query->whereNull('slip_id');
+        }
+    }
+    
+    if (!is_null($this->appliedResolved) && $this->appliedResolved !== '') {
+        if ($this->appliedResolved == '1' || $this->appliedResolved === 1) {
+            $query->whereNotNull('resolved_at');
+        } else {
+            $query->whereNull('resolved_at');
+        }
+    }
+    
+    if (!empty($this->appliedCreatedFrom)) {
+        $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
+    }
+    
+    if (!empty($this->appliedCreatedTo)) {
+        $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
+    }
+    
+    // Sorting
+    $query->orderBy($this->sortBy, $this->sortDirection);
+    
+    return $query;
+}
     
     public function render()
     {
