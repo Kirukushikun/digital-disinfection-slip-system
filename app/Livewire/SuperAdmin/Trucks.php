@@ -3,6 +3,7 @@
 namespace App\Livewire\SuperAdmin;
 
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
 use App\Models\Attachment;
 use App\Models\Truck;
@@ -98,7 +99,10 @@ class Trucks extends Component
     public $showRemoveAttachmentConfirmation = false;
     public $showRestoreModal = false;
     public $showDeleted = false; // Toggle to show deleted items
+
+    #[Locked]
     public $selectedSlip = null;
+    
     public $selectedSlipId = null;
     public $selectedSlipName = null;
     public $attachmentFile = null;

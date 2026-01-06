@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 
 class Trucks extends Component
 {
@@ -100,7 +101,10 @@ class Trucks extends Component
     public $showAttachmentModal = false;
     public $showDeleteConfirmation = false;
     public $showRemoveAttachmentConfirmation = false;
+
+    #[Locked]
     public $selectedSlip = null;
+
     public $attachmentFile = null;
     public $currentAttachmentIndex = 0;
     public $attachmentToDelete = null;
@@ -153,9 +157,6 @@ class Trucks extends Component
     public $searchEditHatcheryGuard = '';
     public $searchEditReceivedGuard = '';
     
-    // Note: availableOriginsOptions and availableDestinationsOptions are now computed properties
-    
-    // Cached collections to avoid duplicate queries
     private $cachedDrivers = null;
     private $cachedTrucks = null;
     private $cachedGuards = null;

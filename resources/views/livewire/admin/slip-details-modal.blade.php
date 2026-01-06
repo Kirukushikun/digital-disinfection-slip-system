@@ -322,7 +322,7 @@
             <x-slot name="footer">
                 <div class="flex justify-between items-center w-full flex-wrap gap-2">
                     {{-- Delete Current Photo Button (only if user can manage attachments AND (uploaded the current photo OR is admin/superadmin)) --}}
-                    @if (($canManage || $isAdminOrSuperAdmin) && $totalAttachments > 0)
+                    @if (($canManage || $isAdminOrSuperAdmin) && $totalAttachments > 0 && !in_array($status, [3, 4]))                        
                         @php
                             $attachmentsData = $attachments->map(fn($a) => ['id' => $a->id, 'user_id' => $a->user_id])->values()->all();
                         @endphp
