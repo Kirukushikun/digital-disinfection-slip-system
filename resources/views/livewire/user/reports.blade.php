@@ -1,4 +1,4 @@
-<div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4"
+<div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4 pb-16 sm:pb-4"
     @if (!$showFilters && !$showDetailsModal) wire:poll.keep-alive @endif>
 
     {{-- Simple Header --}}
@@ -79,7 +79,7 @@
                         <div class="text-base font-bold text-gray-900">
                             @if ($report->slip_id)
                                 @if ($report->slip && !(method_exists($report->slip, 'trashed') && $report->slip->trashed()))
-                                    <button wire:click="openDetailsModal({{ $report->id }})" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
+                                    <button wire:click="openDetailsModal({{ $report->id }})" class="text-gray-900 hover:text-gray-700 hover:underline transition-colors duration-150 hover:cursor-pointer cursor-pointer">
                                         {{ $report->slip->slip_id ?? 'N/A' }}
                                     </button>
                                 @elseif ($report->slip)
@@ -169,7 +169,7 @@
                         <div class="text-gray-900 font-semibold">
                             @if ($selectedReport->slip_id)
                                 @if ($selectedReport->slip && !(method_exists($selectedReport->slip, 'trashed') && $selectedReport->slip->trashed()))
-                                    <button class="text-blue-600 font-semibold">{{ $selectedReport->slip->slip_id ?? 'N/A' }}</button>
+                                    <span class="text-gray-900 font-semibold">{{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
                                 @elseif ($selectedReport->slip)
                                     <span class="text-gray-900">{{ $selectedReport->slip->slip_id ?? $selectedReport->slip_id }}</span><span class="text-red-600"> (Deleted)</span>
                                 @else

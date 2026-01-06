@@ -303,10 +303,7 @@
                                                 Resolved
                                             </span>
                                             <div class="text-xs text-gray-500 mt-1">
-                                                {{ $report->resolved_at->format('M d, Y') }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                {{ $report->resolved_at->format('h:i A') }}
+                                                {{ $report->resolved_at->format('M d, Y h:i A') }}
                                             </div>
                                         </div>
                                     @else

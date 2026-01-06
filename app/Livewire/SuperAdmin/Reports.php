@@ -1224,6 +1224,7 @@ class Reports extends Component
                   ->orWhereHas('slip', function ($slipQuery) use ($searchTerm) {
                       $slipQuery->where('slip_id', 'like', '%' . $searchTerm . '%');
                   })
+                  ->orWhere('id', 'like', '%' . $searchTerm . '%') // Search by report ID
                   ->orWhere(function ($miscQuery) use ($searchTerm) {
                       if (stripos($searchTerm, 'miscellaneous') !== false || stripos($searchTerm, 'misc') !== false) {
                           $miscQuery->whereNull('slip_id');

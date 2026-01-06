@@ -1,4 +1,4 @@
-<div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4">
+<div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4 pb-16 sm:pb-4">
 
     {{-- Simple Header --}}
     <div class="mb-6">
