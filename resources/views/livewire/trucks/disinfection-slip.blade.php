@@ -311,10 +311,12 @@
                                                     <template x-for="photo in photos" :key="photo.id">
                                                         <div class="relative rounded-lg overflow-hidden shadow-md">
                                                             <img :src="photo.data" class="w-full h-24 sm:h-32 object-cover">
-                                                            <button @click="deletePhoto(photo.id)" 
-                                                                    class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
-                                                                Delete
-                                                            </button>
+                                                            @if (!in_array($status, [3, 4]))
+    <button @click="deletePhoto(photo.id)" 
+        class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+        Delete
+    </button>
+@endif
                                                         </div>
                                                     </template>
                                                 </div>
