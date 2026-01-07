@@ -361,6 +361,8 @@ class PlateNumbers extends Component
             $oldValues
         );
 
+        Cache::forget('trucks_all');
+
         $this->showDeleteModal = false;
         $this->reset(['selectedTruckId', 'selectedTruckName']);
         $this->resetPage();
@@ -468,8 +470,6 @@ class PlateNumbers extends Component
             "Created \"{$plateNumber}\"",
             $truck->only(['plate_number', 'disabled'])
         );
-
-        Cache::forget('trucks_all');
 
         $this->showCreateModal = false;
         $this->reset(['create_plate_number']);
