@@ -37,15 +37,15 @@ class Trucks extends Component
     // Ensure filterStatus is properly typed when updated
     public function updatedFilterStatus($value)
     {
-        // Handle null, empty string, or numeric values (0, 1, 2, 3 matching backend)
-        // null/empty = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+        // Handle null, empty string, or numeric values (0, 1, 2, 3, 4 matching backend)
+        // null/empty = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
         // The select will send values as strings, so we convert to int
         if ($value === null || $value === '' || $value === false) {
             $this->filterStatus = null;
         } elseif (is_numeric($value)) {
             $intValue = (int)$value;
-            if ($intValue >= 0 && $intValue <= 3) {
-                // Store as integer (0, 1, 2, or 3)
+            if ($intValue >= 0 && $intValue <= 4) {
+                // Store as integer (0, 1, 2, 3, or 4)
                 $this->filterStatus = $intValue;
             } else {
                 $this->filterStatus = null;
@@ -887,8 +887,8 @@ class Trucks extends Component
 
     public function applyFilters()
     {
-        // Use filterStatus directly - it's already an integer (0, 1, 2) or null
-        // null = All Statuses (no filter), 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+        // Use filterStatus directly - it's already an integer (0, 1, 2, 3, 4) or null
+        // null = All Statuses (no filter), 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
         $this->appliedStatus = $this->filterStatus; // Already an int or null
         // Create new array instances to ensure Livewire detects the change
         // Convert string IDs to integers for proper filtering
@@ -1125,6 +1125,18 @@ class Trucks extends Component
 
     public function openEditModal()
     {
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations
+        if ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::with([
+                'truck' => function($q) { $q->withTrashed(); },
+                'location' => function($q) { $q->withTrashed(); },
+                'destination' => function($q) { $q->withTrashed(); },
+                'driver' => function($q) { $q->withTrashed(); },
+                'hatcheryGuard' => function($q) { $q->withTrashed(); },
+                'receivedGuard' => function($q) { $q->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
+
         // Load slip data into edit fields
         $this->editTruckId = $this->selectedSlip->truck_id;
         $this->editLocationId = $this->selectedSlip->location_id;
@@ -1134,7 +1146,7 @@ class Trucks extends Component
         $this->editReceivedGuardId = $this->selectedSlip->received_guard_id;
         $this->editReasonForDisinfection = $this->selectedSlip->reason_for_disinfection;
         $this->editStatus = $this->selectedSlip->status;
-        
+
         // Reset search properties
         $this->searchEditTruck = '';
         $this->searchEditOrigin = '';
@@ -1142,7 +1154,7 @@ class Trucks extends Component
         $this->searchEditDriver = '';
         $this->searchEditHatcheryGuard = '';
         $this->searchEditReceivedGuard = '';
-        
+
         $this->showEditModal = true;
     }
     
@@ -1162,6 +1174,18 @@ class Trucks extends Component
 
     public function closeEditModal()
     {
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations
+        if ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::with([
+                'truck' => function($q) { $q->withTrashed(); },
+                'location' => function($q) { $q->withTrashed(); },
+                'destination' => function($q) { $q->withTrashed(); },
+                'driver' => function($q) { $q->withTrashed(); },
+                'hatcheryGuard' => function($q) { $q->withTrashed(); },
+                'receivedGuard' => function($q) { $q->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
+        
         // Check if form has unsaved changes
         if ($this->hasEditUnsavedChanges()) {
             $this->showCancelEditConfirmation = true;
@@ -2104,7 +2128,7 @@ class Trucks extends Component
             // Status filter
             // Important: Check for null explicitly, as 0 is a valid status (Pending)
             ->when($this->filtersActive && $this->appliedStatus !== null, function($query) {
-                // appliedStatus is already an integer (0, 1, or 2)
+                // appliedStatus is already an integer (0, 1, 2, 3, or 4)
                 $query->where('status', $this->appliedStatus);
             })
             // Origin filter

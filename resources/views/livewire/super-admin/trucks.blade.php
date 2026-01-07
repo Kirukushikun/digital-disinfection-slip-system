@@ -419,6 +419,9 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
                                         {{ $slip->slip_id }}
+                                        @if ($slip->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
                                         {{ \Carbon\Carbon::parse($slip->created_at)->format('M d, Y h:i A') }}
@@ -452,10 +455,13 @@
                                     @if ($showDriverFirst)
                                         <div class="text-sm font-semibold text-gray-900">
                                             {{ $slip->driver->first_name }} {{ $slip->driver->last_name }}
+                                            @if ($slip->driver && $slip->driver->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             @if ($slip->truck)
-                                            {{ $slip->truck->plate_number }}
+                                                {{ $slip->truck->plate_number }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif
@@ -466,7 +472,7 @@
                                     @else
                                         <div class="text-sm font-semibold text-gray-900">
                                             @if ($slip->truck)
-                                            {{ $slip->truck->plate_number }}
+                                                {{ $slip->truck->plate_number }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif
@@ -476,26 +482,41 @@
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ $slip->driver->first_name }} {{ $slip->driver->last_name }}
+                                            @if ($slip->driver && $slip->driver->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-700">
                                         {{ $slip->location->location_name }}
+                                        @if ($slip->location && $slip->location->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     @if ($slip->hatcheryGuard)
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ trim("{$slip->hatcheryGuard->first_name} {$slip->hatcheryGuard->middle_name} {$slip->hatcheryGuard->last_name}") }}
+                                            @if ($slip->hatcheryGuard->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-700">
                                         {{ $slip->destination->location_name }}
+                                        @if ($slip->destination && $slip->destination->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     @if ($slip->receivedGuard)
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ trim("{$slip->receivedGuard->first_name} {$slip->receivedGuard->middle_name} {$slip->receivedGuard->last_name}") }}
+                                            @if ($slip->receivedGuard->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
