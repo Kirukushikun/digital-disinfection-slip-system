@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
-
+use Illuminate\Support\Facades\Log;
 /**
  * @method void resetPage()
  * @method void dispatch(string $event, mixed ...$params)
@@ -319,7 +319,7 @@ class TruckList extends Component
                     $attachment->forceDelete();
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to cleanup attachment ' . $attachmentId . ': ' . $e->getMessage());
+                Log::error('Failed to cleanup attachment ' . $attachmentId . ': ' . $e->getMessage());
             }
         }
     }
@@ -548,9 +548,10 @@ class TruckList extends Component
 
             $totalAttachments = count($this->pendingAttachmentIds);
             $this->dispatch('toast', message: "Photo added ({$totalAttachments} total).", type: 'success');
-
+            Cache::forget('disinfection_slips_all');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Attachment upload error: ' . $e->getMessage());
+            Log::error('Attachment upload error: ' . $e->getMessage());
+            Cache::forget('disinfection_slips_all');
             $this->dispatch('toast', message: 'Failed to upload photo. Please try again.', type: 'error');
         }
     }
@@ -618,7 +619,8 @@ class TruckList extends Component
             $this->showRemovePendingAttachmentConfirmation = false;
             $this->pendingAttachmentToDelete = null;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Attachment removal error: ' . $e->getMessage());
+            Log::error('Attachment removal error: ' . $e->getMessage());
+            Cache::forget('disinfection_slips_all');
             $this->dispatch('toast', message: 'Failed to remove photo. Please try again.', type: 'error');
             $this->showRemovePendingAttachmentConfirmation = false;
             $this->pendingAttachmentToDelete = null;
