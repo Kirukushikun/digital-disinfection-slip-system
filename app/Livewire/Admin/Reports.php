@@ -12,6 +12,7 @@ use App\Models\Attachment;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -100,6 +101,24 @@ class Reports extends Component
     {
         // Apply default filter on mount
         $this->applyFilters();
+    }
+    
+    /**
+     * Prevent polling from running when any modal is open
+     * This prevents the selected slip data from being overwritten
+     */
+    #[On('polling')]
+    public function polling()
+    {
+        // If any modal is open, skip polling
+        if ($this->showFilters || $this->showDetailsModal || 
+            $this->showAttachmentModal || $this->showEditModal || 
+            $this->showCancelEditConfirmation || $this->showRemoveAttachmentConfirmation ||
+            $this->showSlipDeleteConfirmation || $this->showDeleteConfirmation) {
+            return;
+        }
+        
+        // Allow normal component update - Livewire will re-render
     }
     
     // Helper methods to get cached collections

@@ -1915,7 +1915,14 @@ class Trucks extends Component
 
     public function render()
     {
-        $slips = DisinfectionSlipModel::with(['truck', 'location', 'destination', 'driver', 'hatcheryGuard', 'receivedGuard'])
+        $slips = DisinfectionSlipModel::with([
+            'truck' => function($q) { $q->withTrashed(); },
+            'location' => function($q) { $q->withTrashed(); },
+            'destination' => function($q) { $q->withTrashed(); },
+            'driver' => function($q) { $q->withTrashed(); },
+            'hatcheryGuard' => function($q) { $q->withTrashed(); },
+            'receivedGuard' => function($q) { $q->withTrashed(); }
+        ])
             // Search
             ->when($this->search, function($query) {
                 // Sanitize search term to prevent SQL injection

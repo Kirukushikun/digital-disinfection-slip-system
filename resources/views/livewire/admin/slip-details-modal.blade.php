@@ -225,9 +225,6 @@
                                     if ($uploader) {
                                         $uploaderName = trim($uploader->first_name . ' ' . ($uploader->middle_name ?? '') . ' ' . $uploader->last_name);
                                         $uploaderUsername = $uploader->username;
-                                        if (method_exists($uploader, 'trashed') && $uploader->trashed()) {
-                                            $uploaderName .= ' (Deleted)';
-                                        }
                                     } else {
                                         $uploaderName = null;
                                         $uploaderUsername = null;
@@ -241,15 +238,10 @@
                                         {{-- Uploaded By Information --}}
                                         <div class="text-center mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                                             <span class="font-semibold">Uploaded by:</span> 
-                                            @if($uploaderName && $uploaderUsername)
+                                            @if($uploader)
                                                 <span class="text-gray-800">{{ $uploaderName }}</span>
                                                 <span class="text-gray-500">(&#64;{{ $uploaderUsername }})</span>
-                                                @if(method_exists($attachment->user, 'trashed') && $attachment->user->trashed())
-                                                    <span class="text-red-600 font-semibold"> (Deleted)</span>
-                                                @endif
-                                            @elseif($uploaderName)
-                                                <span class="text-gray-800">{{ $uploaderName }}</span>
-                                                @if(method_exists($attachment->user, 'trashed') && $attachment->user->trashed())
+                                                @if(method_exists($uploader, 'trashed') && $uploader->trashed())
                                                     <span class="text-red-600 font-semibold"> (Deleted)</span>
                                                 @endif
                                             @else
@@ -268,15 +260,10 @@
                                             {{-- Uploaded By Information for non-images --}}
                                             <div class="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
                                                 <span class="font-semibold">Uploaded by:</span> 
-                                                @if($uploaderName && $uploaderUsername)
+                                                @if($uploader)
                                                     <span class="text-gray-800">{{ $uploaderName }}</span>
                                                     <span class="text-gray-500">(&#64;{{ $uploaderUsername }})</span>
-                                                    @if(method_exists($attachment->user, 'trashed') && $attachment->user->trashed())
-                                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
-                                                    @endif
-                                                @elseif($uploaderName)
-                                                    <span class="text-gray-800">{{ $uploaderName }}</span>
-                                                    @if(method_exists($attachment->user, 'trashed') && $attachment->user->trashed())
+                                                    @if(method_exists($uploader, 'trashed') && $uploader->trashed())
                                                         <span class="text-red-600 font-semibold"> (Deleted)</span>
                                                     @endif
                                                 @else
