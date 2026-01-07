@@ -211,9 +211,9 @@ class Trucks extends Component
             return;
         }
         
-        // If a slip is selected, reload it with trashed relations
+        // If a slip is selected, reload it with trashed relations (including if the slip itself is deleted)
         if ($this->selectedSlip) {
-            $this->selectedSlip = DisinfectionSlipModel::with([
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
                 'truck' => function($q) { $q->withTrashed(); },
                 'location' => function($q) { $q->withTrashed(); },
                 'destination' => function($q) { $q->withTrashed(); },
@@ -1080,7 +1080,7 @@ class Trucks extends Component
 
     public function openDetailsModal($id)
     {
-        $this->selectedSlip = DisinfectionSlipModel::with([
+        $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
             'truck' => function($q) { $q->withTrashed(); },
             'location' => function($q) { $q->withTrashed(); },
             'destination' => function($q) { $q->withTrashed(); },
@@ -1146,9 +1146,9 @@ class Trucks extends Component
 
     public function openEditModal()
     {
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
         if ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::with([
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
                 'truck' => function($q) { $q->withTrashed(); },
                 'location' => function($q) { $q->withTrashed(); },
                 'destination' => function($q) { $q->withTrashed(); },
@@ -1218,9 +1218,9 @@ class Trucks extends Component
 
     public function cancelEdit()
     {
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations after cancel
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations after cancel (including if slip is deleted)
         if ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::with([
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
                 'truck' => function($q) { $q->withTrashed(); },
                 'location' => function($q) { $q->withTrashed(); },
                 'destination' => function($q) { $q->withTrashed(); },
@@ -1494,15 +1494,15 @@ class Trucks extends Component
 
         $this->selectedSlip->update($updateData);
 
-        // Refresh the slip with relationships
+        // Refresh the slip with relationships (including trashed relations)
         $this->selectedSlip->refresh();
         $this->selectedSlip->load([
-            'truck',
-            'location',
-            'destination',
-            'driver',
-            'hatcheryGuard',
-            'receivedGuard'
+            'truck' => function($q) { $q->withTrashed(); },
+            'location' => function($q) { $q->withTrashed(); },
+            'destination' => function($q) { $q->withTrashed(); },
+            'driver' => function($q) { $q->withTrashed(); },
+            'hatcheryGuard' => function($q) { $q->withTrashed(); },
+            'receivedGuard' => function($q) { $q->withTrashed(); }
         ]);
 
         $slipId = $this->selectedSlip->slip_id;

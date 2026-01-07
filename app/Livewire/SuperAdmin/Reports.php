@@ -390,7 +390,7 @@ class Reports extends Component
         // Set modal state FIRST to prevent polling from interfering
         $this->showDetailsModal = true;
         
-        $this->selectedSlip = DisinfectionSlipModel::with([
+        $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
             'truck' => function($q) { $q->withTrashed(); },
             'location' => function($q) { $q->withTrashed(); },
             'destination' => function($q) { $q->withTrashed(); },
@@ -966,9 +966,9 @@ class Reports extends Component
 
         $this->selectedSlip->update($updateData);
 
-        // Refresh the slip with relationships
+        // Refresh the slip with relationships (including if slip is deleted)
         $this->selectedSlip->refresh();
-        $this->selectedSlip = DisinfectionSlipModel::with([
+        $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
             'truck' => function($q) { $q->withTrashed(); },
             'location' => function($q) { $q->withTrashed(); },
             'destination' => function($q) { $q->withTrashed(); },
