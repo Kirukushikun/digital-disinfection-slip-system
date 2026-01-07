@@ -97,17 +97,13 @@
                 <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 2 && $selectedSlip->completed_at) bg-gray-100 @else bg-white @endif">
                     <div class="font-semibold text-gray-500">Photos:</div>
                     <div class="text-gray-900">
-                        @php
-                            $attachments = $selectedSlip->attachments();
-                            $attachmentCount = $attachments->count();
-                        @endphp
-                        @if ($attachmentCount > 0)
+                        @if ($this->selectedSlipAttachments->count() > 0)
                             <button wire:click="openAttachmentModal(0)"
                                 class="inline-flex items-center px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-lg transition-colors duration-150 cursor-pointer">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
-                                See Photo{{ $attachmentCount > 1 ? 's (' . $attachmentCount . ')' : '' }}
+                                See Photo{{ $this->selectedSlipAttachments->count() > 1 ? 's (' . $this->selectedSlipAttachments->count() . ')' : '' }}
                             </button>
                         @else
                             N/A
@@ -180,7 +176,7 @@
     {{-- Photos Carousel Modal --}}
     @if ($showAttachmentModal && $selectedSlip)
         @php
-            $attachments = $selectedSlip?->attachments() ?? collect([]);
+            $attachments = $this->selectedSlipAttachments;
             $totalAttachments = $attachments->count();
             $isReceivingGuard = \Illuminate\Support\Facades\Auth::id() === $selectedSlip?->received_guard_id;
             $status = $selectedSlip?->status ?? null;
@@ -225,9 +221,14 @@
                                     if ($uploader) {
                                         $uploaderName = trim($uploader->first_name . ' ' . ($uploader->middle_name ?? '') . ' ' . $uploader->last_name);
                                         $uploaderUsername = $uploader->username;
+<<<<<<< HEAD
+=======
+                                        $isUploaderDeleted = method_exists($uploader, 'trashed') && $uploader->trashed();
+>>>>>>> 3bbe4c596f8a8936d87c3131ea61ddaa2169889d
                                     } else {
                                         $uploaderName = null;
                                         $uploaderUsername = null;
+                                        $isUploaderDeleted = false;
                                     }
                                 @endphp
                                 <div class="w-full shrink-0 px-2 sm:px-4 py-2 sm:py-4 flex flex-col" style="min-width: 100%">
@@ -240,8 +241,18 @@
                                             <span class="font-semibold">Uploaded by:</span> 
                                             @if($uploader)
                                                 <span class="text-gray-800">{{ $uploaderName }}</span>
+<<<<<<< HEAD
                                                 <span class="text-gray-500">(&#64;{{ $uploaderUsername }})</span>
                                                 @if(method_exists($uploader, 'trashed') && $uploader->trashed())
+=======
+                                                <span class="text-gray-500">&#64;{{ $uploaderUsername }}</span>
+                                                @if($isUploaderDeleted)
+                                                    <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                                @endif
+                                            @elseif($uploaderName)
+                                                <span class="text-gray-800">{{ $uploaderName }}</span>
+                                                @if($isUploaderDeleted)
+>>>>>>> 3bbe4c596f8a8936d87c3131ea61ddaa2169889d
                                                     <span class="text-red-600 font-semibold"> (Deleted)</span>
                                                 @endif
                                             @else
@@ -262,8 +273,18 @@
                                                 <span class="font-semibold">Uploaded by:</span> 
                                                 @if($uploader)
                                                     <span class="text-gray-800">{{ $uploaderName }}</span>
+<<<<<<< HEAD
                                                     <span class="text-gray-500">(&#64;{{ $uploaderUsername }})</span>
                                                     @if(method_exists($uploader, 'trashed') && $uploader->trashed())
+=======
+                                                    <span class="text-gray-500">&#64;{{ $uploaderUsername }}</span>
+                                                    @if($isUploaderDeleted)
+                                                        <span class="text-red-600 font-semibold"> (Deleted)</span>
+                                                    @endif
+                                                @elseif($uploaderName)
+                                                    <span class="text-gray-800">{{ $uploaderName }}</span>
+                                                    @if($isUploaderDeleted)
+>>>>>>> 3bbe4c596f8a8936d87c3131ea61ddaa2169889d
                                                         <span class="text-red-600 font-semibold"> (Deleted)</span>
                                                     @endif
                                                 @else
