@@ -504,28 +504,41 @@
             {{-- Delete Current Photo Button --}}
             @if ($totalPendingAttachments > 0)
                 @php
-                    // Create a map of attachment IDs to user IDs for Alpine.js
+                    // Create initial map of attachment IDs to user IDs for Alpine.js
                     $attachmentsMap = $pendingAttachments->mapWithKeys(fn($a) => [$a->id => $a->user_id])->toArray();
+                    // Create a key based on attachment IDs to force Alpine re-initialization when attachments change
+                    $attachmentsKey = implode(',', $pendingAttachmentIds ?? []);
                 @endphp
-                <div x-data="{
-                    attachmentsMap: @js($attachmentsMap),
+                <div wire:key="pending-attachments-{{ $attachmentsKey }}" x-data="{
+                    initialAttachmentsMap: @js($attachmentsMap),
                     currentUserId: @js($currentUserId),
                     isAdminOrSuperAdmin: @js($isAdminOrSuperAdmin),
+                    currentIndex: $wire.get('currentPendingAttachmentIndex'),
+                    attachmentIds: $wire.get('pendingAttachmentIds') || [],
                     getCurrentAttachmentId() {
-                        const index = $wire.get('currentPendingAttachmentIndex');
-                        const ids = $wire.get('pendingAttachmentIds') || [];
+                        const index = this.currentIndex;
+                        const ids = this.attachmentIds;
                         return (index !== null && index >= 0 && index < ids.length) ? ids[index] : null;
                     },
-                    canShowDelete() {
+                    getAttachmentUserId(attachmentId) {
+                        // First check initial map
+                        if (this.initialAttachmentsMap[attachmentId]) {
+                            return this.initialAttachmentsMap[attachmentId];
+                        }
+                        return null;
+                    },
+                    get canDelete() {
+                        // Computed property that re-evaluates when currentIndex or attachmentIds change
                         const attachmentId = this.getCurrentAttachmentId();
                         if (!attachmentId) {
                             return false;
                         }
-                        // Check if attachment exists in our map (might be deleted)
-                        if (!this.attachmentsMap[attachmentId]) {
+                        // Get user ID from map
+                        const attachmentUserId = this.getAttachmentUserId(attachmentId);
+                        if (attachmentUserId === null) {
                             return false;
                         }
-                        const attachmentUserId = this.attachmentsMap[attachmentId];
+                        // Check permissions
                         return this.isAdminOrSuperAdmin || attachmentUserId === this.currentUserId;
                     },
                     deleteCurrentPhoto() {
@@ -535,21 +548,28 @@
                         }
                     }
                 }" x-init="
-                    // Watch for changes in pendingAttachmentIds to update the map
+                    // Watch and sync Livewire properties to Alpine reactive properties
+                    $watch(() => $wire.currentPendingAttachmentIndex, (newIndex) => {
+                        this.currentIndex = newIndex;
+                    });
                     $watch(() => $wire.pendingAttachmentIds, (newIds) => {
-                        // Remove deleted attachments from map
-                        const currentIds = new Set(newIds || []);
-                        Object.keys(this.attachmentsMap).forEach(id => {
+                        this.attachmentIds = newIds || [];
+                        // Update map when attachments are deleted
+                        const currentIds = new Set(this.attachmentIds);
+                        Object.keys(this.initialAttachmentsMap).forEach(id => {
                             if (!currentIds.has(Number(id))) {
-                                delete this.attachmentsMap[id];
+                                delete this.initialAttachmentsMap[id];
                             }
                         });
                     });
+                    // Initialize reactive properties
+                    this.currentIndex = $wire.get('currentPendingAttachmentIndex');
+                    this.attachmentIds = $wire.get('pendingAttachmentIds') || [];
                 ">
                     <x-buttons.submit-button 
                         @click="deleteCurrentPhoto()"
                         color="red"
-                        x-show="canShowDelete()"
+                        x-show="canDelete"
                         class="transition-all">
                         Delete
                     </x-buttons.submit-button>
