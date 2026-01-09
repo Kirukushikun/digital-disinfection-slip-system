@@ -89,7 +89,57 @@
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     const ctx = canvas.getContext('2d');
+                    
+                    // Draw the video frame
                     ctx.drawImage(video, 0, 0);
+                    
+                    // Add timestamp overlay at bottom left
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit' 
+                    });
+                    const timeStr = now.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit',
+                        hour12: false 
+                    });
+                    const timestamp = `${dateStr} ${timeStr}`;
+                    
+                    // Configure text style
+                    const fontSize = Math.max(16, canvas.height * 0.03); // Responsive font size
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    ctx.textBaseline = 'bottom';
+                    
+                    // Add semi-transparent black background for text
+                    const padding = fontSize * 0.3;
+                    const textWidth = ctx.measureText(timestamp).width;
+                    const textHeight = fontSize;
+                    const bgX = padding;
+                    const bgY = canvas.height - textHeight - padding * 2;
+                    const bgWidth = textWidth + padding * 2;
+                    const bgHeight = textHeight + padding * 2;
+                    
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+                    
+                    // Draw text with black stroke/border for maximum visibility
+                    const textX = padding * 2;
+                    const textY = canvas.height - padding * 2;
+                    
+                    // Draw black stroke (border) around text
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = fontSize * 0.15;
+                    ctx.lineJoin = 'round';
+                    ctx.miterLimit = 2;
+                    ctx.strokeText(timestamp, textX, textY);
+                    
+                    // Draw white text on top
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillText(timestamp, textX, textY);
+                    
                     const imageData = canvas.toDataURL('image/jpeg', 0.85);
                     this.photos.push({ id: Date.now(), data: imageData });
                     console.log('Photo captured! Total photos:', this.photos.length);
