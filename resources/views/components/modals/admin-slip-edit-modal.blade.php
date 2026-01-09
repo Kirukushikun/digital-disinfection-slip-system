@@ -325,12 +325,12 @@
                 </div>
             @endif
 
-            {{-- Reason --}}
+            {{-- Remarks --}}
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if (($status == 3 || $status == 4) && $selectedSlip->completed_at) bg-white @else bg-gray-100 @endif">
-                <div class="font-semibold text-gray-500">Reason:</div>
+                <div class="font-semibold text-gray-500">Remarks:</div>
                 <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
-                    <textarea wire:model.live="editReasonForDisinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
-                    @error('editReasonForDisinfection')
+                    <textarea wire:model.live="editRemarksForDisinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                    @error('editRemarksForDisinfection')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>

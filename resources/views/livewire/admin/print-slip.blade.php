@@ -221,8 +221,8 @@
         </div>
 
         <div class="form-field">
-            <div class="form-label">Reason for Disinfection:</div>
-            <div class="form-value">{{ $slip->reason_for_disinfection ?? '' }}</div>
+            <div class="form-label">Remarks for Disinfection:</div>
+            <div class="form-value">{{ $slip->remarks_for_disinfection ?? '' }}</div>
         </div>
 
         <div class="signature-section">

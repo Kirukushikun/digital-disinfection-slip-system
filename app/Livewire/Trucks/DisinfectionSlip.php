@@ -46,7 +46,7 @@ class DisinfectionSlip extends Component
     public $truck_id;
     public $destination_id;
     public $driver_id;
-    public $reason_for_disinfection;
+    public $remarks_for_disinfection;
 
     // Search properties for dropdowns
     public $searchTruck = '';
@@ -203,7 +203,7 @@ class DisinfectionSlip extends Component
         $this->truck_id                = $this->selectedSlip->truck_id;
         $this->destination_id          = $this->selectedSlip->destination_id;
         $this->driver_id               = $this->selectedSlip->driver_id;
-        $this->reason_for_disinfection = $this->selectedSlip->reason_for_disinfection;
+        $this->remarks_for_disinfection = $this->selectedSlip->remarks_for_disinfection;
 
         $this->isEditing = false;
         $this->showDetailsModal = true;
@@ -316,7 +316,7 @@ class DisinfectionSlip extends Component
         return $this->truck_id != ($this->originalValues['truck_id'] ?? $this->selectedSlip->truck_id) ||
                $this->destination_id != ($this->originalValues['destination_id'] ?? $this->selectedSlip->destination_id) ||
                $this->driver_id != ($this->originalValues['driver_id'] ?? $this->selectedSlip->driver_id) ||
-               ($this->reason_for_disinfection ?? '') != ($this->originalValues['reason_for_disinfection'] ?? $this->selectedSlip->reason_for_disinfection ?? '');
+               ($this->remarks_for_disinfection ?? '') != ($this->originalValues['remarks_for_disinfection'] ?? $this->selectedSlip->remarks_for_disinfection ?? '');
     }
 
     public function canManageAttachment()
@@ -356,16 +356,16 @@ class DisinfectionSlip extends Component
 
         $this->isEditing = true;
         
-        // Store original values before editing (normalize reason to ensure consistent comparison)
-        $originalReason = $this->reason_for_disinfection ?? '';
-        $originalReason = trim($originalReason);
-        $originalReason = $originalReason === '' ? null : $originalReason;
+        // Store original values before editing (normalize remarks to ensure consistent comparison)
+        $originalRemarks = $this->remarks_for_disinfection ?? '';
+        $originalRemarks = trim($originalRemarks);
+        $originalRemarks = $originalRemarks === '' ? null : $originalRemarks;
         
         $this->originalValues = [
             'truck_id'                => $this->truck_id,
             'destination_id'          => $this->destination_id,
             'driver_id'               => $this->driver_id,
-            'reason_for_disinfection' => $originalReason,
+            'remarks_for_disinfection' => $originalRemarks,
         ];
     }
 
@@ -375,7 +375,7 @@ class DisinfectionSlip extends Component
         $this->truck_id                = $this->originalValues['truck_id'] ?? $this->selectedSlip->truck_id;
         $this->destination_id          = $this->originalValues['destination_id'] ?? $this->selectedSlip->destination_id;
         $this->driver_id               = $this->originalValues['driver_id'] ?? $this->selectedSlip->driver_id;
-        $this->reason_for_disinfection = $this->originalValues['reason_for_disinfection'] ?? $this->selectedSlip->reason_for_disinfection;
+        $this->remarks_for_disinfection = $this->originalValues['remarks_for_disinfection'] ?? $this->selectedSlip->remarks_for_disinfection;
         
         // Reset search properties
         $this->searchTruck = '';
@@ -632,17 +632,17 @@ class DisinfectionSlip extends Component
                 },
             ],
             'driver_id'               => 'required|exists:drivers,id',
-            'reason_for_disinfection' => 'nullable|string|max:1000',
+            'remarks_for_disinfection' => 'nullable|string|max:1000',
         ]);
 
-        // Sanitize reason_for_disinfection
-        $sanitizedReason = $this->sanitizeText($this->reason_for_disinfection);
+        // Sanitize remarks_for_disinfection
+        $sanitizedRemarks = $this->sanitizeText($this->remarks_for_disinfection);
 
         $this->selectedSlip->update([
             'truck_id'                => $this->truck_id,
             'destination_id'          => $this->destination_id,
             'driver_id'               => $this->driver_id,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
         ]);
 
         Cache::forget('disinfection_slips_all');
@@ -665,13 +665,13 @@ class DisinfectionSlip extends Component
             'truck_id' => $this->originalValues['truck_id'] ?? null,
             'destination_id' => $this->originalValues['destination_id'] ?? null,
             'driver_id' => $this->originalValues['driver_id'] ?? null,
-            'reason_for_disinfection' => $this->originalValues['reason_for_disinfection'] ?? null,
+            'remarks_for_disinfection' => $this->originalValues['remarks_for_disinfection'] ?? null,
         ];
         $newValues = [
             'truck_id' => $this->truck_id,
             'destination_id' => $this->destination_id,
             'driver_id' => $this->driver_id,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
         ];
         
         Logger::update(
@@ -714,7 +714,7 @@ class DisinfectionSlip extends Component
         $this->validate([
             'reportDescription' => 'required|string|min:10|max:1000',
         ], [
-            'reportDescription.required' => 'Please provide a reason for reporting.',
+            'reportDescription.required' => 'Please provide remarks for reporting.',
             'reportDescription.min' => 'The description must be at least 10 characters.',
             'reportDescription.max' => 'The description must not exceed 1000 characters.',
         ]);
@@ -1150,7 +1150,7 @@ class DisinfectionSlip extends Component
     }
 
     /**
-     * Sanitize text input (for textarea fields like reason_for_disinfection)
+     * Sanitize text input (for textarea fields like remarks_for_disinfection)
      * Removes HTML tags, decodes entities, removes control characters
      * Preserves newlines and normalizes whitespace
      * 

@@ -555,14 +555,14 @@
             </div>  {{-- Close: x-data Alpine.js container --}}
         </div>  {{-- Close: Photos field --}}
 
-        {{-- Reason for Disinfection --}}
+        {{-- Remarks for Disinfection --}}
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
-            <div class="font-semibold text-gray-500">Reason:</div>
+            <div class="font-semibold text-gray-500">Remarks:</div>
             <div class="text-gray-900">
-                <textarea wire:model="reason_for_disinfection"
+                <textarea wire:model="remarks_for_disinfection"
                     class="w-full border rounded px-2 py-2 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    rows="6" placeholder="Enter reason for disinfection..."></textarea>
-                @error('reason_for_disinfection')
+                    rows="6" placeholder="Enter remarks for disinfection..."></textarea>
+                @error('remarks_for_disinfection')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror
             </div>

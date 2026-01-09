@@ -18,7 +18,7 @@ class DisinfectionSlip extends Model
         'location_id',
         'destination_id',
         'driver_id',
-        'reason_for_disinfection',
+        'remarks_for_disinfection',
         'attachment_ids',
         'hatchery_guard_id',
         'received_guard_id',

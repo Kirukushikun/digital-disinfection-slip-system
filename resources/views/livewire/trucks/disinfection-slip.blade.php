@@ -579,16 +579,17 @@
             </div>  {{-- Close: Photos field text-gray-900 div --}}
         @endif
 
-        {{-- Reason --}}
-        <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if (($status == 3 || $status == 4) && $selectedSlip->completed_at && !$isEditing) bg-white @elseif (($status == 3 || $status == 4) && $selectedSlip->completed_at && $isEditing) bg-gray-100 @elseif ($isEditing) bg-white @else bg-gray-100 @endif">                    <div class="font-semibold text-gray-500">Reason:</div>
+        {{-- Remarks --}}
+        <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if (($status == 3 || $status == 4) && $selectedSlip->completed_at && !$isEditing) bg-white @elseif (($status == 3 || $status == 4) && $selectedSlip->completed_at && $isEditing) bg-gray-100 @elseif ($isEditing) bg-white @else bg-gray-100 @endif">                    
+            <div class="font-semibold text-gray-500">Remarks:</div>
                     <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
                         @if ($isEditing)
-                            <textarea wire:model.live="reason_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
-                            @error('reason_for_disinfection')
+                            <textarea wire:model.live="remarks_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                            @error('remarks_for_disinfection')
                                 <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                             @enderror
                         @else
-                            <div class="whitespace-pre-wrap">{{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}</div>
+                            <div class="whitespace-pre-wrap">{{ $selectedSlip->remarks_for_disinfection ?? 'N/A' }}</div>
                         @endif
                     </div>
                 </div>
@@ -986,7 +987,7 @@
                     <div class="text-gray-900">
                         <textarea wire:model="reportDescription" rows="6"
                             class="w-full border rounded px-2 py-2 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
-                            placeholder="Please describe the issue or reason for reporting this slip..."></textarea>
+                            placeholder="Please describe the issue for reporting this slip..."></textarea>
                         @error('reportDescription')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

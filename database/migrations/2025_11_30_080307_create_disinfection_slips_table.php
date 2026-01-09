@@ -17,8 +17,8 @@ return new class extends Migration {
             $table->foreignId('destination_id')->constrained('locations')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('driver_id')->constrained('drivers')->cascadeOnUpdate()->cascadeOnDelete();
  
-            // Reason 
-            $table->text('reason_for_disinfection')->nullable(); 
+            // Remarks 
+            $table->text('remarks_for_disinfection')->nullable(); 
  
             // Attachment references (stored as JSON array of attachment IDs)
             $table->json('attachment_ids')->nullable();

@@ -62,7 +62,7 @@ class TruckList extends Component
     public $truck_id;
     public $destination_id;
     public $driver_id;
-    public $reason_for_disinfection;
+    public $remarks_for_disinfection;
     public $isCreating = false;
 
     // Attachment properties for creation
@@ -329,7 +329,7 @@ class TruckList extends Component
         $this->truck_id = null;
         $this->destination_id = null;
         $this->driver_id = null;
-        $this->reason_for_disinfection = null;
+        $this->remarks_for_disinfection = null;
         $this->searchTruck = '';
         $this->searchDestination = '';
         $this->searchDriver = '';
@@ -388,17 +388,17 @@ class TruckList extends Component
                 },
             ],
             'driver_id' => 'required|exists:drivers,id',
-            'reason_for_disinfection' => 'nullable|string|max:1000',
+            'remarks_for_disinfection' => 'nullable|string|max:1000',
         ]);
 
-        // Sanitize reason_for_disinfection
-        $sanitizedReason = $this->sanitizeText($this->reason_for_disinfection);
+        // Sanitize remarks_for_disinfection
+        $sanitizedRemarks = $this->sanitizeText($this->remarks_for_disinfection);
 
         $slip = DisinfectionSlip::create([
             'truck_id' => $this->truck_id,
             'destination_id' => $this->destination_id,
             'driver_id' => $this->driver_id,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
             'location_id' => $currentLocationId,
             'hatchery_guard_id' => Auth::id(),
             'status' => 0, // Pending
@@ -706,7 +706,7 @@ class TruckList extends Component
     }
 
     /**
-     * Sanitize text input (for textarea fields like reason_for_disinfection)
+     * Sanitize text input (for textarea fields like remarks_for_disinfection)
      * Removes HTML tags, decodes entities, removes control characters
      * Preserves newlines and normalizes whitespace
      * 

@@ -54,7 +54,7 @@ class Settings extends Component
         $softDeletedRetention = Setting::where('setting_name', 'soft_deleted_retention_months')->first();
 
         $this->attachment_retention_days = $attachmentRetention ? $attachmentRetention->value : '30';
-        // Don't populate the password field for security reasons - keep it blank
+        // Don't populate the password field for security - keep it blank
         $this->default_guard_password = '';
         $this->default_location_logo = $defaultLogo ? $defaultLogo->value : 'images/logo/BGC.png';
         $this->log_retention_months = $logRetention ? $logRetention->value : '3';

@@ -132,7 +132,7 @@ class Trucks extends Component
     public $driver_id;
     public $hatchery_guard_id;
     public $received_guard_id = null; // Optional receiving guard for creation
-    public $reason_for_disinfection;
+    public $remarks_for_disinfection;
     public $isCreating = false;
     
     // Search properties for dropdowns (create modal)
@@ -157,7 +157,7 @@ class Trucks extends Component
     public $editDriverId;
     public $editHatcheryGuardId; // For status 0
     public $editReceivedGuardId = null;
-    public $editReasonForDisinfection;
+    public $editRemarksForDisinfection;
     public $editStatus;
     
     // Search properties for edit modal
@@ -1056,7 +1056,7 @@ class Trucks extends Component
         $this->editDriverId = $this->selectedSlip->driver_id;
         $this->editHatcheryGuardId = $this->selectedSlip->hatchery_guard_id;
         $this->editReceivedGuardId = $this->selectedSlip->received_guard_id;
-        $this->editReasonForDisinfection = $this->selectedSlip->reason_for_disinfection;
+        $this->editRemarksForDisinfection = $this->selectedSlip->remarks_for_disinfection;
         $this->editStatus = $this->selectedSlip->status;
         
         // Reset search properties
@@ -1110,7 +1110,7 @@ class Trucks extends Component
         $this->editDriverId = null;
         $this->editHatcheryGuardId = null;
         $this->editReceivedGuardId = null;
-        $this->editReasonForDisinfection = null;
+        $this->editRemarksForDisinfection = null;
         $this->editStatus = null;
         $this->searchEditTruck = '';
         $this->searchEditOrigin = '';
@@ -1133,7 +1133,7 @@ class Trucks extends Component
                $this->editDriverId != $this->selectedSlip->driver_id ||
                $this->editHatcheryGuardId != $this->selectedSlip->hatchery_guard_id ||
                $this->editReceivedGuardId != $this->selectedSlip->received_guard_id ||
-               $this->editReasonForDisinfection != $this->selectedSlip->reason_for_disinfection ||
+               $this->editRemarksForDisinfection != $this->selectedSlip->remarks_for_disinfection ||
                $this->editStatus != $this->selectedSlip->status;
     }
 
@@ -1178,7 +1178,7 @@ class Trucks extends Component
                 },
             ],
             'editDriverId' => 'required|exists:drivers,id',
-            'editReasonForDisinfection' => 'nullable|string|max:1000',
+            'editRemarksForDisinfection' => 'nullable|string|max:1000',
         ];
 
         // Status 0, 1, 2 (Pending, Disinfecting, In-Transit): Origin and Hatchery Guard are required, Receiving Guard is optional
@@ -1296,7 +1296,7 @@ class Trucks extends Component
             'editDriverId' => 'Driver',
             'editHatcheryGuardId' => 'Hatchery Guard',
             'editReceivedGuardId' => 'Receiving Guard',
-            'editReasonForDisinfection' => 'Reason for Disinfection',
+            'editRemarksForDisinfection' => 'Remarks for Disinfection',
             'editStatus' => 'Status',
         ]);
 
@@ -1306,13 +1306,13 @@ class Trucks extends Component
             return;
         }
 
-        // Sanitize reason_for_disinfection
-        $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);
+        // Sanitize remarks_for_disinfection
+        $sanitizedRemarks = $this->sanitizeText($this->editRemarksForDisinfection);
 
         // Capture old values for logging
         $oldValues = $this->selectedSlip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
 
         // Build update data based on status
@@ -1320,7 +1320,7 @@ class Trucks extends Component
             'truck_id' => $this->editTruckId,
             'destination_id' => $this->editDestinationId,
             'driver_id' => $this->editDriverId,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
             'status' => $this->editStatus,
         ];
 
@@ -1373,7 +1373,7 @@ class Trucks extends Component
         // Log the update
         $newValues = $this->selectedSlip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
         Logger::update(
             DisinfectionSlipModel::class,
@@ -1409,7 +1409,7 @@ class Trucks extends Component
         // Capture old values for logging
         $oldValues = $this->selectedSlip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
         
         // Atomic delete: Only delete if not already deleted to prevent race conditions
@@ -1496,7 +1496,7 @@ class Trucks extends Component
         $this->driver_id = null;
         $this->hatchery_guard_id = null;
         $this->received_guard_id = null;
-        $this->reason_for_disinfection = null;
+        $this->remarks_for_disinfection = null;
         $this->searchOrigin = '';
         $this->searchDestination = '';
         $this->searchTruck = '';
@@ -1514,7 +1514,7 @@ class Trucks extends Component
                !empty($this->driver_id) || 
                !empty($this->hatchery_guard_id) || 
                !empty($this->received_guard_id) || 
-               !empty($this->reason_for_disinfection);
+               !empty($this->remarks_for_disinfection);
     }
 
     public function createSlip()
@@ -1590,7 +1590,7 @@ class Trucks extends Component
                     }
                 },
             ],
-            'reason_for_disinfection' => 'nullable|string|max:1000',
+            'remarks_for_disinfection' => 'nullable|string|max:1000',
         ], [], [
             'location_id' => 'Origin',
             'destination_id' => 'Destination',
@@ -1598,11 +1598,11 @@ class Trucks extends Component
             'driver_id' => 'Driver',
             'hatchery_guard_id' => 'Hatchery Guard',
             'received_guard_id' => 'Receiving Guard',
-            'reason_for_disinfection' => 'Reason for Disinfection',
+            'remarks_for_disinfection' => 'Remarks for Disinfection',
         ]);
 
-        // Sanitize reason_for_disinfection
-        $sanitizedReason = $this->sanitizeText($this->reason_for_disinfection);
+        // Sanitize remarks_for_disinfection
+        $sanitizedRemarks = $this->sanitizeText($this->remarks_for_disinfection);
 
         $slip = DisinfectionSlipModel::create([
             'truck_id' => $this->truck_id,
@@ -1611,7 +1611,7 @@ class Trucks extends Component
             'driver_id' => $this->driver_id,
             'hatchery_guard_id' => $this->hatchery_guard_id,
             'received_guard_id' => $this->received_guard_id,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
             'status' => 0, // Pending
         ]);
 
@@ -1620,7 +1620,7 @@ class Trucks extends Component
         // Log the creation
         $newValues = $slip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
         Logger::create(
             DisinfectionSlipModel::class,
@@ -1852,7 +1852,7 @@ class Trucks extends Component
     }
 
     /**
-     * Sanitize text input (for textarea fields like reason_for_disinfection)
+     * Sanitize text input (for textarea fields like remarks_for_disinfection)
      * Removes HTML tags, decodes entities, removes control characters
      * Preserves newlines and normalizes whitespace
      * 

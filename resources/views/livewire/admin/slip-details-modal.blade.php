@@ -111,11 +111,11 @@
                     </div>
                 </div>
 
-                {{-- Reason --}}
+                {{-- Remarks --}}
                 <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if ($status == 2 && $selectedSlip->completed_at) bg-white @else bg-gray-100 @endif">
-                    <div class="font-semibold text-gray-500">Reason:</div>
+                    <div class="font-semibold text-gray-500">Remarks:</div>
                     <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
-                        <div class="whitespace-pre-wrap">{{ $selectedSlip->reason_for_disinfection ?? 'N/A' }}</div>
+                        <div class="whitespace-pre-wrap">{{ $selectedSlip->remarks_for_disinfection ?? 'N/A' }}</div>
                     </div>
                 </div>
             </div>

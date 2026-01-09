@@ -213,7 +213,7 @@ class Reports extends Component
     public $editDriverId;
     public $editHatcheryGuardId; // For status 0
     public $editReceivedGuardId = null;
-    public $editReasonForDisinfection;
+    public $editRemarksForDisinfection;
     public $editStatus;
     
     // Search properties for edit modal
@@ -650,7 +650,7 @@ class Reports extends Component
                 'driver_id',
                 'hatchery_guard_id',
                 'received_guard_id',
-                'reason_for_disinfection',
+                'remarks_for_disinfection',
                 'status'
             ]);
             
@@ -697,7 +697,7 @@ class Reports extends Component
         $this->editDriverId = $this->selectedSlip->driver_id;
         $this->editHatcheryGuardId = $this->selectedSlip->hatchery_guard_id;
         $this->editReceivedGuardId = $this->selectedSlip->received_guard_id;
-        $this->editReasonForDisinfection = $this->selectedSlip->reason_for_disinfection;
+        $this->editRemarksForDisinfection = $this->selectedSlip->remarks_for_disinfection;
         $this->editStatus = $this->selectedSlip->status;
         
         // Reset search properties
@@ -737,7 +737,7 @@ class Reports extends Component
         $this->editDriverId = null;
         $this->editHatcheryGuardId = null;
         $this->editReceivedGuardId = null;
-        $this->editReasonForDisinfection = null;
+        $this->editRemarksForDisinfection = null;
         $this->editStatus = null;
         $this->searchEditTruck = '';
         $this->searchEditOrigin = '';
@@ -760,7 +760,7 @@ class Reports extends Component
                $this->editDriverId != $this->selectedSlip->driver_id ||
                $this->editHatcheryGuardId != $this->selectedSlip->hatchery_guard_id ||
                $this->editReceivedGuardId != $this->selectedSlip->received_guard_id ||
-               $this->editReasonForDisinfection != $this->selectedSlip->reason_for_disinfection ||
+               $this->editRemarksForDisinfection != $this->selectedSlip->remarks_for_disinfection ||
                $this->editStatus != $this->selectedSlip->status;
     }
     
@@ -800,7 +800,7 @@ class Reports extends Component
                 },
             ],
             'editDriverId' => 'required|exists:drivers,id',
-            'editReasonForDisinfection' => 'nullable|string|max:1000',
+            'editRemarksForDisinfection' => 'nullable|string|max:1000',
         ];
 
         // Status handling: Receiving Guard is optional for non-completed statuses; required for Completed (3)
@@ -919,7 +919,7 @@ class Reports extends Component
             'editDriverId' => 'Driver',
             'editHatcheryGuardId' => 'Hatchery Guard',
             'editReceivedGuardId' => 'Receiving Guard',
-            'editReasonForDisinfection' => 'Reason for Disinfection',
+            'editRemarksForDisinfection' => 'Remarks for Disinfection',
             'editStatus' => 'Status',
         ]);
 
@@ -929,13 +929,13 @@ class Reports extends Component
             return;
         }
 
-        // Sanitize reason_for_disinfection
-        $sanitizedReason = $this->sanitizeText($this->editReasonForDisinfection);
+        // Sanitize remarks_for_disinfection
+        $sanitizedRemarks = $this->sanitizeText($this->editRemarksForDisinfection);
 
         // Capture old values for logging
         $oldValues = $this->selectedSlip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
 
         // Build update data based on status
@@ -943,7 +943,7 @@ class Reports extends Component
             'truck_id' => $this->editTruckId,
             'destination_id' => $this->editDestinationId,
             'driver_id' => $this->editDriverId,
-            'reason_for_disinfection' => $sanitizedReason,
+            'remarks_for_disinfection' => $sanitizedRemarks,
             'status' => $this->editStatus,
         ];
 
@@ -979,7 +979,7 @@ class Reports extends Component
         // Log the update
         $newValues = $this->selectedSlip->only([
             'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_for_disinfection', 'status'
+            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
         ]);
         Logger::update(
             DisinfectionSlipModel::class,
