@@ -172,7 +172,7 @@
                     input.click();
                 },
                 async processGalleryImage(file) {
-                    return new Promise((resolve, reject) => {
+                    return new Promise((resolve) => {
                         const reader = new FileReader();
                         
                         reader.onload = (e) => {
@@ -192,18 +192,57 @@
                                 // Add timestamp watermark
                                 this.addTimestampWatermark(ctx, canvas.width, canvas.height);
                                 
-                                // Compress with same quality as camera capture
-                                const imageData = canvas.toDataURL('image/jpeg', 0.85);
-                                this.photos.push({ id: Date.now(), data: imageData });
-                                console.log('Gallery photo processed! Total photos:', this.photos.length);
+                                // Try to compress the image to be under 15MB
+                                let imageData = null;
+                                let quality = 0.85;
+                                const maxSizeMB = 15;
+                                const maxSizeBytes = maxSizeMB * 1024 * 1024;
+                                let attempts = 0;
+                                const maxAttempts = 10;
                                 
+                                // Try different quality levels to get under 15MB
+                                while (attempts < maxAttempts) {
+                                    imageData = canvas.toDataURL('image/jpeg', quality);
+                                    
+                                    // Calculate size in bytes (base64 is ~4/3 of actual size)
+                                    const base64Length = imageData.length - 'data:image/jpeg;base64,'.length;
+                                    const sizeInBytes = (base64Length * 3) / 4;
+                                    
+                                    console.log('Attempt ' + (attempts + 1) + ': Quality ' + quality.toFixed(2) + ', Size ' + (sizeInBytes / 1024 / 1024).toFixed(2) + 'MB');
+                                    
+                                    if (sizeInBytes <= maxSizeBytes) {
+                                        // Image is under 15MB
+                                        this.photos.push({ id: Date.now(), data: imageData });
+                                        console.log('Gallery photo processed! Total photos:', this.photos.length);
+                                        resolve();
+                                        return;
+                                    }
+                                    
+                                    // Reduce quality for next attempt
+                                    quality -= 0.1;
+                                    attempts++;
+                                    
+                                    if (quality < 0.1) {
+                                        break;
+                                    }
+                                }
+                                
+                                // If we get here, image is too large even at minimum quality
+                                console.error('Image too large to compress under 15MB:', file.name);
+                                $wire.dispatch('toast', { 
+                                    message: 'Photo \'' + file.name + '\' is too large to upload (over 15MB even after compression)', 
+                                    type: 'error' 
+                                });
                                 resolve();
                             };
                             
                             img.onerror = () => {
                                 console.error('Failed to load image');
-                                alert('Failed to load image: ' + file.name);
-                                reject();
+                                $wire.dispatch('toast', { 
+                                    message: 'Failed to load image: ' + file.name, 
+                                    type: 'error' 
+                                });
+                                resolve();
                             };
                             
                             img.src = e.target.result;
@@ -211,8 +250,11 @@
                         
                         reader.onerror = () => {
                             console.error('Failed to read file');
-                            alert('Failed to read file: ' + file.name);
-                            reject();
+                            $wire.dispatch('toast', { 
+                                message: 'Failed to read file: ' + file.name, 
+                                type: 'error' 
+                            });
+                            resolve();
                         };
                         
                         reader.readAsDataURL(file);
