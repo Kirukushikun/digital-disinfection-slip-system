@@ -192,26 +192,26 @@
                                 // Add timestamp watermark
                                 this.addTimestampWatermark(ctx, canvas.width, canvas.height);
                                 
-                                // Try to compress the image to be under 15MB
+                                // Try to compress the image to be under 15MB (accounting for base64 overhead)
                                 let imageData = null;
                                 let quality = 0.85;
-                                const maxSizeMB = 15;
+                                const maxSizeMB = 10; // Target 10MB to ensure under 15MB after base64 encoding
                                 const maxSizeBytes = maxSizeMB * 1024 * 1024;
                                 let attempts = 0;
-                                const maxAttempts = 10;
+                                const maxAttempts = 15;
                                 
-                                // Try different quality levels to get under 15MB
+                                // Try different quality levels to get under target size
                                 while (attempts < maxAttempts) {
                                     imageData = canvas.toDataURL('image/jpeg', quality);
                                     
-                                    // Calculate size in bytes (base64 is ~4/3 of actual size)
+                                    // Calculate actual decoded size in bytes
                                     const base64Length = imageData.length - 'data:image/jpeg;base64,'.length;
                                     const sizeInBytes = (base64Length * 3) / 4;
                                     
                                     console.log('Attempt ' + (attempts + 1) + ': Quality ' + quality.toFixed(2) + ', Size ' + (sizeInBytes / 1024 / 1024).toFixed(2) + 'MB');
                                     
                                     if (sizeInBytes <= maxSizeBytes) {
-                                        // Image is under 15MB
+                                        // Image is under target size
                                         this.photos.push({ id: Date.now(), data: imageData });
                                         console.log('Gallery photo processed! Total photos:', this.photos.length);
                                         resolve();
@@ -219,16 +219,16 @@
                                     }
                                     
                                     // Reduce quality for next attempt
-                                    quality -= 0.1;
+                                    quality -= 0.05;
                                     attempts++;
                                     
-                                    if (quality < 0.1) {
+                                    if (quality < 0.05) {
                                         break;
                                     }
                                 }
                                 
                                 // If we get here, image is too large even at minimum quality
-                                console.error('Image too large to compress under 15MB:', file.name);
+                                console.error('Image too large to compress under 10MB:', file.name);
                                 $wire.dispatch('toast', { 
                                     message: 'Photo \'' + file.name + '\' is too large to upload (over 15MB even after compression)', 
                                     type: 'error' 
