@@ -671,6 +671,8 @@
             :available-origins-options="$availableOriginsOptions" :available-destinations-options="$availableDestinationsOptions" :create-truck-options="$createTruckOptions" :create-driver-options="$createDriverOptions" :create-guard-options="$createGuardOptions"
             :create-received-guard-options="$createReceivedGuardOptions" :is-creating="$isCreating" />
 
+        <x-modals.reason-settings />
+        
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
@@ -734,7 +736,6 @@
                 :available-origins-options="$editAvailableOriginsOptions" :available-destinations-options="$editAvailableDestinationsOptions" :edit-truck-options="$editTruckOptions" :edit-driver-options="$editDriverOptions" :edit-guard-options="$editGuardOptions"
                 :edit-received-guard-options="$editReceivedGuardOptions" :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" />
         @endif
-
     </div>
 </div>
 

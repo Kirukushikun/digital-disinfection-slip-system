@@ -102,6 +102,9 @@ class Trucks extends Component
     public $showRestoreModal = false;
     public $showDeleted = false; // Toggle to show deleted items
 
+    // Reasons Modal
+    public $showReasonsModal = false;
+
     #[Locked]
     public $selectedSlip = null;
     
@@ -204,7 +207,8 @@ class Trucks extends Component
         if ($this->showFilters || $this->showCreateModal || $this->showDetailsModal || 
             $this->showDeleteConfirmation || $this->showRemoveAttachmentConfirmation || 
             $this->showEditModal || $this->showCancelCreateConfirmation || 
-            $this->showCancelEditConfirmation || $this->showAttachmentModal || $this->showRestoreModal) {
+            $this->showCancelEditConfirmation || $this->showAttachmentModal || 
+            $this->showRestoreModal || $this->showSettingsModal) {
             return;
         }
         
@@ -2502,5 +2506,14 @@ class Trucks extends Component
         $printUrl = route('superadmin.print.slip', ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
+    }
+    public function openReasonsModal()
+    {
+        $this->showReasonsModal = true;
+    }
+
+    public function closeReasonsModal()
+    {
+        $this->showReasonsModal = false;
     }
 }
