@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 /**
  * @method void resetPage()
  * @method void dispatch(string $event, mixed ...$params)
@@ -1043,25 +1044,34 @@ class TruckList extends Component
             return;
         }
         
-        $this->validate([
-            'editingReasonText' => [
-                'required',
-                'string',
-                'max:255',
-                'min:1',
-                function ($attribute, $value, $fail) {
-                    $trimmedValue = trim($value);
-                    $exists = Reason::where('id', '!=', $this->editingReasonId)
-                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
-                        ->exists();
-                    if ($exists) {
-                        $fail('This reason already exists.');
-                    }
-                },
-            ],
-        ], [], [
-            'editingReasonText' => 'Reason text',
-        ]);
+        try {
+            $this->validate([
+                'editingReasonText' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    'min:1',
+                    function ($attribute, $value, $fail) {
+                        $trimmedValue = trim($value);
+                        $exists = Reason::where('id', '!=', $this->editingReasonId)
+                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                            ->exists();
+                        if ($exists) {
+                            $fail('This reason already exists.');
+                        }
+                    },
+                ],
+            ], [], [
+                'editingReasonText' => 'Reason text',
+            ]);
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = collect($errors)->flatten()->first();
+            if ($firstError) {
+                $this->dispatch('toast', message: $firstError, type: 'error');
+            }
+            throw $e;
+        }
         
         if (trim($this->editingReasonText) === $this->originalReasonText) {
             $this->dispatch('toast', message: 'No changes detected.', type: 'info');

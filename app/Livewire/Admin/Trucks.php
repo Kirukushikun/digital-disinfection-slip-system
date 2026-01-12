@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 class Trucks extends Component
 {
     use WithPagination;
@@ -2524,25 +2525,34 @@ class Trucks extends Component
     public function saveReasonEdit()
     {
         // Validate the edited text
-        $this->validate([
-            'editingReasonText' => [
-                'required',
-                'string',
-                'max:255',
-                'min:1',
-                function ($attribute, $value, $fail) {
-                    $trimmedValue = trim($value);
-                    $exists = Reason::where('id', '!=', $this->editingReasonId)
-                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
-                        ->exists();
-                    if ($exists) {
-                        $fail('This reason already exists.');
-                    }
-                },
-            ],
-        ], [], [
-            'editingReasonText' => 'Reason text',
-        ]);
+        try {
+            $this->validate([
+                'editingReasonText' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    'min:1',
+                    function ($attribute, $value, $fail) {
+                        $trimmedValue = trim($value);
+                        $exists = Reason::where('id', '!=', $this->editingReasonId)
+                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                            ->exists();
+                        if ($exists) {
+                            $fail('This reason already exists.');
+                        }
+                    },
+                ],
+            ], [], [
+                'editingReasonText' => 'Reason text',
+            ]);
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = collect($errors)->flatten()->first();
+            if ($firstError) {
+                $this->dispatch('toast', message: $firstError, type: 'error');
+            }
+            throw $e;
+        }
         
         // Check if there are changes
         if (trim($this->editingReasonText) === $this->originalReasonText) {
