@@ -173,8 +173,6 @@
                         uploading: false,
                         processingGallery: false,
                         async startCamera() {
-                            console.log('Starting camera...');
-                            
                             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                                 alert('Camera not supported! You need HTTPS or localhost.');
                                 return;
@@ -187,14 +185,11 @@
                                 });
                                 this.$refs.video.srcObject = this.stream;
                                 this.cameraActive = true;
-                                console.log('Camera started!');
                             } catch(err) {
-                                console.error('Camera error:', err);
                                 alert('Camera error: ' + err.message);
                             }
                         },
                         capturePhoto() {
-                            console.log('Capturing photo...');
                             const video = this.$refs.video;
                             const canvas = this.$refs.canvas;
                             canvas.width = video.videoWidth;
@@ -209,7 +204,6 @@
                             
                             const imageData = canvas.toDataURL('image/jpeg', 0.85);
                             this.photos.push({ id: Date.now(), data: imageData });
-                            console.log('Photo captured! Total photos:', this.photos.length);
                         },
                         addTimestampWatermark(ctx, width, height) {
                             // Add timestamp overlay at bottom left
@@ -258,7 +252,6 @@
                             ctx.fillText(timestamp, textX, textY);
                         },
                         async selectFromGallery() {
-                            console.log('Opening gallery...');
                             const input = document.createElement('input');
                             input.type = 'file';
                             input.accept = 'image/*';
@@ -320,8 +313,6 @@
                                         const sizeInBytes = (base64Length * 3) / 4;
                                         const sizeInMB = (sizeInBytes / 1024 / 1024).toFixed(2);
                                         
-                                        console.log('Gallery photo processed: ' + targetWidth + 'x' + targetHeight + ', Size: ' + sizeInMB + 'MB');
-                                        
                                         // Check if still too large
                                         if (sizeInBytes > 15 * 1024 * 1024) {
                                             $wire.dispatch('toast', { 
@@ -333,12 +324,10 @@
                                         }
                                         
                                         this.photos.push({ id: Date.now(), data: imageData });
-                                        console.log('Gallery photo added! Total photos:', this.photos.length);
                                         resolve();
                                     };
                                     
                                     img.onerror = () => {
-                                        console.error('Failed to load image');
                                         $wire.dispatch('toast', { 
                                             message: 'Failed to load image: ' + file.name, 
                                             type: 'error' 
@@ -350,7 +339,6 @@
                                 };
                                 
                                 reader.onerror = () => {
-                                    console.error('Failed to read file');
                                     $wire.dispatch('toast', { 
                                         message: 'Failed to read file: ' + file.name, 
                                         type: 'error' 
@@ -362,7 +350,6 @@
                             });
                         },
                         stopCamera() {
-                            console.log('Stopping camera...');
                             if (this.stream) {
                                 this.stream.getTracks().forEach(track => track.stop());
                                 this.stream = null;
@@ -378,7 +365,6 @@
                             }
                         },
                         confirmCancel() {
-                            console.log('Cancelling and resetting...');
                             this.stopCamera();
                             this.photos = [];
                             this.showCancelConfirmation = false;
@@ -387,7 +373,6 @@
                             this.processingGallery = false;
                         },
                         deletePhoto(id) {
-                            console.log('Deleting photo:', id);
                             this.photos = this.photos.filter(p => p.id !== id);
                         },
                         async uploadPhotos() {
@@ -396,7 +381,6 @@
                                 return;
                             }
                             
-                            console.log('Uploading photos...');
                             this.uploading = true;
                             
                             try {
@@ -407,10 +391,7 @@
                                 this.photos = [];
                                 this.stopCamera();
                                 this.showCameraModal = false;
-                                
-                                console.log('Upload complete!');
                             } catch(err) {
-                                console.error('Upload error:', err);
                                 alert('Upload failed: ' + err.message);
                             } finally {
                                 this.uploading = false;
