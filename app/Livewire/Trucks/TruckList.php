@@ -83,7 +83,28 @@ class TruckList extends Component
     public $searchDriver = '';
     public $searchReason = '';
 
+    // Reason management properties (for super guards)
+    public $showReasonsModal = false;
+    public $showCreateReasonModal = false;
+    public $newReasonText = '';
+    public $editingReasonId = null;
+    public $editingReasonText = '';
+    public $originalReasonText = '';
+    public $showSaveConfirmation = false;
+    public $showUnsavedChangesConfirmation = false;
+    public $savingReason = false;
+    public $reasonTexts = [];
+    public $showDeleteReasonConfirmation = false;
+    public $reasonToDelete = null;
+    public $searchReasonSettings = '';
+    public $reasonsPage = 1; // Page for reasons pagination
+
     protected $listeners = ['slip-created' => '$refresh'];
+    
+    public function updatedSearchReasonSettings()
+    {
+        $this->reasonsPage = 1; // Reset to first page when search changes
+    }
 
     public function mount($type = 'incoming')
     {
@@ -109,6 +130,17 @@ class TruckList extends Component
         if (request()->has('openCreate') && $this->type === 'outgoing' && $this->canCreateSlip) {
             $this->showCreateModal = true;
         }
+        
+        // Load reasons if user is a super guard
+        if ($this->isSuperGuard()) {
+            $this->loadReasons();
+        }
+    }
+    
+    public function isSuperGuard()
+    {
+        $user = Auth::user();
+        return $user && $user->super_guard && $user->user_type === 0;
     }
 
     // Computed properties for dynamic dropdown data
@@ -857,6 +889,311 @@ class TruckList extends Component
             'truckOptions' => $this->truckOptions,
             'locationOptions' => $this->locationOptions,
             'driverOptions' => $this->driverOptions,
+            'reasons' => $this->isSuperGuard() ? $this->reasons : collect(),
         ]);
+    }
+    
+    // Reason management methods (for super guards - no delete)
+    private function getCachedReasons()
+    {
+        return Cache::remember('reasons_all', 300, function() {
+            return Reason::orderBy('reason_text')->get();
+        });
+    }
+    
+    public function loadReasons()
+    {
+        $reasons = $this->getCachedReasons();
+        $this->reasonTexts = $reasons->pluck('reason_text', 'id')->toArray();
+    }
+    
+    public function getReasonsProperty()
+    {
+        $reasons = $this->getCachedReasons();
+        
+        // Filter by search term if provided
+        if (!empty($this->searchReasonSettings)) {
+            $searchTerm = strtolower(trim($this->searchReasonSettings));
+            $reasons = $reasons->filter(function($reason) use ($searchTerm) {
+                return str_contains(strtolower($reason->reason_text), $searchTerm);
+            });
+        }
+        
+        // Convert collection to paginated result for Livewire
+        $page = $this->reasonsPage;
+        $perPage = 5;
+        $items = $reasons->slice(($page - 1) * $perPage, $perPage)->values();
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $reasons->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+    }
+    
+    public function gotoPage($page, $pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage') {
+            $this->reasonsPage = $page;
+        } else {
+            parent::gotoPage($page, $pageName);
+        }
+    }
+    
+    public function previousPage($pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage' && $this->reasonsPage > 1) {
+            $this->reasonsPage--;
+        } else {
+            parent::previousPage($pageName);
+        }
+    }
+    
+    public function nextPage($pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage') {
+            $this->reasonsPage++;
+        } else {
+            parent::nextPage($pageName);
+        }
+    }
+    
+    public function openCreateReasonModal()
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $this->newReasonText = '';
+        $this->showCreateReasonModal = true;
+    }
+    
+    public function closeCreateReasonModal()
+    {
+        $this->newReasonText = '';
+        $this->showCreateReasonModal = false;
+        $this->resetErrorBag();
+    }
+    
+    public function createReason()
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $this->validate([
+            'newReasonText' => [
+                'required',
+                'string',
+                'max:255',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $trimmedValue = trim($value);
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        ->exists();
+                    if ($exists) {
+                        $fail('This reason already exists.');
+                    }
+                },
+            ],
+        ], [], [
+            'newReasonText' => 'Reason text',
+        ]);
+        
+        $reason = Reason::create([
+            'reason_text' => trim($this->newReasonText),
+            'disabled' => false,
+        ]);
+        
+        $this->reasonTexts[$reason->id] = $reason->reason_text;
+        
+        Logger::create(
+            Reason::class,
+            $reason->id,
+            "Added new reason: {$reason->reason_text}",
+            $reason->only(['reason_text', 'is_disabled'])
+        );
+        
+        Cache::forget('reasons_all');
+        Cache::forget('reasons_active');
+        
+        $this->dispatch('toast', message: 'Reason created successfully.', type: 'success');
+        $this->closeCreateReasonModal();
+        $this->resetPage();
+    }
+    
+    public function startEditingReason($reasonId)
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $reason = Reason::find($reasonId);
+        if ($reason) {
+            $this->editingReasonId = $reasonId;
+            $this->editingReasonText = $reason->reason_text;
+            $this->originalReasonText = $reason->reason_text;
+        }
+    }
+    
+    public function saveReasonEdit()
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $this->validate([
+            'editingReasonText' => [
+                'required',
+                'string',
+                'max:255',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $trimmedValue = trim($value);
+                    $exists = Reason::where('id', '!=', $this->editingReasonId)
+                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        ->exists();
+                    if ($exists) {
+                        $fail('This reason already exists.');
+                    }
+                },
+            ],
+        ], [], [
+            'editingReasonText' => 'Reason text',
+        ]);
+        
+        if (trim($this->editingReasonText) === $this->originalReasonText) {
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            $this->cancelEditing();
+            return;
+        }
+        
+        $this->showSaveConfirmation = true;
+    }
+    
+    public function confirmSaveReasonEdit()
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $this->savingReason = true;
+        $reason = Reason::find($this->editingReasonId);
+        
+        if ($reason) {
+            $oldValues = $reason->only(['reason_text', 'is_disabled']);
+            $reason->reason_text = trim($this->editingReasonText);
+            $reason->save();
+            
+            Logger::update(
+                Reason::class,
+                $reason->id,
+                "Updated reason: {$reason->reason_text}",
+                $oldValues,
+                $reason->only(['reason_text', 'is_disabled'])
+            );
+            
+            $this->reasonTexts[$this->editingReasonId] = $reason->reason_text;
+            Cache::forget('reasons_all');
+            Cache::forget('reasons_active');
+            
+            $this->dispatch('toast', message: 'Reason updated successfully.', type: 'success');
+        }
+        
+        $this->showSaveConfirmation = false;
+        $this->cancelEditing();
+        $this->resetPage();
+        $this->savingReason = false;
+    }
+    
+    public function cancelEditing()
+    {
+        $this->editingReasonId = null;
+        $this->editingReasonText = '';
+        $this->originalReasonText = '';
+    }
+    
+    public function toggleReasonDisabled($reasonId)
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $reason = Reason::find($reasonId);
+        if ($reason) {
+            $oldValues = $reason->only(['reason_text', 'is_disabled']);
+            $reason->disabled = !$reason->disabled;
+            $reason->save();
+            
+            Logger::update(
+                Reason::class,
+                $reason->id,
+                ($reason->disabled ? "Disabled reason: {$reason->reason_text}" : "Enabled reason: {$reason->reason_text}"),
+                $oldValues,
+                $reason->only(['reason_text', 'is_disabled'])
+            );
+            
+            Cache::forget('reasons_all');
+            Cache::forget('reasons_active');
+            
+            $status = $reason->disabled ? 'disabled' : 'enabled';
+            $this->dispatch('toast', message: "Reason {$status} successfully.", type: 'success');
+            $this->resetPage();
+        }
+    }
+    
+    public function attemptCloseReasonsModal()
+    {
+        if ($this->editingReasonId !== null) {
+            $this->showUnsavedChangesConfirmation = true;
+        } else {
+            $this->closeReasonsModal();
+        }
+    }
+    
+    public function closeWithoutSaving()
+    {
+        $this->showUnsavedChangesConfirmation = false;
+        $this->cancelEditing();
+        $this->closeReasonsModal();
+    }
+    
+    public function closeReasonsModal()
+    {
+        $this->loadReasons();
+        $this->newReasonText = '';
+        $this->searchReasonSettings = '';
+        $this->cancelEditing();
+        $this->showReasonsModal = false;
+        $this->showSaveConfirmation = false;
+        $this->showUnsavedChangesConfirmation = false;
+        $this->showDeleteReasonConfirmation = false;
+        $this->reasonToDelete = null;
+    }
+    
+    public function openReasonsModal()
+    {
+        if (!$this->isSuperGuard()) {
+            return;
+        }
+        
+        $this->loadReasons();
+        $this->newReasonText = '';
+        $this->searchReasonSettings = '';
+        $this->cancelEditing();
+        $this->showReasonsModal = true;
+        $this->showSaveConfirmation = false;
+        $this->showUnsavedChangesConfirmation = false;
+        $this->showDeleteReasonConfirmation = false;
+        $this->reasonToDelete = null;
+    }
+    
+    // Delete reason method (not used by super guards, but needed for component compatibility)
+    public function confirmDeleteReason($reasonId)
+    {
+        // Super guards cannot delete reasons
+        // This method exists only for component compatibility
+        // The delete button is hidden for non-superadmins in the component
     }
 }

@@ -7,6 +7,40 @@
     maxWidth="max-w-3xl"
 >
     <div class="space-y-4">
+        {{-- Search Bar and Create Button --}}
+        <div class="flex gap-3">
+            <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input type="text" wire:model.live="searchReasonSettings"
+                    class="block w-full pl-10 {{ $this->searchReasonSettings ? 'pr-10' : 'pr-4' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Search reasons...">
+                @if($this->searchReasonSettings)
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <button wire:click="$set('searchReasonSettings', '')" type="button"
+                            class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 hover:cursor-pointer cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                @endif
+            </div>
+            <x-buttons.submit-button wire:click="openCreateReasonModal" color="blue" size="lg">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create
+                </div>
+            </x-buttons.submit-button>
+        </div>
+
         {{-- Reasons List Container --}}
         <div class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
             @forelse($reasons as $index => $reason)
@@ -115,52 +149,27 @@
             @endforelse
         </div>
 
-        {{-- Pagination --}}
-        @if($reasons->hasPages())
-            <div class="mt-4">
-                {{ $reasons->links() }}
-            </div>
-        @endif
-
-        {{-- Add New Reason Section --}}
-        <div class="pt-4 border-t border-gray-200">
-            <div class="flex gap-2">
-                <input 
-                    type="text" 
-                    wire:model="newReasonText"
-                    wire:keydown.enter="addNewReason"
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Enter new reason"
-                >
-                <button
-                    wire:click="addNewReason"
-                    type="button"
-                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    :disabled="!$wire.newReasonText || $wire.newReasonText.trim() === ''"
-                >
-                    <span wire:loading.remove wire:target="addNewReason">Add</span>
-                    <svg wire:loading wire:target="addNewReason" class="animate-spin h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span wire:loading wire:target="addNewReason">Adding...</span>
-                </button>
-            </div>
-            @error('newReasonText')
-                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-            @enderror
-        </div>
     </div>
 
     <x-slot name="footer">
-        <x-buttons.submit-button 
-            wire:click="attemptCloseReasonsModal"
-            color="gray" 
-            size="lg"
-            :fullWidth="false"
-        >
-            Close
-        </x-buttons.submit-button>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+            {{-- Pagination --}}
+            <div class="flex-1">
+                @if($reasons->hasPages())
+                    <x-buttons.nav-pagination :paginator="$reasons" pageName="reasonsPage" />
+                @endif
+            </div>
+            
+            {{-- Close Button --}}
+            <x-buttons.submit-button 
+                wire:click="attemptCloseReasonsModal"
+                color="gray" 
+                size="lg"
+                :fullWidth="false"
+            >
+                Close
+            </x-buttons.submit-button>
+        </div>
     </x-slot>
 </x-modals.modal-template>
 
@@ -267,6 +276,58 @@
                         <span wire:loading.remove wire:target="confirmSaveReasonEdit">Save Changes</span>
                         <span wire:loading wire:target="confirmSaveReasonEdit">Saving...</span>
                     </x-buttons.submit-button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
+{{-- Create Reason Modal --}}
+@if($this->showCreateReasonModal)
+    <div class="fixed inset-0 z-60 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 transition-opacity" wire:click="closeCreateReasonModal"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
+                <div class="px-6 py-4 bg-white border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Create Reason</h3>
+                </div>
+
+                <div class="px-6 py-4">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Reason Text <span class="text-red-500">*</span></label>
+                            <input 
+                                type="text" 
+                                wire:model="newReasonText"
+                                maxlength="255"
+                                class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter reason text"
+                            >
+                            @error('newReasonText')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                    <button wire:click="closeCreateReasonModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer">
+                        Cancel
+                    </button>
+                    <button wire:click.prevent="createReason" wire:loading.attr="disabled" wire:target="createReason"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span wire:loading.remove wire:target="createReason">Create</span>
+                        <span wire:loading.inline-flex wire:target="createReason" class="inline-flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating...
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -126,6 +126,7 @@ class Trucks extends Component
 
     // Reasons Modal
     public $showReasonsModal = false;
+    public $showCreateReasonModal = false;
     public $newReasonText = '';
     public $editingReasonId = null;
     public $editingReasonText = '';
@@ -158,6 +159,13 @@ class Trucks extends Component
     public $searchHatcheryGuard = '';
     public $searchReceivedGuard = '';
     public $searchReason = '';
+    public $searchReasonSettings = '';
+    public $reasonsPage = 1; // Page for reasons pagination
+    
+    public function updatedSearchReasonSettings()
+    {
+        $this->reasonsPage = 1; // Reset to first page when search changes
+    }
     
     // Search properties for details modal
     public $searchDetailsTruck = '';
@@ -2391,9 +2399,18 @@ class Trucks extends Component
     public function getReasonsProperty()
     {
         $reasons = $this->getCachedReasons();
+        
+        // Filter by search term if provided
+        if (!empty($this->searchReasonSettings)) {
+            $searchTerm = strtolower(trim($this->searchReasonSettings));
+            $reasons = $reasons->filter(function($reason) use ($searchTerm) {
+                return str_contains(strtolower($reason->reason_text), $searchTerm);
+            });
+        }
+        
         // Convert collection to paginated result for Livewire
-        $page = request()->get('page', 1);
-        $perPage = 10;
+        $page = $this->reasonsPage;
+        $perPage = 5;
         $items = $reasons->slice(($page - 1) * $perPage, $perPage)->values();
         return new \Illuminate\Pagination\LengthAwarePaginator(
             $items,
@@ -2403,14 +2420,67 @@ class Trucks extends Component
             ['path' => request()->url(), 'query' => request()->query()]
         );
     }
+    
+    public function gotoPage($page, $pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage') {
+            $this->reasonsPage = $page;
+        } else {
+            parent::gotoPage($page, $pageName);
+        }
+    }
+    
+    public function previousPage($pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage' && $this->reasonsPage > 1) {
+            $this->reasonsPage--;
+        } else {
+            parent::previousPage($pageName);
+        }
+    }
+    
+    public function nextPage($pageName = 'reasonsPage')
+    {
+        if ($pageName === 'reasonsPage') {
+            $this->reasonsPage++;
+        } else {
+            parent::nextPage($pageName);
+        }
+    }
 
-    public function addNewReason()
+    public function openCreateReasonModal()
+    {
+        $this->newReasonText = '';
+        $this->showCreateReasonModal = true;
+    }
+    
+    public function closeCreateReasonModal()
+    {
+        $this->newReasonText = '';
+        $this->showCreateReasonModal = false;
+        $this->resetErrorBag();
+    }
+    
+    public function createReason()
     {
         // Validate the new reason text
         $this->validate([
-            'newReasonText' => 'required|string|max:255|min:1',
+            'newReasonText' => [
+                'required',
+                'string',
+                'max:255',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $trimmedValue = trim($value);
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        ->exists();
+                    if ($exists) {
+                        $fail('This reason already exists.');
+                    }
+                },
+            ],
         ], [], [
-            'newReasonText' => 'New reason',
+            'newReasonText' => 'Reason text',
         ]);
         
         $reason = Reason::create([
@@ -2428,14 +2498,13 @@ class Trucks extends Component
             $reason->only(['reason_text', 'is_disabled'])
         );
         
-        // Clear the input field
-        $this->newReasonText = '';
-        
         // Clear cache after adding new reason
         Cache::forget('reasons_all');
         Cache::forget('reasons_active');
         
-        $this->dispatch('toast', message: 'Reason added successfully.', type: 'success');
+        $this->dispatch('toast', message: 'Reason created successfully.', type: 'success');
+        
+        $this->closeCreateReasonModal();
         
         // Reset to first page to show the new reason
         $this->resetPage();
@@ -2456,7 +2525,21 @@ class Trucks extends Component
     {
         // Validate the edited text
         $this->validate([
-            'editingReasonText' => 'required|string|max:255|min:1',
+            'editingReasonText' => [
+                'required',
+                'string',
+                'max:255',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $trimmedValue = trim($value);
+                    $exists = Reason::where('id', '!=', $this->editingReasonId)
+                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        ->exists();
+                    if ($exists) {
+                        $fail('This reason already exists.');
+                    }
+                },
+            ],
         ], [], [
             'editingReasonText' => 'Reason text',
         ]);
@@ -2575,6 +2658,7 @@ class Trucks extends Component
         // Reload reasons to discard any unsaved changes
         $this->loadReasons();
         $this->newReasonText = '';
+        $this->searchReasonSettings = '';
         $this->cancelEditing();
         $this->showReasonsModal = false;
         $this->showDeleteReasonConfirmation = false;
@@ -2588,6 +2672,7 @@ class Trucks extends Component
         // Reload reasons to discard any unsaved changes
         $this->loadReasons();
         $this->newReasonText = '';
+        $this->searchReasonSettings = '';
         $this->cancelEditing();
         $this->showReasonsModal = true;
         $this->showDeleteReasonConfirmation = false;
