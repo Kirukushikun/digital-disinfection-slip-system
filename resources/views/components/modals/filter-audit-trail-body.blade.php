@@ -214,16 +214,25 @@
             if (!Array.isArray(this.selected)) {
                 this.selected = [];
             }
-            const numKey = Number(key);
-            const index = this.selected.findIndex(v => Number(v) === numKey);
+            // Handle both numeric keys and string keys (like 'super_guard')
+            const index = this.selected.findIndex(v => {
+                if (key === 'super_guard') {
+                    return v === 'super_guard';
+                }
+                return Number(v) === Number(key);
+            });
             if (index > -1) {
                 this.selected.splice(index, 1);
             } else {
-                this.selected.push(numKey);
+                // Keep string keys as strings, numeric keys as numbers
+                this.selected.push(key === 'super_guard' ? 'super_guard' : Number(key));
             }
         },
         isSelected(key) {
             if (!Array.isArray(this.selected)) return false;
+            if (key === 'super_guard') {
+                return this.selected.includes('super_guard');
+            }
             return this.selected.some(v => Number(v) === Number(key));
         },
         closeDropdown() {

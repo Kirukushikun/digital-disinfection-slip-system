@@ -61,6 +61,7 @@ class AuditTrail extends Component
     
     public $availableUserTypes = [
         0 => 'Guard',
+        'super_guard' => 'Super Guard',
         1 => 'Admin',
     ];
     
@@ -71,8 +72,10 @@ class AuditTrail extends Component
         // Initialize array filters
         $this->filterAction = [];
         $this->filterModelType = [];
+        $this->filterUserType = [];
         $this->appliedAction = [];
         $this->appliedModelType = [];
+        $this->appliedUserType = null;
     }
     
     public function applySort($column)
@@ -95,7 +98,8 @@ class AuditTrail extends Component
     {
         $this->appliedAction = $this->filterAction;
         $this->appliedModelType = $this->filterModelType;
-        $this->appliedUserType = $this->filterUserType;
+        // Convert empty array to null for consistency
+        $this->appliedUserType = !empty($this->filterUserType) ? $this->filterUserType : null;
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
         
@@ -122,7 +126,7 @@ class AuditTrail extends Component
                 break;
             case 'user_type':
                 $this->appliedUserType = null;
-                $this->filterUserType = null;
+                $this->filterUserType = [];
                 break;
             case 'created_from':
                 $this->appliedCreatedFrom = '';
@@ -154,11 +158,48 @@ class AuditTrail extends Component
                 $this->appliedModelType = array_values(array_filter($this->appliedModelType, fn($v) => $v !== $value));
                 $this->filterModelType = array_values(array_filter($this->filterModelType, fn($v) => $v !== $value));
                 break;
+            case 'user_type':
+                // Handle both string keys (like 'super_guard') and numeric keys
+                // Convert null to empty array for processing
+                if (!is_array($this->appliedUserType)) {
+                    $this->appliedUserType = [];
+                }
+                $this->appliedUserType = array_values(array_filter($this->appliedUserType, function($v) use ($value) {
+                    if ($value === 'super_guard') {
+                        return $v !== 'super_guard';
+                    }
+                    // Handle numeric comparison for numeric values
+                    if (is_numeric($v) && is_numeric($value)) {
+                        return (int)$v !== (int)$value;
+                    }
+                    return $v !== $value;
+                }));
+                if (!is_array($this->filterUserType)) {
+                    $this->filterUserType = [];
+                }
+                $this->filterUserType = array_values(array_filter($this->filterUserType, function($v) use ($value) {
+                    if ($value === 'super_guard') {
+                        return $v !== 'super_guard';
+                    }
+                    // Handle numeric comparison for numeric values
+                    if (is_numeric($v) && is_numeric($value)) {
+                        return (int)$v !== (int)$value;
+                    }
+                    return $v !== $value;
+                }));
+                // Convert empty array to null for consistency
+                if (empty($this->appliedUserType)) {
+                    $this->appliedUserType = null;
+                }
+                if (empty($this->filterUserType)) {
+                    $this->filterUserType = [];
+                }
+                break;
         }
         
         $this->filtersActive = !empty($this->appliedAction) || 
                                !empty($this->appliedModelType) || 
-                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedUserType) || 
                                !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
@@ -169,7 +210,7 @@ class AuditTrail extends Component
     {
         $this->filterAction = [];
         $this->filterModelType = [];
-        $this->filterUserType = null;
+        $this->filterUserType = [];
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         $this->searchFilterAction = '';
@@ -400,7 +441,41 @@ class AuditTrail extends Component
         }
         
         if (!empty($this->appliedUserType)) {
-            $query->whereIn('user_type', $this->appliedUserType);
+            // Separate super guards from regular guards
+            $hasSuperGuard = in_array('super_guard', $this->appliedUserType);
+            $hasRegularGuard = in_array(0, $this->appliedUserType);
+            $numericUserTypes = array_filter($this->appliedUserType, function($type) {
+                return $type !== 'super_guard';
+            });
+            
+            $query->where(function($q) use ($hasSuperGuard, $hasRegularGuard, $numericUserTypes) {
+                // If super guard is selected, include logs where user_type = 0 AND changes->user_super_guard = true
+                if ($hasSuperGuard) {
+                    $q->where(function($subQ) {
+                        $subQ->where('user_type', 0)
+                             ->whereNotNull('changes')
+                             ->whereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = CAST('true' AS JSON)");
+                    });
+                }
+                
+                // If regular guard is selected, include logs where user_type = 0 AND (changes->user_super_guard IS NULL OR false)
+                if ($hasRegularGuard) {
+                    $q->orWhere(function($subQ) {
+                        $subQ->where('user_type', 0)
+                             ->where(function($innerQ) {
+                                 $innerQ->whereNull('changes')
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') IS NULL")
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = CAST('false' AS JSON)")
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = 0");
+                             });
+                    });
+                }
+                
+                // Include other numeric user types
+                if (!empty($numericUserTypes)) {
+                    $q->orWhereIn('user_type', $numericUserTypes);
+                }
+            });
         }
         
         if (!empty($this->appliedCreatedFrom)) {

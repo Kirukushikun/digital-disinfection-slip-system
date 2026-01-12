@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\User\Data;
 
 use App\Models\Location;
 use App\Models\Attachment;
@@ -204,9 +204,11 @@ class Locations extends Component
 
     public function updateLocation()
     {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         $this->validate([
@@ -375,9 +377,11 @@ class Locations extends Component
         $this->isTogglingStatus = true;
 
         try {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         // Atomic update: Get current status and update atomically to prevent race conditions
@@ -463,9 +467,11 @@ class Locations extends Component
 
     public function createLocation()
     {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         $this->validate([
@@ -601,7 +607,7 @@ class Locations extends Component
             $currentLocation = Location::with('attachment')->find($this->selectedLocationId);
         }
 
-        return view('livewire.admin.locations', [
+        return view('livewire.user.data.locations', [
             'locations' => $locations,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
@@ -727,7 +733,9 @@ class Locations extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('admin.print.locations', ['token' => $token]);
+        // Note: Print route would need to be created for super guards if needed
+        $this->dispatch('toast', message: 'Print functionality not yet available for super guards.', type: 'info');
+        return;
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }

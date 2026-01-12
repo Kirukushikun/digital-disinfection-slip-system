@@ -46,4 +46,49 @@ class UserController extends Controller
     {
         return view('user.report');
     }
+
+    // Super Guard Data Management Methods (accessible to super guards and super admins)
+    public function dataGuards()
+    {
+        $user = auth()->user();
+        // Allow super guards OR super admins
+        if (!($user->super_guard || $user->user_type === 2)) {
+            // Regular guards trying to access super guard routes - redirect to landing
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+        return view('user.data.guards');
+    }
+
+    public function dataDrivers()
+    {
+        $user = auth()->user();
+        // Allow super guards OR super admins
+        if (!($user->super_guard || $user->user_type === 2)) {
+            // Regular guards trying to access super guard routes - redirect to landing
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+        return view('user.data.drivers');
+    }
+
+    public function dataLocations()
+    {
+        $user = auth()->user();
+        // Allow super guards OR super admins
+        if (!($user->super_guard || $user->user_type === 2)) {
+            // Regular guards trying to access super guard routes - redirect to landing
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+        return view('user.data.locations');
+    }
+
+    public function dataPlateNumbers()
+    {
+        $user = auth()->user();
+        // Allow super guards OR super admins
+        if (!($user->super_guard || $user->user_type === 2)) {
+            // Regular guards trying to access super guard routes - redirect to landing
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+        return view('user.data.plate-numbers');
+    }
 }

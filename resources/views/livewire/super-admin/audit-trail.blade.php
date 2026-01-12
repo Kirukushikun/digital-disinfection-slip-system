@@ -97,7 +97,7 @@
                         @foreach ($appliedUserType as $userType)
                             <span
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                User Type: {{ $availableUserTypes[(int) $userType] ?? 'N/A' }}
+                                User Type: {{ $availableUserTypes[$userType] ?? 'N/A' }}
                                 <button type="button" 
                                     wire:click="removeSpecificFilter('user_type', @js($userType))"
                                     class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
@@ -260,7 +260,16 @@
                                         @endif
                                         @if ($log->user_type !== null)
                                             <span class="ml-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
-                                                {{ $availableUserTypes[$log->user_type] ?? 'N/A' }}
+                                                @php
+                                                    // Check if user is a super guard (stored in changes JSON)
+                                                    $isSuperGuard = isset($log->changes['user_super_guard']) && $log->changes['user_super_guard'] === true;
+                                                    if ($log->user_type === 0 && $isSuperGuard) {
+                                                        $userTypeLabel = $availableUserTypes['super_guard'] ?? 'Super Guard';
+                                                    } else {
+                                                        $userTypeLabel = $availableUserTypes[$log->user_type] ?? 'N/A';
+                                                    }
+                                                @endphp
+                                                {{ $userTypeLabel }}
                                             </span>
                                         @endif
                                     </div>

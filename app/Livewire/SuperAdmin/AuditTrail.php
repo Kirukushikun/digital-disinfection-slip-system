@@ -61,6 +61,7 @@ class AuditTrail extends Component
     
     public $availableUserTypes = [
         0 => 'Guard',
+        'super_guard' => 'Super Guard',
         1 => 'Admin',
         2 => 'Super Admin',
     ];
@@ -427,7 +428,41 @@ class AuditTrail extends Component
         }
         
         if (!empty($this->appliedUserType)) {
-            $query->whereIn('user_type', $this->appliedUserType);
+            // Separate super guards from regular guards
+            $hasSuperGuard = in_array('super_guard', $this->appliedUserType);
+            $hasRegularGuard = in_array(0, $this->appliedUserType);
+            $numericUserTypes = array_filter($this->appliedUserType, function($type) {
+                return $type !== 'super_guard';
+            });
+            
+            $query->where(function($q) use ($hasSuperGuard, $hasRegularGuard, $numericUserTypes) {
+                // If super guard is selected, include logs where user_type = 0 AND changes->user_super_guard = true
+                if ($hasSuperGuard) {
+                    $q->where(function($subQ) {
+                        $subQ->where('user_type', 0)
+                             ->whereNotNull('changes')
+                             ->whereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = CAST('true' AS JSON)");
+                    });
+                }
+                
+                // If regular guard is selected, include logs where user_type = 0 AND (changes->user_super_guard IS NULL OR false)
+                if ($hasRegularGuard) {
+                    $q->orWhere(function($subQ) {
+                        $subQ->where('user_type', 0)
+                             ->where(function($innerQ) {
+                                 $innerQ->whereNull('changes')
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') IS NULL")
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = CAST('false' AS JSON)")
+                                       ->orWhereRaw("JSON_EXTRACT(changes, '$.user_super_guard') = 0");
+                             });
+                    });
+                }
+                
+                // Include other numeric user types
+                if (!empty($numericUserTypes)) {
+                    $q->orWhereIn('user_type', $numericUserTypes);
+                }
+            });
         }
         
         if (!empty($this->appliedCreatedFrom)) {

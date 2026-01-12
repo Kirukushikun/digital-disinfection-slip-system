@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Livewire\SuperAdmin;
+namespace App\Livewire\User\Data;
 
 use App\Models\User;
 use App\Models\Setting;
+use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Hash;
@@ -12,8 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-use App\Services\Logger;
 use Illuminate\Support\Facades\Cache;
+
 class Guards extends Component
 {
     use WithPagination;
@@ -33,12 +34,6 @@ class Guards extends Component
     public $appliedStatus = null; // null = All Guards, 0 = Enabled, 1 = Disabled
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
-    
-    // Store previous date filter values when entering restore mode
-    private $previousFilterCreatedFrom = null;
-    private $previousFilterCreatedTo = null;
-    private $previousAppliedCreatedFrom = null;
-    private $previousAppliedCreatedTo = null;
     
     public $availableStatuses = [
         0 => 'Enabled',
@@ -68,34 +63,24 @@ class Guards extends Component
     
     public $selectedUserId;
     public $selectedUserDisabled = false;
-    public $selectedUserName = '';
     public $showEditModal = false;
     public $showDisableModal = false;
     public $showResetPasswordModal = false;
     public $showCreateModal = false;
-    public $showDeleteModal = false;
-    public $showRestoreModal = false;
-    public $showDeleted = false; // Toggle to show deleted items
-    public $selectedRestoreUserId = null;
-    public $selectedRestoreUserName = '';
 
     // Protection flags
     public $isTogglingStatus = false;
     public $isResettingPassword = false;
-    public $isDeleting = false;
-    public $isRestoring = false;
 
     // Edit form fields
     public $first_name;
     public $middle_name;
     public $last_name;
-    public $super_guard = false;
 
     // Create form fields
     public $create_first_name;
     public $create_middle_name;
     public $create_last_name;
-    public $create_super_guard = false;
 
     protected $queryString = ['search'];
     
@@ -194,22 +179,33 @@ class Guards extends Component
     public $original_first_name;
     public $original_middle_name;
     public $original_last_name;
-    public $original_super_guard = false;
 
     public function openEditModal($userId)
     {
         $user = User::findOrFail($userId);
+        $currentUserId = Auth::id();
+        
+        // Prevent editing super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot edit super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent editing themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot edit your own account.', type: 'error');
+            return;
+        }
+        
         $this->selectedUserId = $userId;
         $this->first_name = $user->first_name;
         $this->middle_name = $user->middle_name;
         $this->last_name = $user->last_name;
-        $this->super_guard = (bool) ($user->super_guard ?? false);
         
         // Store original values for change detection
         $this->original_first_name = $user->first_name;
         $this->original_middle_name = $user->middle_name;
         $this->original_last_name = $user->last_name;
-        $this->original_super_guard = (bool) ($user->super_guard ?? false);
         
         $this->showEditModal = true;
     }
@@ -226,15 +222,16 @@ class Guards extends Component
 
         return ($this->original_first_name !== $firstName) ||
                ($this->original_middle_name !== $middleName) ||
-               ($this->original_last_name !== $lastName) ||
-               ($this->original_super_guard !== $this->super_guard);
+               ($this->original_last_name !== $lastName);
     }
 
     public function updateUser()
     {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $user = Auth::user();
+        if (!(($user->user_type === 0 && $user->super_guard) || $user->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         $this->validate([
@@ -257,12 +254,24 @@ class Guards extends Component
         $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
         $user = User::findOrFail($this->selectedUserId);
+        $currentUserId = Auth::id();
+        
+        // Prevent editing super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot edit super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent editing themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot edit your own account.', type: 'error');
+            return;
+        }
         
         // Check if there are any changes
         $hasChanges = ($user->first_name !== $firstName) ||
                       ($user->middle_name !== $middleName) ||
-                      ($user->last_name !== $lastName) ||
-                      ((bool)($user->super_guard ?? false) !== $this->super_guard);
+                      ($user->last_name !== $lastName);
         
         if (!$hasChanges) {
             $this->dispatch('toast', message: 'No changes detected.', type: 'info');
@@ -270,14 +279,13 @@ class Guards extends Component
         }
         
         // Capture old values for logging
-        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'super_guard']);
+        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
         
         // Check if first name or last name changed (these affect username)
         $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
         
         // Prepare update data
         $updateData = [
-            'super_guard' => $this->super_guard,
             'first_name' => $firstName,
             'middle_name' => $middleName,
             'last_name' => $lastName,
@@ -304,30 +312,27 @@ class Guards extends Component
                 ->where('user_id', $user->id)
                 ->delete();
         }
-        
+
+        Cache::forget('guards_all');
+
         // Generate description based on what changed
         $changedFields = [];
         if ($user->first_name !== $firstName || $user->last_name !== $lastName) {
             $changedFields[] = "name to \"{$guardName}\"";
         }
-        if ((bool)($user->super_guard ?? false) !== $this->super_guard) {
-            $changedFields[] = $this->super_guard ? "super guard status (enabled)" : "super guard status (disabled)";
-        }
+        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
         if ($usernameChanged) {
             $changedFields[] = "username";
         }
         $description = !empty($changedFields) ? "Updated " . implode(" and ", $changedFields) : "Updated \"{$guardName}\"";
         
-        Cache::forget('guards_all');
-        
-        // Log the update action
-        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'super_guard']);
+        // Log the update
         Logger::update(
             User::class,
             $user->id,
             $description,
             $oldValues,
-            $updateData
+            $newValues
         );
 
         $this->showEditModal = false;
@@ -343,6 +348,20 @@ class Guards extends Component
     public function openDisableModal($userId)
     {
         $user = User::findOrFail($userId);
+        $currentUserId = Auth::id();
+        
+        // Prevent disabling super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot disable super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent disabling themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot disable your own account.', type: 'error');
+            return;
+        }
+        
         $this->selectedUserId = $userId;
         $this->selectedUserDisabled = $user->disabled;
         $this->showDisableModal = true;
@@ -358,19 +377,35 @@ class Guards extends Component
         $this->isTogglingStatus = true;
 
         try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
             abort(403, 'Unauthorized action.');
         }
 
         // Atomic update: Get current status and update atomically to prevent race conditions
         $user = User::findOrFail($this->selectedUserId);
+        $currentUserId = Auth::id();
+        
+        // Prevent disabling super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot disable super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent disabling themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot disable your own account.', type: 'error');
+            return;
+        }
+        
         $wasDisabled = $user->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         
         // Atomic update: Only update if the current disabled status matches what we expect
         $updated = User::where('id', $this->selectedUserId)
             ->where('disabled', $wasDisabled) // Only update if status hasn't changed
+            ->where('super_guard', false) // Ensure not a super guard
             ->update(['disabled' => $newStatus]);
         
         if ($updated === 0) {
@@ -381,32 +416,28 @@ class Guards extends Component
             $this->dispatch('toast', message: 'The user status was changed by another administrator. Please refresh the page.', type: 'error');
             return;
         }
-        
-        $action = $newStatus ? 'disabled' : 'enabled';
-        $guardName = $this->getGuardFullName($user);
-        
-        // Capture old values for logging
+
+        Cache::forget('guards_all');
         $oldValues = ['disabled' => $wasDisabled];
+        $newValues = ['disabled' => $newStatus];
         
         // Refresh user to get updated data
         $user->refresh();
-        
-        Cache::forget('guards_all');
-        
-        // Log the status change
-        Logger::update(
-            User::class,
-            $user->id,
-            ucfirst($action) . " \"{$guardName}\"",
-            $oldValues,
-            ['disabled' => $newStatus]
-        );
 
         // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
         $this->resetPage();
         
         $guardName = $this->getGuardFullName($user);
         $message = !$wasDisabled ? "{$guardName} has been disabled." : "{$guardName} has been enabled.";
+        
+        // Log the status change
+        Logger::update(
+            User::class,
+            $user->id,
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " guard \"{$guardName}\"",
+            $oldValues,
+            $newValues
+        );
 
         $this->showDisableModal = false;
         $this->reset(['selectedUserId', 'selectedUserDisabled']);
@@ -418,6 +449,21 @@ class Guards extends Component
 
     public function openResetPasswordModal($userId)
     {
+        $user = User::findOrFail($userId);
+        $currentUserId = Auth::id();
+        
+        // Prevent resetting password for super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot reset password for super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent resetting password for themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot reset password for your own account.', type: 'error');
+            return;
+        }
+        
         $this->selectedUserId = $userId;
         $this->showResetPasswordModal = true; 
     }
@@ -432,12 +478,27 @@ class Guards extends Component
         $this->isResettingPassword = true;
 
         try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
             abort(403, 'Unauthorized action.');
         }
 
         $user = User::findOrFail($this->selectedUserId);
+        $currentUserId = Auth::id();
+        
+        // Prevent resetting password for super guards
+        if ($user->super_guard) {
+            $this->dispatch('toast', message: 'Cannot reset password for super guards.', type: 'error');
+            return;
+        }
+        
+        // Prevent resetting password for themselves
+        if ($user->id === $currentUserId) {
+            $this->dispatch('toast', message: 'Cannot reset password for your own account.', type: 'error');
+            return;
+        }
+        
         $defaultPassword = $this->getDefaultGuardPassword();
         $user->update([
             'password' => Hash::make($defaultPassword),
@@ -468,194 +529,13 @@ class Guards extends Component
         $this->showDisableModal = false;
         $this->showResetPasswordModal = false;
         $this->showCreateModal = false;
-        $this->showDeleteModal = false;
-        $this->showRestoreModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled', 'selectedUserName', 'selectedRestoreUserId', 'selectedRestoreUserName', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard', 'create_first_name', 'create_middle_name', 'create_last_name', 'create_super_guard']);
+        $this->reset(['selectedUserId', 'selectedUserDisabled', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
 
-    public function openDeleteModal($userId)
-    {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserName = $this->getGuardFullName($user);
-        $this->showDeleteModal = true;
-    }
-
-    public function deleteUser()
-    {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
-
-        $this->isDeleting = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $user = User::findOrFail($this->selectedUserId);
-        $userIdForLog = $user->id;
-        $guardName = $this->getGuardFullName($user);
-        
-        // Capture old values for logging
-        $oldValues = $user->only([
-            'first_name',
-            'middle_name',
-            'last_name',
-            'username',
-            'user_type',
-            'disabled'
-        ]);
-        
-        // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = User::where('id', $this->selectedUserId)
-            ->whereNull('deleted_at') // Only delete if not already deleted
-            ->update(['deleted_at' => now()]);
-        
-        if ($deleted === 0) {
-            // User was already deleted by another process
-            $this->showDeleteModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->dispatch('toast', message: 'This user was already deleted by another administrator. Please refresh the page.', type: 'error');
-            $this->resetPage();
-            return;
-        }
-        
-        // Log the delete action
-        Logger::delete(
-            User::class,
-            $userIdForLog,
-            "Deleted \"{$guardName}\"",
-            $oldValues
-        );
-
-        Cache::forget('guards_all');
-
-        $this->showDeleteModal = false;
-        $this->reset(['selectedUserId', 'selectedUserName']);
-        $this->resetPage();
-        $this->dispatch('toast', message: "{$guardName} has been deleted.", type: 'success');
-        } finally {
-            $this->isDeleting = false;
-        }
-    }
-
-    public function toggleDeletedView()
-    {
-        $this->showDeleted = !$this->showDeleted;
-        
-        if ($this->showDeleted) {
-            // Entering restore mode: Store current values only if not already stored, then clear date filters
-            if ($this->previousAppliedCreatedFrom === null && $this->previousAppliedCreatedTo === null) {
-                $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
-                $this->previousFilterCreatedTo = $this->filterCreatedTo;
-                $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
-                $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
-            }
-            
-            $this->filterCreatedFrom = '';
-            $this->filterCreatedTo = '';
-            $this->appliedCreatedFrom = '';
-            $this->appliedCreatedTo = '';
-        } else {
-            // Exiting restore mode: Always restore previous values, then reset stored values
-            $this->filterCreatedFrom = $this->previousFilterCreatedFrom ?? '';
-            $this->filterCreatedTo = $this->previousFilterCreatedTo ?? '';
-            $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom ?? '';
-            $this->appliedCreatedTo = $this->previousAppliedCreatedTo ?? '';
-            
-            // Reset stored values for next time
-            $this->previousFilterCreatedFrom = null;
-            $this->previousFilterCreatedTo = null;
-            $this->previousAppliedCreatedFrom = null;
-            $this->previousAppliedCreatedTo = null;
-        }
-        
-        $this->resetPage();
-    }
-
-    public function openRestoreModal($userId)
-    {
-        $user = User::onlyTrashed()->findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserName = $this->getGuardFullName($user);
-        $this->showRestoreModal = true;
-    }
-
-    public function restoreUser()
-    {
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        $this->isRestoring = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        if (!$this->selectedUserId) {
-            return;
-        }
-
-        // Atomic restore: Only restore if currently deleted to prevent race conditions
-        // Do the atomic update first, then load the model only if successful
-        $restored = User::onlyTrashed()
-            ->where('id', $this->selectedUserId)
-            ->update(['deleted_at' => null]);
-        
-        if ($restored === 0) {
-            // User was already restored or doesn't exist
-            $this->showRestoreModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->dispatch('toast', message: 'This user was already restored or does not exist. Please refresh the page.', type: 'error');
-            $this->resetPage();
-            return;
-        }
-        
-        // Now load the restored user
-        $user = User::findOrFail($this->selectedUserId);
-        
-        // Verify the user is a guard (user_type = 0)
-        if ($user->user_type !== 0) {
-            // Rollback the restore by deleting again
-            $user->delete();
-            $this->showRestoreModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->dispatch('toast', message: 'Cannot restore this user.', type: 'error');
-            return;
-        }
-
-        $guardName = $this->getGuardFullName($user);
-        
-        // Log the restore action
-        Logger::restore(
-            User::class,
-            $user->id,
-            "Restored guard {$guardName}"
-        );
-        
-        Cache::forget('guards_all');
-
-        $this->showRestoreModal = false;
-        $this->reset(['selectedUserId', 'selectedUserName']);
-        $this->dispatch('toast', message: 'Guard restored successfully.', type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
-    }
-
-
     public function openCreateModal()
     {
-        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name', 'create_super_guard']);
+        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
         $this->showCreateModal = true;
     }
@@ -767,8 +647,9 @@ class Guards extends Component
 
     public function createGuard()
     {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -797,14 +678,14 @@ class Guards extends Component
         // Get default password from settings table
         $defaultPassword = $this->getDefaultGuardPassword();
 
-        // Create guard with default password
+        // Create guard with default password (super_guard is always false for super guard created guards)
         $user = User::create([
             'first_name' => $firstName,
             'middle_name' => $middleName,
             'last_name' => $lastName,
             'username' => $username,
             'user_type' => 0, // Guard
-            'super_guard' => $this->create_super_guard ?? false,
+            'super_guard' => false, // Super guards cannot create other super guards
             'password' => Hash::make($defaultPassword),
         ]);
 
@@ -812,19 +693,13 @@ class Guards extends Component
 
         $guardName = $this->getGuardFullName($user);
         
-        // Log the create action
+        // Log the creation
+        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'user_type', 'super_guard']);
         Logger::create(
             User::class,
             $user->id,
             "Created \"{$guardName}\"",
-            $user->only([
-                'first_name',
-                'middle_name',
-                'last_name',
-                'username',
-                'user_type',
-                'super_guard'
-            ])
+            $newValues
         );
 
         $this->showCreateModal = false;
@@ -835,11 +710,11 @@ class Guards extends Component
 
     public function render()
     {
-        $query = $this->showDeleted 
-            ? User::onlyTrashed()->where('user_type', 0)
-            : User::where('user_type', 0)->whereNull('deleted_at');
-        
-        $users = $query
+        // Filter out super guards and the current user - only show regular guards
+        $currentUserId = Auth::id();
+        $users = User::where('user_type', 0)
+            ->where('super_guard', false) // Exclude super guards
+            ->where('id', '!=', $currentUserId) // Exclude current user (themselves)
             ->when($this->search, function ($query) {
                 $searchTerm = $this->search;
                 
@@ -878,7 +753,7 @@ class Guards extends Component
             ->when($this->appliedCreatedTo, function ($query) {
                 $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
             })
-            ->when($this->appliedStatus !== null && !$this->showDeleted, function ($query) {
+            ->when($this->appliedStatus !== null, function ($query) {
                 if ($this->appliedStatus === 0) {
                     // Enabled (disabled = false)
                     $query->where('disabled', false);
@@ -917,7 +792,7 @@ class Guards extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.super-admin.guards', [
+        return view('livewire.user.data.guards', [
             'users' => $users,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
@@ -926,14 +801,22 @@ class Guards extends Component
 
     public function getExportData()
     {
-        return User::where('user_type', 0)->whereNull('deleted_at')
+        // Filter out super guards and the current user - only show regular guards
+        $currentUserId = Auth::id();
+        return User::where('user_type', 0)
+            ->where('super_guard', false) // Exclude super guards
+            ->where('id', '!=', $currentUserId) // Exclude current user (themselves)
             ->when($this->search, function ($query) {
-                $searchTerm = trim($this->search);
+                $searchTerm = $this->search;
+                $searchTerm = trim($searchTerm);
                 $searchTerm = preg_replace('/[%_]/', '', $searchTerm);
+                
                 if (empty($searchTerm)) {
                     return;
                 }
+                
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
+                
                 if (str_starts_with($searchTerm, '@')) {
                     $cleanedSearchTerm = ltrim($searchTerm, '@');
                     $escapedCleanedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $cleanedSearchTerm);
@@ -968,10 +851,6 @@ class Guards extends Component
 
     public function exportCSV()
     {
-        if ($this->showDeleted) {
-            return;
-        }
-        
         $data = $this->getExportData();
         $filename = 'guards_' . date('Y-m-d_His') . '.csv';
         
@@ -982,10 +861,12 @@ class Guards extends Component
 
         $callback = function() use ($data) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
             
+            // Headers
             fputcsv($file, ['Name', 'Username', 'Status', 'Created Date']);
             
+            // Data
             foreach ($data as $user) {
                 $name = trim(implode(' ', array_filter([$user->first_name, $user->middle_name, $user->last_name])));
                 $status = $user->disabled ? 'Disabled' : 'Enabled';
@@ -1005,10 +886,6 @@ class Guards extends Component
 
     public function openPrintView()
     {
-        if ($this->showDeleted) {
-            return;
-        }
-        
         $data = $this->getExportData();
         $exportData = $data->map(function($user) {
             return [
@@ -1036,8 +913,7 @@ class Guards extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('superadmin.print.guards', ['token' => $token]);
-        
-        $this->dispatch('open-print-window', ['url' => $printUrl]);
+        // Note: Print route would need to be created for super guards if needed
+        $this->dispatch('toast', message: 'Print functionality not yet available for super guards.', type: 'info');
     }
 }

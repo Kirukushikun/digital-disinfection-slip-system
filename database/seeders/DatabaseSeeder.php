@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Montiano',
             'username' => 'JMontiano',
             'user_type' => '2',
+            'super_guard' => true,
         ]);
 
         User::factory()->create([
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Trinidad',
             'username' => 'ATrinidad',
             'user_type' => '2',
+            'super_guard' => true,
         ]);
 
         User::factory()->create([
@@ -40,6 +42,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Guno',
             'username' => 'IGuno',
             'user_type' => '2',
+            'super_guard' => true,
         ]);
 
         User::factory()->create([
@@ -48,6 +51,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Roque',
             'username' => 'RRoque',
             'user_type' => '2',
+            'super_guard' => true,
         ]);
         
         User::factory()->create([
@@ -56,6 +60,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'Santos',
             'username' => 'JSantos',
             'user_type' => '2',
+            'super_guard' => true,
         ]);
 
         // Create default settings

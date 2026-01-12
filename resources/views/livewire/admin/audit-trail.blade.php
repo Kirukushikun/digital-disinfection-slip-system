@@ -93,19 +93,22 @@
                         @endforeach
                     @endif
 
-                    @if (!is_null($appliedUserType))
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            User Type:
-                            {{ isset($availableUserTypes[(int) $appliedUserType]) ? $availableUserTypes[(int) $appliedUserType] : 'N/A' }}
-                            <button wire:click="removeFilter('user_type')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                        clip-rule="evenodd"></path>
-                                </svg>
-                            </button>
-                        </span>
+                    @if (!empty($appliedUserType) && is_array($appliedUserType))
+                        @foreach ($appliedUserType as $userType)
+                            <span
+                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                User Type: {{ $availableUserTypes[$userType] ?? 'N/A' }}
+                                <button type="button" 
+                                    wire:click="removeSpecificFilter('user_type', @js($userType))"
+                                    class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            </span>
+                        @endforeach
                     @endif
 
                     @if ($appliedCreatedFrom)
@@ -257,7 +260,16 @@
                                         @endif
                                         @if ($log->user_type !== null)
                                             <span class="ml-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
-                                                {{ $availableUserTypes[$log->user_type] ?? 'N/A' }}
+                                                @php
+                                                    // Check if user is a super guard (stored in changes JSON)
+                                                    $isSuperGuard = isset($log->changes['user_super_guard']) && $log->changes['user_super_guard'] === true;
+                                                    if ($log->user_type === 0 && $isSuperGuard) {
+                                                        $userTypeLabel = $availableUserTypes['super_guard'] ?? 'Super Guard';
+                                                    } else {
+                                                        $userTypeLabel = $availableUserTypes[$log->user_type] ?? 'N/A';
+                                                    }
+                                                @endphp
+                                                {{ $userTypeLabel }}
                                             </span>
                                         @endif
                                     </div>

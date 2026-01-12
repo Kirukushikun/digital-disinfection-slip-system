@@ -1,11 +1,11 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal && !$showResetPasswordModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
         {{-- Simple Header --}}
         <div class="mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Guards</h1>
-                    <p class="text-gray-600 text-sm mt-1">Manage all guards in the system</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Drivers</h1>
+                    <p class="text-gray-600 text-sm mt-1">Manage all drivers in the system</p>
                 </div>
 
                 {{-- Search and Filter Bar --}}
@@ -20,7 +20,7 @@
                         </div>
                         <input type="text" wire:model.live="search"
                             class="block w-full pl-10 {{ $search ? 'pr-20' : 'pr-12' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Search by name or @username...">
+                            placeholder="Search by name...">
                         
                         {{-- Right Side Buttons Container --}}
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
@@ -36,14 +36,14 @@
                         @endif
 
                             {{-- Filter Button Inside Search (Right Side) --}}
-                            <button wire:click="$toggle('showFilters')" title="Filters"
-                                        class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 focus:outline-none hover:cursor-pointer cursor-pointer">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
-                                    </path>
-                                </svg>
-                            </button>
+                    <button wire:click="$toggle('showFilters')" title="Filters"
+                                class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 focus:outline-none hover:cursor-pointer cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                            </path>
+                        </svg>
+                    </button>
                         </div>
                     </div>
 
@@ -73,8 +73,7 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Status: {{ $availableStatuses[$appliedStatus] }}
-                            <button wire:click="removeFilter('status')"
-                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('status')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -88,8 +87,7 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             From: {{ \Carbon\Carbon::parse($appliedCreatedFrom)->format('M d, Y') }}
-                            <button wire:click="removeFilter('createdFrom')"
-                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('createdFrom')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -103,8 +101,7 @@
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             To: {{ \Carbon\Carbon::parse($appliedCreatedTo)->format('M d, Y') }}
-                            <button wire:click="removeFilter('createdTo')"
-                                class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                            <button wire:click="removeFilter('createdTo')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -182,10 +179,6 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Username
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
                                     <span>Created Date</span>
                                     <button wire:click.prevent="applySort('created_at')" type="button"
@@ -233,53 +226,33 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Super Guard
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($users as $user)
+                        @forelse($drivers as $driver)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ $user->first_name }}
-                                        @if ($user->middle_name)
-                                            {{ $user->middle_name }}
+                                        {{ $driver->first_name }}
+                                        @if ($driver->middle_name)
+                                            {{ $driver->middle_name }}
                                         @endif
-                                        {{ $user->last_name }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-700">
-                                        <span>@</span>{{ $user->username }}
+                                        {{ $driver->last_name }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}
+                                        {{ \Carbon\Carbon::parse($driver->created_at)->format('M d, Y') }}
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
-                                        {{ \Carbon\Carbon::parse($user->created_at)->format('h:i A') }}
+                                        {{ \Carbon\Carbon::parse($driver->created_at)->format('h:i A') }}
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    @if ($user->super_guard)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Super Guard
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            Regular Guard
-                                        </span>
-                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center gap-2">
-                                        <x-buttons.submit-button wire:click="openEditModal({{ $user->id }})"
+                                        <x-buttons.submit-button wire:click="openEditModal({{ $driver->id }})"
                                             color="blue" size="sm" :fullWidth="false">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
@@ -289,20 +262,9 @@
                                             </svg>
                                             Edit
                                         </x-buttons.submit-button>
-                                        <x-buttons.submit-button
-                                            wire:click="openResetPasswordModal({{ $user->id }})" color="gray"
-                                            size="sm" :fullWidth="false">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
-                                                </path>
-                                            </svg>
-                                            Reset Password
-                                        </x-buttons.submit-button>
-                                        @if ($user->disabled)
+                                        @if ($driver->disabled)
                                             <x-buttons.submit-button
-                                                wire:click="openDisableModal({{ $user->id }})" color="green"
+                                                wire:click="openDisableModal({{ $driver->id }})" color="green"
                                                 size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -315,7 +277,7 @@
                                             </x-buttons.submit-button>
                                         @else
                                             <x-buttons.submit-button
-                                                wire:click="openDisableModal({{ $user->id }})" color="orange"
+                                                wire:click="openDisableModal({{ $driver->id }})" color="orange"
                                                 size="sm" :fullWidth="false">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -332,21 +294,21 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="3" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24"
                                             stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
                                             </path>
                                         </svg>
-                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No guards found</h3>
+                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No drivers found</h3>
                                         <p class="text-sm text-gray-500">
                                             @if ($search)
                                                 No results match your search "<span
                                                     class="font-medium text-gray-700">{{ $search }}</span>".
                                             @else
-                                                No guards available in the system.
+                                                No drivers available in the system.
                                             @endif
                                         </p>
                                         @if ($search)
@@ -365,14 +327,14 @@
 
             {{-- Pagination Footer --}}
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <x-buttons.nav-pagination :paginator="$users" />
+                <x-buttons.nav-pagination :paginator="$drivers" />
             </div>
         </div>
 
         {{-- Filter Modal --}}
         <x-modals.filter-modal>
             <x-slot name="filters">
-                <x-modals.filter-guards-body :availableStatuses="$availableStatuses" />
+                <x-modals.filter-drivers-body :availableStatuses="$availableStatuses" />
             </x-slot>
         </x-modals.filter-modal>
 
@@ -388,7 +350,7 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Edit Guard</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Edit Driver</h3>
                         </div>
 
                         <div class="px-6 py-4">
@@ -426,18 +388,6 @@
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
-
-                                {{-- Super Guard Toggle --}}
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Super Guard Status</label>
-                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ superGuard: @entangle('super_guard').live }">
-                                        <input type="checkbox" wire:model.live="super_guard" x-model="superGuard" class="sr-only">
-                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="superGuard ? 'bg-blue-600' : 'bg-gray-200'">
-                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="superGuard ? 'translate-x-5' : 'translate-x-0'"></div>
-                                        </div>
-                                        <span class="ml-3 text-sm text-gray-700" x-text="superGuard ? 'Enabled - This guard has super guard privileges' : 'Disabled - This is a regular guard'"></span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
 
@@ -446,11 +396,11 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="updateUser" wire:loading.attr="disabled" wire:target="updateUser"
+                            <button wire:click.prevent="updateDriver" wire:loading.attr="disabled" wire:target="updateDriver"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 x-bind:disabled="!$wire.hasChanges">
-                                <span wire:loading.remove wire:target="updateUser">Save Changes</span>
-                                <span wire:loading.inline-flex wire:target="updateUser" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>
+                                <span wire:loading.remove wire:target="updateDriver">Save Changes</span>
+                                <span wire:loading.inline-flex wire:target="updateDriver" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>
                             </button>
                         </div>
                     </div>
@@ -471,7 +421,7 @@
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
                             <div class="flex items-center">
-                                @if ($selectedUserDisabled)
+                                @if ($selectedDriverDisabled)
                                     <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
                                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -480,7 +430,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Guard</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Driver</h3>
                                 @else
                                     <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
                                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
@@ -490,7 +440,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Guard</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Driver</h3>
                                 @endif
                             </div>
                         </div>
@@ -498,33 +448,33 @@
                         <div class="px-6 py-4">
                     @csrf
                             <p class="text-sm text-gray-600">
-                                @if ($selectedUserDisabled)
-                                    Are you sure you want to enable this guard? The guard will be able to access the
-                                    system again.
+                                @if ($selectedDriverDisabled)
+                                    Are you sure you want to enable this driver? The driver will be available for use
+                                    again.
                                 @else
-                                    Are you sure you want to disable this guard? The guard will not be able to access
-                                    the system.
+                                    Are you sure you want to disable this driver? The driver will not be available for
+                                    use.
                                 @endif
                             </p>
                         </div>
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
                                 Cancel
                             </button>
-                            @if ($selectedUserDisabled)
-                                <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                            @if ($selectedDriverDisabled)
+                                <button wire:click="toggleDriverStatus" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleUserStatus">Enable Guard</span>
-                                    <span wire:loading.inline-flex wire:target="toggleUserStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Enabling...
+                                    <span wire:loading.remove wire:target="toggleDriverStatus">Enable Driver</span>
+                                    <span wire:loading.inline-flex wire:target="toggleDriverStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Enabling...
                                     </span>
                                 </button>
                             @else
-                                <button wire:click="toggleUserStatus" wire:loading.attr="disabled" wire:target="toggleUserStatus"
+                                <button wire:click="toggleDriverStatus" wire:loading.attr="disabled" wire:target="toggleDriverStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleUserStatus">Disable Guard</span>
-                                    <span wire:loading.inline-flex wire:target="toggleUserStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Disabling...
+                                    <span wire:loading.remove wire:target="toggleDriverStatus">Disable Driver</span>
+                                    <span wire:loading.inline-flex wire:target="toggleDriverStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Disabling...
                                     </span>
                                 </button>
                             @endif
@@ -534,58 +484,7 @@
             </div>
         @endif
 
-        {{-- Reset Password Modal --}}
-        @if ($showResetPasswordModal)
-            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-                aria-modal="true">
-                {{-- Backdrop --}}
-                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeModal"></div>
-
-                {{-- Modal Panel --}}
-                <div class="flex min-h-full items-center justify-center p-4">
-                    <div
-                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
-                        <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <div class="flex items-center">
-                                <div class="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full">
-                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
-                                        </path>
-                                    </svg>
-                                </div>
-                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Reset Password</h3>
-                            </div>
-                        </div>
-
-                        <div class="px-6 py-4">
-                    @csrf
-                            <p class="text-sm text-gray-600">
-                                Are you sure you want to reset this guard's password? The password will be reset to the
-                                default password "<span
-                                    class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
-                            </p>
-                        </div>
-
-                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="resetPassword"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                Cancel
-                            </button>
-                            <button wire:click="resetPassword" wire:loading.attr="disabled" wire:target="resetPassword"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                <span wire:loading.remove wire:target="resetPassword">Reset Password</span>
-                                <span wire:loading.inline-flex wire:target="resetPassword" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Resetting...
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- Create Guard Modal --}}
+        {{-- Create Driver Modal --}}
         @if ($showCreateModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
@@ -597,7 +496,7 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Create Guard</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Create Driver</h3>
                         </div>
 
                         <div class="px-6 py-4">
@@ -635,18 +534,6 @@
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
-
-                                {{-- Super Guard Toggle --}}
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Super Guard</label>
-                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ superGuard: @entangle('create_super_guard').live }">
-                                        <input type="checkbox" wire:model.live="create_super_guard" x-model="superGuard" class="sr-only">
-                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="superGuard ? 'bg-blue-600' : 'bg-gray-200'">
-                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="superGuard ? 'translate-x-5' : 'translate-x-0'"></div>
-                                        </div>
-                                        <span class="ml-3 text-sm text-gray-700" x-text="superGuard ? 'Enabled - This guard is a super guard' : 'Disabled - This guard is a regular guard'"></span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
 
@@ -655,10 +542,10 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="createGuard" wire:loading.attr="disabled" wire:target="createGuard"
+                            <button wire:click.prevent="createDriver" wire:loading.attr="disabled" wire:target="createDriver"
                                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading.remove wire:target="createGuard">Create</span>
-                                <span wire:loading.inline-flex wire:target="createGuard" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Creating...</span>
+                                <span wire:loading.remove wire:target="createDriver">Create</span>
+                                <span wire:loading.inline-flex wire:target="createDriver" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Creating...</span>
                             </button>
                         </div>
                     </div>

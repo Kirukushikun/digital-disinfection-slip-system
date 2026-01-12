@@ -34,7 +34,8 @@ class EnsureUserType
         }
 
         if (! $user || ! $isAllowed) {
-            abort(Response::HTTP_FORBIDDEN);
+            // Redirect to landing page instead of showing error
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
         // Check if user is disabled - block access and logout

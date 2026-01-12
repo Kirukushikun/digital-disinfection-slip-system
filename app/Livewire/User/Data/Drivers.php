@@ -1,20 +1,18 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\User\Data;
 
-use App\Models\User;
-use App\Models\Setting;
+use App\Models\Driver;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
-class Guards extends Component
+use Illuminate\Support\Str;
+
+class Drivers extends Component
 {
     use WithPagination;
 
@@ -25,12 +23,12 @@ class Guards extends Component
     public $sortColumns = ['first_name' => 'asc']; // Default sort by first_name ascending
     
     // Filter properties
-    public $filterStatus = null; // null = All Guards, 0 = Enabled, 1 = Disabled
+    public $filterStatus = null; // null = All Drivers, 0 = Enabled, 1 = Disabled
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
-    public $appliedStatus = null; // null = All Guards, 0 = Enabled, 1 = Disabled
+    public $appliedStatus = null; // null = All Drivers, 0 = Enabled, 1 = Disabled
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
@@ -43,7 +41,7 @@ class Guards extends Component
     public function updatedFilterStatus($value)
     {
         // Handle null, empty string, or numeric values (0, 1)
-        // null/empty = All Guards, 0 = Enabled, 1 = Disabled
+        // null/empty = All Drivers, 0 = Enabled, 1 = Disabled
         // The select will send values as strings, so we convert to int
         if ($value === null || $value === '' || $value === false) {
             $this->filterStatus = null;
@@ -60,28 +58,24 @@ class Guards extends Component
         }
     }
     
-    public $selectedUserId;
-    public $selectedUserDisabled = false;
+    public $selectedDriverId;
+    public $selectedDriverDisabled = false;
     public $showEditModal = false;
     public $showDisableModal = false;
-    public $showResetPasswordModal = false;
-    public $showCreateModal = false;
-
+    
     // Protection flags
     public $isTogglingStatus = false;
-    public $isResettingPassword = false;
+    public $showCreateModal = false;
 
     // Edit form fields
     public $first_name;
     public $middle_name;
     public $last_name;
-    public $super_guard = false;
 
     // Create form fields
     public $create_first_name;
     public $create_middle_name;
     public $create_last_name;
-    public $create_super_guard = false;
 
     protected $queryString = ['search'];
     
@@ -129,14 +123,6 @@ class Guards extends Component
         return $this->sortColumns[$column] ?? null;
     }
 
-    /**
-     * Get the default guard password (for display in views)
-     */
-    public function getDefaultPasswordProperty()
-    {
-        return $this->getDefaultGuardPassword();
-    }
-
     public function updatingSearch()
     {
         $this->resetPage();
@@ -180,29 +166,26 @@ class Guards extends Component
     public $original_first_name;
     public $original_middle_name;
     public $original_last_name;
-    public $original_super_guard = false;
 
-    public function openEditModal($userId)
+    public function openEditModal($driverId)
     {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->first_name = $user->first_name;
-        $this->middle_name = $user->middle_name;
-        $this->last_name = $user->last_name;
-        $this->super_guard = (bool) ($user->super_guard ?? false);
+        $driver = Driver::findOrFail($driverId);
+        $this->selectedDriverId = $driverId;
+        $this->first_name = $driver->first_name;
+        $this->middle_name = $driver->middle_name;
+        $this->last_name = $driver->last_name;
         
         // Store original values for change detection
-        $this->original_first_name = $user->first_name;
-        $this->original_middle_name = $user->middle_name;
-        $this->original_last_name = $user->last_name;
-        $this->original_super_guard = (bool) ($user->super_guard ?? false);
+        $this->original_first_name = $driver->first_name;
+        $this->original_middle_name = $driver->middle_name;
+        $this->original_last_name = $driver->last_name;
         
         $this->showEditModal = true;
     }
 
     public function getHasChangesProperty()
     {
-        if (!$this->selectedUserId) {
+        if (!$this->selectedDriverId) {
             return false;
         }
 
@@ -212,15 +195,16 @@ class Guards extends Component
 
         return ($this->original_first_name !== $firstName) ||
                ($this->original_middle_name !== $middleName) ||
-               ($this->original_last_name !== $lastName) ||
-               ($this->original_super_guard !== $this->super_guard);
+               ($this->original_last_name !== $lastName);
     }
 
-    public function updateUser()
+    public function updateDriver()
     {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         $this->validate([
@@ -242,13 +226,12 @@ class Guards extends Component
         $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
         $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
 
-        $user = User::findOrFail($this->selectedUserId);
+        $driver = Driver::findOrFail($this->selectedDriverId);
         
         // Check if there are any changes
-        $hasChanges = ($user->first_name !== $firstName) ||
-                      ($user->middle_name !== $middleName) ||
-                      ($user->last_name !== $lastName) ||
-                      ((bool)($user->super_guard ?? false) !== $this->super_guard);
+        $hasChanges = ($driver->first_name !== $firstName) ||
+                      ($driver->middle_name !== $middleName) ||
+                      ($driver->last_name !== $lastName);
         
         if (!$hasChanges) {
             $this->dispatch('toast', message: 'No changes detected.', type: 'info');
@@ -256,85 +239,44 @@ class Guards extends Component
         }
         
         // Capture old values for logging
-        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'super_guard']);
+        $oldValues = $driver->only(['first_name', 'middle_name', 'last_name']);
         
-        // Check if first name or last name changed (these affect username)
-        $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
-        
-        // Prepare update data
-        $updateData = [
+        $driver->update([
             'first_name' => $firstName,
             'middle_name' => $middleName,
             'last_name' => $lastName,
-            'super_guard' => $this->super_guard,
-        ];
-        
-        // Regenerate username if name changed
-        if ($nameChanged) {
-            $newUsername = $this->generateUsername($firstName, $lastName, $this->selectedUserId);
-            $updateData['username'] = $newUsername;
-        }
-        
-        $user->update($updateData);
-        
-        // Refresh user to get updated name
-        $user->refresh();
-        $guardName = $this->getGuardFullName($user);
-        
-        // Check if username changed
-        $usernameChanged = isset($updateData['username']) && $oldValues['username'] !== $updateData['username'];
-        
-        // If username changed, invalidate all sessions for this user (force logout)
-        if ($usernameChanged) {
-            DB::table('sessions')
-                ->where('user_id', $user->id)
-                ->delete();
-        }
+        ]);
 
-        Cache::forget('guards_all');
+        Cache::forget('drivers_all');
 
-        // Generate description based on what changed
-        $changedFields = [];
-        if ($user->first_name !== $firstName || $user->last_name !== $lastName) {
-            $changedFields[] = "name to \"{$guardName}\"";
-        }
-        if ((bool)($user->super_guard ?? false) !== $this->super_guard) {
-            $changedFields[] = $this->super_guard ? "super guard status (enabled)" : "super guard status (disabled)";
-        }
-        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'super_guard']);
-        if ($usernameChanged) {
-            $changedFields[] = "username";
-        }
-        $description = !empty($changedFields) ? "Updated " . implode(" and ", $changedFields) : "Updated \"{$guardName}\"";
+        // Refresh driver to get updated name
+        $driver->refresh();
+        $driverName = $this->getDriverFullName($driver);
         
         // Log the update
+        $newValues = $driver->only(['first_name', 'middle_name', 'last_name']);
         Logger::update(
-            User::class,
-            $user->id,
-            $description,
+            Driver::class,
+            $driver->id,
+            "Updated name to \"{$driverName}\"",
             $oldValues,
             $newValues
         );
 
         $this->showEditModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard']);
-        
-        $message = "{$guardName} has been updated.";
-        if ($usernameChanged) {
-            $message .= " The user has been logged out and must log in again with the new username.";
-        }
-        $this->dispatch('toast', message: $message, type: 'success');
+        $this->reset(['selectedDriverId', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name']);
+        $this->dispatch('toast', message: "{$driverName} has been updated.", type: 'success');
     }
 
-    public function openDisableModal($userId)
+    public function openDisableModal($driverId)
     {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserDisabled = $user->disabled;
+        $driver = Driver::findOrFail($driverId);
+        $this->selectedDriverId = $driverId;
+        $this->selectedDriverDisabled = $driver->disabled;
         $this->showDisableModal = true;
     }
 
-    public function toggleUserStatus()
+    public function toggleDriverStatus()
     {
         // Prevent multiple submissions
         if ($this->isTogglingStatus) {
@@ -344,103 +286,57 @@ class Guards extends Component
         $this->isTogglingStatus = true;
 
         try {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         // Atomic update: Get current status and update atomically to prevent race conditions
-        $user = User::findOrFail($this->selectedUserId);
-        $wasDisabled = $user->disabled;
+        $driver = Driver::findOrFail($this->selectedDriverId);
+        $wasDisabled = $driver->disabled;
         $newStatus = !$wasDisabled; // true = disabled, false = enabled
         
         // Atomic update: Only update if the current disabled status matches what we expect
-        $updated = User::where('id', $this->selectedUserId)
+        $updated = Driver::where('id', $this->selectedDriverId)
             ->where('disabled', $wasDisabled) // Only update if status hasn't changed
             ->update(['disabled' => $newStatus]);
         
         if ($updated === 0) {
             // Status was changed by another process, refresh and show error
-            $user->refresh();
+            $driver->refresh();
             $this->showDisableModal = false;
-            $this->reset(['selectedUserId', 'selectedUserDisabled']);
-            $this->dispatch('toast', message: 'The user status was changed by another administrator. Please refresh the page.', type: 'error');
+            $this->reset(['selectedDriverId', 'selectedDriverDisabled']);
+            $this->dispatch('toast', message: 'The driver status was changed by another administrator. Please refresh the page.', type: 'error');
             return;
         }
-
-        Cache::forget('guards_all');
-        $oldValues = ['disabled' => $wasDisabled];
-        $newValues = ['disabled' => $newStatus];
         
-        // Refresh user to get updated data
-        $user->refresh();
+        Cache::forget('drivers_all');
 
-        // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
+        // Refresh driver to get updated data
+        $driver->refresh();
+
+        // Always reset to first page to avoid pagination issues when driver disappears/appears from filtered results
         $this->resetPage();
         
-        $guardName = $this->getGuardFullName($user);
-        $message = !$wasDisabled ? "{$guardName} has been disabled." : "{$guardName} has been enabled.";
+        $driverName = $this->getDriverFullName($driver);
+        $message = !$wasDisabled ? "{$driverName} has been disabled." : "{$driverName} has been enabled.";
         
         // Log the status change
         Logger::update(
-            User::class,
-            $user->id,
-            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " guard \"{$guardName}\"",
+            Driver::class,
+            $driver->id,
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " driver \"{$driverName}\"",
             ['disabled' => $wasDisabled],
             ['disabled' => $newStatus]
         );
 
         $this->showDisableModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled']);
+        $this->reset(['selectedDriverId', 'selectedDriverDisabled']);
         $this->dispatch('toast', message: $message, type: 'success');
         } finally {
             $this->isTogglingStatus = false;
-        }
-    }
-
-    public function openResetPasswordModal($userId)
-    {
-        $this->selectedUserId = $userId;
-        $this->showResetPasswordModal = true; 
-    }
-
-    public function resetPassword()
-    {
-        // Prevent multiple submissions
-        if ($this->isResettingPassword) {
-            return;
-        }
-
-        $this->isResettingPassword = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $user = User::findOrFail($this->selectedUserId);
-        $defaultPassword = $this->getDefaultGuardPassword();
-        $user->update([
-            'password' => Hash::make($defaultPassword),
-        ]);
-
-        $guardName = $this->getGuardFullName($user);
-        
-        // Log the password reset as an update
-        Logger::update(
-            User::class,
-            $user->id,
-            "Reset password for guard {$guardName}",
-            ['password' => '[hidden]'],
-            ['password' => '[reset]']
-        );
-
-        $this->showResetPasswordModal = false;
-        $this->reset('selectedUserId');
-        $this->dispatch('toast', message: "{$guardName}'s password has been reset.", type: 'success');
-        } finally {
-            $this->isResettingPassword = false;
         }
     }
 
@@ -448,47 +344,28 @@ class Guards extends Component
     {
         $this->showEditModal = false;
         $this->showDisableModal = false;
-        $this->showResetPasswordModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard', 'create_first_name', 'create_middle_name', 'create_last_name', 'create_super_guard']);
+        $this->reset(['selectedDriverId', 'selectedDriverDisabled', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
     }
 
     public function openCreateModal()
     {
-        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name', 'create_super_guard']);
+        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
         $this->resetValidation();
         $this->showCreateModal = true;
     }
 
     /**
-     * Get guard's full name formatted
+     * Get driver's full name formatted
      * 
-     * @param \App\Models\User $user
+     * @param \App\Models\Driver $driver
      * @return string
      */
-    private function getGuardFullName($user)
+    private function getDriverFullName($driver)
     {
-        $parts = array_filter([$user->first_name, $user->middle_name, $user->last_name]);
+        $parts = array_filter([$driver->first_name, $driver->middle_name, $driver->last_name]);
         return implode(' ', $parts);
-    }
-
-    /**
-     * Get default guard password from settings table
-     * Falls back to hardcoded value if setting doesn't exist
-     * 
-     * @return string
-     */
-    private function getDefaultGuardPassword()
-    {
-        $setting = Setting::where('setting_name', 'default_guard_password')->first();
-        
-        if ($setting && !empty($setting->value)) {
-            return $setting->value;
-        }
-        
-        // Fallback to default (shouldn't happen if seeded properly)
-        return 'brookside25';
     }
 
     /**
@@ -523,54 +400,13 @@ class Guards extends Component
         return mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
     }
 
-    /**
-     * Generate unique username based on first name and last name
-     * Format: First letter of first name + First word of last name
-     * If exists, append increment: JDoe, JDoe1, JDoe2, etc.
-     * 
-     * @param string $firstName
-     * @param string $lastName
-     * @param int|null $excludeUserId User ID to exclude from uniqueness check (for updates)
-     * @return string
-     */
-    private function generateUsername($firstName, $lastName, $excludeUserId = null)
+    public function createDriver()
     {
-        // Trim whitespace from names
-        $firstName = trim($firstName);
-        $lastName = trim($lastName);
-
-        // Get first letter of first name (uppercase) and first word of last name
-        if (empty($firstName) || empty($lastName)) {
-            return '';
-        }
-
-        $firstLetter = strtoupper(substr($firstName, 0, 1));
-        // Get first word of last name (handles cases like "De Guzman" or "Apple de apple")
-        $lastNameWords = preg_split('/\s+/', $lastName);
-        $firstWordOfLastName = $lastNameWords[0];
-        $username = $firstLetter . $firstWordOfLastName;
-
-        // Check if username exists (excluding current user if updating)
-        $counter = 0;
-        $baseUsername = $username;
-
-        while (User::whereRaw('LOWER(username) = ?', [strtolower($username)])
-            ->when($excludeUserId, function ($query) use ($excludeUserId) {
-                $query->where('id', '!=', $excludeUserId);
-            })
-            ->exists()) {
-            $counter++;
-            $username = $baseUsername . $counter;
-        }
-
-        return $username;
-    }
-
-    public function createGuard()
-    {
-        // Authorization check
-        if (Auth::user()->user_type < 1) {
-            abort(403, 'Unauthorized action.');
+        // Authorization check - allow super guards OR super admins
+        $currentUser = Auth::user();
+        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
+            // Regular guards trying to access super guard features - redirect to landing
+            return $this->redirect('/', navigate: true);
         }
 
         $this->validate([
@@ -592,46 +428,36 @@ class Guards extends Component
         $middleName = !empty($this->create_middle_name) ? $this->sanitizeAndCapitalizeName($this->create_middle_name) : null;
         $lastName = $this->sanitizeAndCapitalizeName($this->create_last_name);
 
-        // Generate unique username
-        $username = $this->generateUsername($firstName, $lastName);
-
-        // Get default password from settings table
-        $defaultPassword = $this->getDefaultGuardPassword();
-
-        // Create guard with default password
-        $user = User::create([
+        // Create driver
+        $driver = Driver::create([
             'first_name' => $firstName,
             'middle_name' => $middleName,
             'last_name' => $lastName,
-            'username' => $username,
-            'user_type' => 0, // Guard
-            'super_guard' => $this->create_super_guard ?? false,
-            'password' => Hash::make($defaultPassword),
+            'disabled' => false,
         ]);
 
-        Cache::forget('guards_all');
+        Cache::forget('drivers_all');
 
-        $guardName = $this->getGuardFullName($user);
+        $driverName = $this->getDriverFullName($driver);
         
         // Log the creation
-        $newValues = $user->only(['first_name', 'middle_name', 'last_name', 'username', 'user_type', 'super_guard']);
+        $newValues = $driver->only(['first_name', 'middle_name', 'last_name', 'disabled']);
         Logger::create(
-            User::class,
-            $user->id,
-            "Created \"{$guardName}\"",
+            Driver::class,
+            $driver->id,
+            "Created \"{$driverName}\"",
             $newValues
         );
 
         $this->showCreateModal = false;
         $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
-        $this->dispatch('toast', message: "{$guardName} has been created.", type: 'success');
+        $this->dispatch('toast', message: "{$driverName} has been created.", type: 'success');
         $this->resetPage();
     }
 
     public function render()
     {
-        $users = User::where('user_type', 0)
-            ->when($this->search, function ($query) {
+        $drivers = Driver::when($this->search, function ($query) {
                 $searchTerm = $this->search;
                 
                 // Sanitize search term to prevent SQL injection
@@ -645,23 +471,15 @@ class Guards extends Component
                 // Escape special characters for LIKE
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
                 
-                // Check if search term starts with @
-                if (str_starts_with($searchTerm, '@')) {
-                    // Search only username (remove @ symbol)
-                    $cleanedSearchTerm = ltrim($searchTerm, '@');
-                    $escapedCleanedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $cleanedSearchTerm);
-                    $query->where('username', 'like', '%' . $escapedCleanedSearchTerm . '%');
-                } else {
-                    // Search only names (first, middle, last, and combinations)
-                    // Use parameterized CONCAT to prevent SQL injection
-                    $query->where(function ($q) use ($escapedSearchTerm) {
-                        $q->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                          ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
-                    });
-                }
+                // Search only names (first, middle, last, and combinations)
+                // Use parameterized CONCAT to prevent SQL injection
+                $query->where(function ($q) use ($escapedSearchTerm) {
+                    $q->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                      ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                });
             })
             ->when($this->appliedCreatedFrom, function ($query) {
                 $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
@@ -708,8 +526,8 @@ class Guards extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.admin.guards', [
-            'users' => $users,
+        return view('livewire.user.data.drivers', [
+            'drivers' => $drivers,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
         ]);
@@ -717,31 +535,21 @@ class Guards extends Component
 
     public function getExportData()
     {
-        return User::where('user_type', 0)
-            ->when($this->search, function ($query) {
-                $searchTerm = $this->search;
-                $searchTerm = trim($searchTerm);
+        return Driver::when($this->search, function ($query) {
+                $searchTerm = trim($this->search);
                 $searchTerm = preg_replace('/[%_]/', '', $searchTerm);
-                
                 if (empty($searchTerm)) {
-                    return;
+                    return $query;
                 }
-                
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
-                
-                if (str_starts_with($searchTerm, '@')) {
-                    $cleanedSearchTerm = ltrim($searchTerm, '@');
-                    $escapedCleanedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $cleanedSearchTerm);
-                    $query->where('username', 'like', '%' . $escapedCleanedSearchTerm . '%');
-                } else {
-                    $query->where(function ($q) use ($escapedSearchTerm) {
-                        $q->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
-                          ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
-                          ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
-                    });
-                }
+                $query->where(function ($q) use ($escapedSearchTerm) {
+                    $q->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
+                      ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                });
+                return $query;
             })
             ->when($this->appliedCreatedFrom, function ($query) {
                 $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
@@ -756,15 +564,36 @@ class Guards extends Component
                     $query->where('disabled', true);
                 }
             })
-            ->orderBy('first_name', 'asc')
-            ->orderBy('last_name', 'asc')
+            ->when(!empty($this->sortColumns), function($query) {
+                if (!is_array($this->sortColumns)) {
+                    $this->sortColumns = ['first_name' => 'asc'];
+                }
+                
+                $firstSort = true;
+                foreach ($this->sortColumns as $column => $direction) {
+                    if ($column === 'created_at' && $firstSort) {
+                        // Special handling for created_at when it's the primary sort
+                        // First: prioritize recent records (within 5 minutes) over older ones
+                        $query->orderByRaw("CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN 0 ELSE 1 END")
+                            // Second: sort recent records by created_at DESC, older records also by created_at (to avoid NULL sorting issues)
+                            ->orderByRaw("CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN created_at ELSE created_at END DESC")
+                            ->orderBy('created_at', $direction);
+                    } else {
+                        $query->orderBy($column, $direction);
+                    }
+                    $firstSort = false;
+                }
+            })
+            ->when(empty($this->sortColumns), function($query) {
+                $query->orderBy('first_name', 'asc');
+            })
             ->get();
     }
 
     public function exportCSV()
     {
         $data = $this->getExportData();
-        $filename = 'guards_' . date('Y-m-d_His') . '.csv';
+        $filename = 'drivers_' . date('Y-m-d_His') . '.csv';
         
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -773,20 +602,17 @@ class Guards extends Component
 
         $callback = function() use ($data) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            // Headers
-            fputcsv($file, ['Name', 'Username', 'Status', 'Created Date']);
+            fputcsv($file, ['Name', 'Status', 'Created Date']);
             
-            // Data
-            foreach ($data as $user) {
-                $name = trim(implode(' ', array_filter([$user->first_name, $user->middle_name, $user->last_name])));
-                $status = $user->disabled ? 'Disabled' : 'Enabled';
+            foreach ($data as $driver) {
+                $name = trim(implode(' ', array_filter([$driver->first_name, $driver->middle_name, $driver->last_name])));
+                $status = $driver->disabled ? 'Disabled' : 'Enabled';
                 fputcsv($file, [
                     $name,
-                    $user->username,
                     $status,
-                    $user->created_at->format('Y-m-d H:i:s')
+                    $driver->created_at->format('Y-m-d H:i:s')
                 ]);
             }
             
@@ -799,14 +625,13 @@ class Guards extends Component
     public function openPrintView()
     {
         $data = $this->getExportData();
-        $exportData = $data->map(function($user) {
+        $exportData = $data->map(function($driver) {
             return [
-                'first_name' => $user->first_name,
-                'middle_name' => $user->middle_name,
-                'last_name' => $user->last_name,
-                'username' => $user->username,
-                'disabled' => $user->disabled,
-                'created_at' => $user->created_at->toIso8601String(),
+                'first_name' => $driver->first_name,
+                'middle_name' => $driver->middle_name,
+                'last_name' => $driver->last_name,
+                'disabled' => $driver->disabled,
+                'created_at' => $driver->created_at->toIso8601String(),
             ];
         })->toArray();
         
@@ -825,7 +650,9 @@ class Guards extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('admin.print.guards', ['token' => $token]);
+        // Note: Print route would need to be created for super guards if needed
+        $this->dispatch('toast', message: 'Print functionality not yet available for super guards.', type: 'info');
+        return;
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }

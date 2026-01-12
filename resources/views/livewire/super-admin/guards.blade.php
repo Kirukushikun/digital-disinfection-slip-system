@@ -329,6 +329,12 @@
                                     @endif
                                 </div>
                             </th>
+                            @if (!$showDeleted)
+                            <th scope="col"
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Super Guard
+                            </th>
+                            @endif
                             <th scope="col"
                                 class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
@@ -368,6 +374,19 @@
                                         @endif
                                     </div>
                                 </td>
+                                @if (!$showDeleted)
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    @if ($user->super_guard)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Super Guard
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            Regular Guard
+                                        </span>
+                                    @endif
+                                </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     @if ($showDeleted)
                                         <x-buttons.submit-button wire:click="openRestoreModal({{ $user->id }})"
@@ -451,7 +470,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
+                                <td colspan="{{ $showDeleted ? '4' : '5' }}" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24"
                                             stroke="currentColor">
@@ -554,6 +573,18 @@
                                     @error('last_name')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
+                                </div>
+
+                                {{-- Super Guard Toggle --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Super Guard Status</label>
+                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ superGuard: @entangle('super_guard').live }">
+                                        <input type="checkbox" wire:model.live="super_guard" x-model="superGuard" class="sr-only">
+                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="superGuard ? 'bg-blue-600' : 'bg-gray-200'">
+                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="superGuard ? 'translate-x-5' : 'translate-x-0'"></div>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-700" x-text="superGuard ? 'Enabled - This guard has super guard privileges' : 'Disabled - This is a regular guard'"></span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -751,6 +782,18 @@
                                     @error('create_last_name')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
+                                </div>
+
+                                {{-- Super Guard Toggle --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Super Guard</label>
+                                    <label class="relative inline-flex items-center cursor-pointer" x-data="{ superGuard: @entangle('create_super_guard').live }">
+                                        <input type="checkbox" wire:model.live="create_super_guard" x-model="superGuard" class="sr-only">
+                                        <div class="w-11 h-6 rounded-full focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-300 transition-colors duration-200 relative" :class="superGuard ? 'bg-blue-600' : 'bg-gray-200'">
+                                            <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform duration-200" :class="superGuard ? 'translate-x-5' : 'translate-x-0'"></div>
+                                        </div>
+                                        <span class="ml-3 text-sm text-gray-700" x-text="superGuard ? 'Enabled - This guard is a super guard' : 'Disabled - This guard is a regular guard'"></span>
+                                    </label>
                                 </div>
                             </div>
                         </div>

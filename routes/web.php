@@ -33,6 +33,14 @@ Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group
     Route::get('/completed-trucks', [UserController::class, 'completedTrucks'])->name('completed-trucks');
     Route::get('/reports', [UserController::class, 'reports'])->name('reports');
     Route::get('/report', [UserController::class, 'report'])->name('report');
+    
+    // Super Guard Data Management Routes (accessible to super guards and super admins)
+    Route::middleware('super.guard')->group(function () {
+        Route::get('/data/guards', [UserController::class, 'dataGuards'])->name('data.guards');
+        Route::get('/data/drivers', [UserController::class, 'dataDrivers'])->name('data.drivers');
+        Route::get('/data/locations', [UserController::class, 'dataLocations'])->name('data.locations');
+        Route::get('/data/plate-numbers', [UserController::class, 'dataPlateNumbers'])->name('data.plate-numbers');
+    });
 });
 
 Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->group(function () {

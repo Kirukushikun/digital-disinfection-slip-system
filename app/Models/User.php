@@ -49,6 +49,7 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'disabled' => 'boolean',
+            'super_guard' => 'boolean',
         ];
     }
 

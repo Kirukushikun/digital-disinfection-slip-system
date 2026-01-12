@@ -72,6 +72,11 @@ class Logger
             $changes['location_context'] = ['location_id' => $locationId];
         }
         
+        // Add super_guard information to changes for filtering/display purposes
+        if ($user && $user->user_type === 0 && $user->super_guard) {
+            $changes['user_super_guard'] = true;
+        }
+        
         // Add any additional information
         if ($additionalInfo !== null) {
             $changes = array_merge($changes, $additionalInfo);
@@ -87,15 +92,28 @@ class Logger
             'user_type' => $user?->user_type,
         ];
 
-        return Log::create(array_merge($userData, [
-            'action' => $action,
-            'model_type' => $modelType,
-            'model_id' => $modelId,
-            'description' => $description,
-            'changes' => !empty($changes) ? $changes : null,
-            'ip_address' => Request::ip(),
-            'user_agent' => Request::userAgent(),
-        ]));
+        try {
+            return Log::create(array_merge($userData, [
+                'action' => $action,
+                'model_type' => $modelType,
+                'model_id' => $modelId,
+                'description' => $description,
+                'changes' => !empty($changes) ? $changes : null,
+                'ip_address' => Request::ip(),
+                'user_agent' => Request::userAgent(),
+            ]));
+        } catch (\Exception $e) {
+            // Log the error to Laravel's log system but don't fail the operation
+            \Log::error('Failed to create audit log', [
+                'action' => $action,
+                'model_type' => $modelType,
+                'model_id' => $modelId,
+                'user_id' => $user?->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Return a dummy log object to prevent errors
+            return new Log();
+        }
     }
 
     /**
