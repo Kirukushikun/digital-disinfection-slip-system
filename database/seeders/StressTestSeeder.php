@@ -35,10 +35,6 @@ class StressTestSeeder extends Seeder
         $batchSize = 1000;
         $totalBatches = 5;
         
-        // Create 5,000 Users (Guards and Admins only, no Super Admins)
-        // Create one at a time to ensure username uniqueness
-        $this->command->info('Creating 5,000 users (guards and admins)...');
-        
         // Helper function to generate unique username (matches system logic)
         $generateUniqueUsername = function($firstName, $lastName) {
             // Trim whitespace from names
@@ -68,6 +64,8 @@ class StressTestSeeder extends Seeder
             return $username;
         };
         
+        // Create 5,000 Guards (user_type = 0) with randomized super_guard status
+        $this->command->info('Creating 5,000 guards (with randomized super_guard status)...');
         for ($batch = 0; $batch < $totalBatches; $batch++) {
             for ($i = 0; $i < $batchSize; $i++) {
                 $firstName = fake()->firstName();
@@ -77,13 +75,34 @@ class StressTestSeeder extends Seeder
                 User::factory()->create([
                     'first_name' => $firstName,
                     'last_name' => $lastName,
-                    'username' => $username, // Pre-generate unique username
-                    'user_type' => fake()->randomElement([0, 1]), // 0: Guard, 1: Admin (no SuperAdmin)
+                    'username' => $username,
+                    'user_type' => 0, // Guard
+                    'super_guard' => fake()->boolean(20), // 20% are super guards
                 ]);
             }
             $this->command->info("  Batch " . ($batch + 1) . "/{$totalBatches} completed");
         }
-        $this->command->info('✓ Created 5,000 users');
+        $this->command->info('✓ Created 5,000 guards');
+        
+        // Create 5,000 Admins (user_type = 1)
+        $this->command->info('Creating 5,000 admins...');
+        for ($batch = 0; $batch < $totalBatches; $batch++) {
+            for ($i = 0; $i < $batchSize; $i++) {
+                $firstName = fake()->firstName();
+                $lastName = fake()->lastName();
+                $username = $generateUniqueUsername($firstName, $lastName);
+                
+                User::factory()->create([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'username' => $username,
+                    'user_type' => 1, // Admin
+                    'super_guard' => false, // Admins are not guards
+                ]);
+            }
+            $this->command->info("  Batch " . ($batch + 1) . "/{$totalBatches} completed");
+        }
+        $this->command->info('✓ Created 5,000 admins');
         
         // Get user IDs (only IDs, not full models)
         /** @phpstan-ignore-next-line */
@@ -450,7 +469,8 @@ class StressTestSeeder extends Seeder
         
         $this->command->info('✓ Stress test seeding completed successfully!');
         $this->command->info('Total entries created:');
-        $this->command->info('  - Users (guards/admins): 5,000');
+        $this->command->info('  - Guards: 5,000 (~1,000 super guards, ~4,000 regular guards)');
+        $this->command->info('  - Admins: 5,000');
         $this->command->info('  - Trucks: 5,000');
         $this->command->info('  - Drivers: 5,000');
         $this->command->info('  - Locations: 5,000');
