@@ -3,9 +3,12 @@
     <nav class="bg-[#ffb97f] shadow-md rounded-md px-2 sm:px-4 py-2 sm:py-3 fixed top-0 left-0 w-full z-20">
         <!-- Mobile: Simple Layout - Logo + Title -->
         <div class="flex items-center justify-between gap-3 sm:hidden">
-            <a href="{{ url('/') }}" class="flex items-center gap-2.5 flex-1 justify-center min-w-0 hover:opacity-80 transition-opacity">
-                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-10 w-10 object-contain shrink-0">
-                <span class="font-bold text-gray-800 text-base truncate">Digital Disinfection Slip System</span>
+            <a href="{{ url('/') }}" class="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity">
+                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-15 w-30 object-contain shrink-0">
+                <div class="font-bold text-gray-800 text-base leading-tight">
+                    <div>Digital Disinfection</div>
+                    <div>Slip System</div>
+                </div>
             </a>
         </div>
 
@@ -13,7 +16,7 @@
         <div class="hidden sm:flex items-center justify-between gap-3">
             <!-- Left: Logo + Title + Date -->
             <a href="{{ url('/') }}" class="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity">
-                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-12 w-12 object-contain shrink-0">
+                <img src="{{ asset('storage/images/logo/BGC.png') }}" alt="Logo" class="h-15 w-30 object-contain shrink-0">
                 <!-- Title + Date (stacked) -->
                 <div class="flex flex-col">
                     <span class="font-semibold text-gray-800 text-lg truncate">Digital Disinfection Slip System</span>
@@ -32,7 +35,7 @@
                     @if (isset($location) && $location)
                         Log in to your account
                     @else
-                        Log in to your account as admin
+                        Log in as Admin
                     @endif
                 </h2>
             </div>

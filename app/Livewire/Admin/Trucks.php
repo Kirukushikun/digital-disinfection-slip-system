@@ -2427,7 +2427,7 @@ class Trucks extends Component
     // Separate pagination methods for reasons (don't override default pagination)
     public function gotoReasonsPage($page)
     {
-        $this->reasonsPage = $page;
+            $this->reasonsPage = $page;
     }
     
     public function previousReasonsPage()
@@ -2439,7 +2439,7 @@ class Trucks extends Component
     
     public function nextReasonsPage()
     {
-        $this->reasonsPage++;
+            $this->reasonsPage++;
     }
 
     public function openCreateReasonModal()
