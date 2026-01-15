@@ -5,6 +5,7 @@ namespace App\Livewire\SuperAdmin;
 use Livewire\Component;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Renderless;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
 use App\Models\Attachment;
 use App\Models\Truck;
@@ -164,11 +165,17 @@ class Trucks extends Component
     public $searchDetailsDestination = '';
     public $searchDetailsDriver = '';
     public $searchReasonSettings = '';
+    public $filterReasonStatus = 'all'; // Filter: 'all', 'enabled', 'disabled'
     public $reasonsPage = 1; // Page for reasons pagination
     
     public function updatedSearchReasonSettings()
     {
         $this->reasonsPage = 1; // Reset to first page when search changes
+    }
+
+    public function updatedFilterReasonStatus()
+    {
+        $this->reasonsPage = 1; // Reset to first page when filter changes
     }
     
     // Edit Modal
@@ -193,7 +200,6 @@ class Trucks extends Component
     public $searchEditReceivedGuard = '';
     public $searchEditReason = '';
     
-    public $reasonTexts = [];
     public $showDeleteReasonConfirmation = false;
     public $reasonToDelete = null;
     private $cachedFilterGuards = null;
@@ -222,8 +228,6 @@ class Trucks extends Component
         $this->appliedCreatedFrom = $today;
         $this->appliedCreatedTo = $today;
         $this->filtersActive = true;
-        
-        $this->loadReasons();
     }
     
     /**
@@ -349,19 +353,58 @@ class Trucks extends Component
     // Computed property for locations
     public function getLocationsProperty()
     {
-        return $this->getCachedLocations();
+        // Only load locations that are actually used in applied filters
+        $locationIds = array_merge(
+            $this->filterOrigin ?? [],
+            $this->filterDestination ?? []
+        );
+        
+        if (empty($locationIds)) {
+            return collect();
+        }
+        
+        // Only fetch the locations we actually need
+        return Location::withTrashed()
+            ->whereIn('id', $locationIds)
+            ->select('id', 'location_name', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
-    // Computed property for drivers
+    // Computed property for drivers - lazy load only what's needed
     public function getDriversProperty()
     {
-        return $this->getCachedDrivers();
+        // Only load drivers that are actually used in applied filters
+        $driverIds = $this->filterDriver ?? [];
+        
+        if (empty($driverIds)) {
+            return collect();
+        }
+        
+        // Only fetch the drivers we actually need
+        return Driver::withTrashed()
+            ->whereIn('id', $driverIds)
+            ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
-    // Computed property for trucks
+    // Computed property for trucks - lazy load only what's needed
     public function getTrucksProperty()
     {
-        return $this->getCachedTrucks();
+        // Only load trucks that are actually used in applied filters
+        $truckIds = $this->filterPlateNumber ?? [];
+        
+        if (empty($truckIds)) {
+            return collect();
+        }
+        
+        // Only fetch the trucks we actually need
+        return Truck::withTrashed()
+            ->whereIn('id', $truckIds)
+            ->select('id', 'plate_number', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
     
     // Helper method to ensure selected values are always included in filtered options
@@ -390,128 +433,28 @@ class Trucks extends Component
         return is_array($options) ? $optionsArray : collect($optionsArray);
     }
     
-    // Computed properties for filtered filter options
-    public function getFilterTruckOptionsProperty()
-    {
-        $trucks = $this->getCachedTrucks();
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterPlateNumber)) {
-            $searchTerm = strtolower($this->searchFilterPlateNumber);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterPlateNumber, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getFilterDriverOptionsProperty()
-    {
-        $drivers = $this->getCachedDrivers();
-        $allOptions = $drivers->pluck('full_name', 'id');
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterDriver)) {
-            $searchTerm = strtolower($this->searchFilterDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterDriver, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getFilterHatcheryGuardOptionsProperty()
-    {
-        // Always use the cached guards - no need to cache filtered options as they change frequently
-        $guards = $this->getFilterGuards();
-        $allOptions = $guards;
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterHatcheryGuard)) {
-            $searchTerm = strtolower($this->searchFilterHatcheryGuard);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterHatcheryGuard, $allOptions);
-        }
-        
-        return is_array($options) ? $options : $options->toArray();
-    }
-    
-    public function getFilterReceivedGuardOptionsProperty()
-    {
-        // Always use the cached guards - no need to cache filtered options as they change frequently
-        $guards = $this->getFilterGuards();
-        $allOptions = $guards;
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterReceivedGuard)) {
-            $searchTerm = strtolower($this->searchFilterReceivedGuard);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterReceivedGuard, $allOptions);
-        }
-        
-        return is_array($options) ? $options : $options->toArray();
-    }
-    
-    public function getFilterOriginOptionsProperty()
-    {
-        $locations = $this->getCachedLocations();
-        $allOptions = $locations->pluck('location_name', 'id');
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterOrigin)) {
-            $searchTerm = strtolower($this->searchFilterOrigin);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterOrigin, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getFilterDestinationOptionsProperty()
-    {
-        $locations = $this->getCachedLocations();
-        $allOptions = $locations->pluck('location_name', 'id');
-        $options = $allOptions;
-        
-        // Apply search filter
-        if (!empty($this->searchFilterDestination)) {
-            $searchTerm = strtolower($this->searchFilterDestination);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected values are always included
-            $options = $this->ensureSelectedInOptions($options, $this->filterDestination, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
+    // NOTE: Filter options removed - now using paginated dropdowns with getPaginatedX methods
+    // Old getFilterTruckOptionsProperty, getFilterDriverOptionsProperty, etc. removed
 
-    // Computed property for guards (users)
+    // Computed property for guards (users) - lazy load only what's needed
     public function getGuardsProperty()
     {
-        // Return all guards (including disabled) for filter display purposes
-        return $this->getFilterGuardsCollection()->keyBy('id');
+        // Only load guards that are actually used in applied filters
+        $guardIds = array_merge(
+            $this->appliedHatcheryGuard ?? [],
+            $this->appliedReceivedGuard ?? []
+        );
+        
+        if (empty($guardIds)) {
+            return collect();
+        }
+        
+        // Only fetch the guards we actually need
+        return User::withTrashed()
+            ->whereIn('id', $guardIds)
+            ->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
     // Computed property for available origins (excludes selected destination)
@@ -543,120 +486,7 @@ class Trucks extends Component
     }
     
     // Computed properties for create modal filtered options
-    public function getCreateTruckOptionsProperty()
-    {
-        $trucks = $this->getCachedTrucks()->whereNull('deleted_at')->where('disabled', false);
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchTruck)) {
-            $searchTerm = strtolower($this->searchTruck);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getCreateDriverOptionsProperty()
-    {
-        $drivers = $this->getCachedDrivers()->whereNull('deleted_at')->where('disabled', false);
-        $allOptions = $drivers->pluck('full_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchDriver)) {
-            $searchTerm = strtolower($this->searchDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getCreateGuardOptionsProperty()
-    {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        // Exclude receiving guard from hatchery guard options
-        if ($this->received_guard_id) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->received_guard_id;
-            });
-        }
-        
-        if (!empty($this->searchHatcheryGuard)) {
-            $searchTerm = strtolower($this->searchHatcheryGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the receiving guard)
-            if ($this->hatchery_guard_id && $this->hatchery_guard_id != $this->received_guard_id) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->hatchery_guard_id, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
-    }
-    
-    public function getCreateReceivedGuardOptionsProperty()
-    {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        // Exclude hatchery guard from receiving guard options
-        if ($this->hatchery_guard_id) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->hatchery_guard_id;
-            });
-        }
-        
-        if (!empty($this->searchReceivedGuard)) {
-            $searchTerm = strtolower($this->searchReceivedGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the hatchery guard)
-            if ($this->received_guard_id && $this->received_guard_id != $this->hatchery_guard_id) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->received_guard_id, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
-    }
-    
-    public function getCreateReasonOptionsProperty()
-    {
-        // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
-        // Only cache id and reason_text to reduce memory usage
-        $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', '=', false)
-                ->select('id', 'reason_text', 'is_disabled')
-                ->orderBy('reason_text')
-                ->get();
-        });
-        $allOptions = $reasons->pluck('reason_text', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchReason)) {
-            $searchTerm = strtolower($this->searchReason);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Only include selected value if it's in the available (non-disabled) options
-            if ($this->reason_id && isset($allOptions[$this->reason_id])) {
-                $options = $this->ensureSelectedInOptions($options, $this->reason_id, $allOptions);
-            }
-        }
-        
-        return $options->toArray();
-    }
+    // NOTE: Create modal options removed - now using paginated dropdowns with getPaginatedX methods
     
     // Computed properties for details modal filtered options
     public function getDetailsTruckOptionsProperty()
@@ -713,279 +543,324 @@ class Trucks extends Component
         return $options->toArray();
     }
     
-    // Computed properties for edit modal filtered options
-    public function getEditTruckOptionsProperty()
-    {
-        $trucks = $this->getCachedTrucks()->whereNull('deleted_at')->where('disabled', false);
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        
-        // If selected truck is soft-deleted or disabled, include it in options
-        if ($this->editTruckId) {
-            $selectedTruck = Truck::withTrashed()->find($this->editTruckId);
-            if ($selectedTruck) {
-                if ($selectedTruck->trashed() && !isset($allOptions[$this->editTruckId])) {
-                    $allOptions[$this->editTruckId] = $selectedTruck->plate_number . ' (Deleted)';
-                } elseif ($selectedTruck->disabled && !isset($allOptions[$this->editTruckId])) {
-                    $allOptions[$this->editTruckId] = $selectedTruck->plate_number . ' (Disabled)';
-                }
-            }
-        }
-        
-        $options = $allOptions;
-        
-        if (!empty($this->searchEditTruck)) {
-            $searchTerm = strtolower($this->searchEditTruck);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (even if soft-deleted)
-            $options = $this->ensureSelectedInOptions($options, $this->editTruckId, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
+    // NOTE: Edit modal options removed - now using paginated dropdowns with getPaginatedX methods
 
-    public function getIsSelectedTruckSoftDeletedProperty()
+    // Paginated data fetching methods for searchable dropdowns
+    #[Renderless]
+    public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        if (!$this->editTruckId || !$this->selectedSlip) {
-            return false;
-        }
-        
-        $truck = Truck::withTrashed()->find($this->editTruckId);
-        return $truck && $truck->trashed();
-    }
-    
-    public function getEditDriverOptionsProperty()
-    {
-        $drivers = $this->getCachedDrivers()->whereNull('deleted_at')->where('disabled', false);
-        $allOptions = $drivers->pluck('full_name', 'id');
+        $query = Truck::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'plate_number']);
 
-        // If selected driver is disabled, include it in options
-        if ($this->editDriverId) {
-            $selectedDriver = Driver::withTrashed()->find($this->editDriverId);
-            if ($selectedDriver && $selectedDriver->disabled && !isset($allOptions[$this->editDriverId])) {
-                $allOptions[$this->editDriverId] = $selectedDriver->full_name . ' (Disabled)';
-            }
-        }
-
-        $options = $allOptions;
-        
-        if (!empty($this->searchEditDriver)) {
-            $searchTerm = strtolower($this->searchEditDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->editDriverId, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getEditGuardOptionsProperty()
-    {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        // Exclude receiving guard from hatchery guard options
-        if ($this->editReceivedGuardId) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->editReceivedGuardId;
-            });
-        }
-        
-        if (!empty($this->searchEditHatcheryGuard)) {
-            $searchTerm = strtolower($this->searchEditHatcheryGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the receiving guard)
-            if ($this->editHatcheryGuardId && $this->editHatcheryGuardId != $this->editReceivedGuardId) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->editHatcheryGuardId, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
-    }
-    
-    public function getEditReceivedGuardOptionsProperty()
-    {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        // Exclude hatchery guard from receiving guard options
-        if ($this->editHatcheryGuardId) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->editHatcheryGuardId;
-            });
-        }
-        
-        if (!empty($this->searchEditReceivedGuard)) {
-            $searchTerm = strtolower($this->searchEditReceivedGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the hatchery guard)
-            if ($this->editReceivedGuardId && $this->editReceivedGuardId != $this->editHatcheryGuardId) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->editReceivedGuardId, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
-    }
-    
-    public function getEditReasonOptionsProperty()
-    {
-        // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
-        // Only cache id and reason_text to reduce memory usage
-        $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', '=', false)
-                ->select('id', 'reason_text', 'is_disabled')
-                ->orderBy('reason_text')
-                ->get();
-        });
-        $allOptions = $reasons->pluck('reason_text', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchEditReason)) {
-            $searchTerm = strtolower($this->searchEditReason);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Only include selected value if it's in the available (non-disabled) options
-            if ($this->editReasonId && isset($allOptions[$this->editReasonId])) {
-                $options = $this->ensureSelectedInOptions($options, $this->editReasonId, $allOptions);
-            }
-        }
-        
-        return $options->toArray();
-    }
-    
-    public function getEditAvailableOriginsOptionsProperty()
-    {
-        $locations = $this->getCachedLocations()->whereNull('deleted_at')->where('disabled', false);
-        $allLocations = $this->getCachedLocations()->whereNull('deleted_at');
-
-        // If selected origin is disabled, include it in options
-        if ($this->editLocationId) {
-            $selectedLocation = Location::withTrashed()->find($this->editLocationId);
-            if ($selectedLocation && $selectedLocation->disabled && !isset($locations[$this->editLocationId])) {
-                $locations[$this->editLocationId] = $selectedLocation->location_name . ' (Disabled)';
-            }
-        }
-
-        // Exclude selected destination from origins
-        $originOptions = $locations;
-        if ($this->editDestinationId) {
-            $originOptions = $originOptions->where('id', '!=', $this->editDestinationId);
-        }
-        $originOptions = $originOptions->pluck('location_name', 'id');
-        
         // Apply search filter
-        if (!empty($this->searchEditOrigin)) {
-            $searchTerm = strtolower($this->searchEditOrigin);
-            $originOptions = $originOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the destination)
-            if ($this->editLocationId && $this->editLocationId != $this->editDestinationId) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $originOptions = $this->ensureSelectedInOptions($originOptions, $this->editLocationId, $allOptions);
-            }
-        }
-        
-        return $originOptions->toArray();
-    }
-    
-    public function getEditAvailableDestinationsOptionsProperty()
-    {
-        $locations = $this->getCachedLocations()->whereNull('deleted_at')->where('disabled', false);
-        $allLocations = $this->getCachedLocations()->whereNull('deleted_at');
-
-        // If selected destination is disabled, include it in options
-        if ($this->editDestinationId) {
-            $selectedLocation = Location::withTrashed()->find($this->editDestinationId);
-            if ($selectedLocation && $selectedLocation->disabled && !isset($locations[$this->editDestinationId])) {
-                $locations[$this->editDestinationId] = $selectedLocation->location_name . ' (Disabled)';
-            }
+        if (!empty($search)) {
+            $query->where('plate_number', 'like', '%' . $search . '%');
         }
 
-        // Exclude selected origin from destinations
-        $destinationOptions = $locations;
-        if ($this->editLocationId) {
-            $destinationOptions = $destinationOptions->where('id', '!=', $this->editLocationId);
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = Truck::whereIn('id', $includeIds)
+                ->select(['id', 'plate_number'])
+                ->get()
+                ->pluck('plate_number', 'id')
+                ->toArray();
         }
-        $destinationOptions = $destinationOptions->pluck('location_name', 'id');
+
+        $query->orderBy('plate_number', 'asc');
         
-        // Apply search filter
-        if (!empty($this->searchEditDestination)) {
-            $searchTerm = strtolower($this->searchEditDestination);
-            $destinationOptions = $destinationOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the origin)
-            if ($this->editDestinationId && $this->editDestinationId != $this->editLocationId) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $destinationOptions = $this->ensureSelectedInOptions($destinationOptions, $this->editDestinationId, $allOptions);
-            }
+        // Calculate offset
+        $offset = ($page - 1) * $perPage;
+        
+        // Get total count for this query
+        $total = $query->count();
+        
+        // Get paginated results
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        // Convert to array format - database ORDER BY ensures alphabetical order
+        $data = $results->pluck('plate_number', 'id')->toArray();
+        
+        // Handle includeIds for label loading only (when explicitly requested with specific IDs)
+        if (!empty($includeIds)) {
+            $includedItems = Truck::whereIn('id', $includeIds)
+                ->select(['id', 'plate_number'])
+                ->orderBy('plate_number', 'asc')
+                ->get()
+                ->pluck('plate_number', 'id')
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
         }
         
-        return $destinationOptions->toArray();
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
-    
-    // Computed properties for available origins and destinations (reactive)
-    public function getAvailableOriginsOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedDrivers($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $locations = $this->getCachedLocations()->whereNull('deleted_at')->where('disabled', false);
-        
-        // Exclude selected destination from origins
-        $originOptions = $locations;
-        if ($this->destination_id) {
-            $originOptions = $originOptions->where('id', '!=', $this->destination_id);
-        }
-        $originOptions = $originOptions->pluck('location_name', 'id');
-        
+        $query = Driver::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'first_name', 'middle_name', 'last_name']);
+
         // Apply search filter
-        if (!empty($this->searchOrigin)) {
-            $searchTerm = strtolower($this->searchOrigin);
-            $originOptions = $originOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('first_name', 'like', $searchTerm)
+                  ->orWhere('middle_name', 'like', $searchTerm)
+                  ->orWhere('last_name', 'like', $searchTerm);
             });
-            // Ensure selected value is always included (if it's not the destination)
-            if ($this->location_id && $this->location_id != $this->destination_id) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $originOptions = $this->ensureSelectedInOptions($originOptions, $this->location_id, $allOptions);
-            }
+        }
+
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = Driver::whereIn('id', $includeIds)
+                ->select(['id', 'first_name', 'middle_name', 'last_name'])
+                ->get()
+                ->mapWithKeys(function ($driver) {
+                    return [$driver->id => trim("{$driver->first_name} {$driver->middle_name} {$driver->last_name}")];
+                })
+                ->toArray();
+        }
+
+        $query->orderBy('first_name', 'asc');
+        
+        // Calculate offset
+        $offset = ($page - 1) * $perPage;
+        
+        // Get total count for this query
+        $total = $query->count();
+        
+        // Get paginated results
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        // Convert to array format - database ORDER BY ensures alphabetical order
+        $data = $results->mapWithKeys(function ($driver) {
+            return [$driver->id => trim("{$driver->first_name} {$driver->middle_name} {$driver->last_name}")];
+        })->toArray();
+        
+        // Handle includeIds for label loading only
+        if (!empty($includeIds)) {
+            $includedItems = Driver::whereIn('id', $includeIds)
+                ->select(['id', 'first_name', 'middle_name', 'last_name'])
+                ->orderBy('first_name', 'asc')
+                ->get()
+                ->mapWithKeys(function ($driver) {
+                    return [$driver->id => trim("{$driver->first_name} {$driver->middle_name} {$driver->last_name}")];
+                })
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
         }
         
-        return $originOptions->toArray();
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
-    
-    public function getAvailableDestinationsOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedLocations($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $locations = $this->getCachedLocations()->whereNull('deleted_at')->where('disabled', false);
-        
-        // Exclude selected origin from destinations
-        $destinationOptions = $locations;
-        if ($this->location_id) {
-            $destinationOptions = $destinationOptions->where('id', '!=', $this->location_id);
-        }
-        $destinationOptions = $destinationOptions->pluck('location_name', 'id');
-        
+        $query = Location::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'location_name']);
+
         // Apply search filter
-        if (!empty($this->searchDestination)) {
-            $searchTerm = strtolower($this->searchDestination);
-            $destinationOptions = $destinationOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included (if it's not the origin)
-            if ($this->destination_id && $this->destination_id != $this->location_id) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $destinationOptions = $this->ensureSelectedInOptions($destinationOptions, $this->destination_id, $allOptions);
-            }
+        if (!empty($search)) {
+            $query->where('location_name', 'like', '%' . $search . '%');
+        }
+
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = Location::whereIn('id', $includeIds)
+                ->select(['id', 'location_name'])
+                ->get()
+                ->pluck('location_name', 'id')
+                ->toArray();
+        }
+
+        $query->orderBy('location_name', 'asc');
+        
+        // Calculate offset
+        $offset = ($page - 1) * $perPage;
+        
+        // Get total count for this query
+        $total = $query->count();
+        
+        // Get paginated results
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        // Convert to array format - database ORDER BY ensures alphabetical order
+        $data = $results->pluck('location_name', 'id')->toArray();
+        
+        // Handle includeIds for label loading only
+        if (!empty($includeIds)) {
+            $includedItems = Location::whereIn('id', $includeIds)
+                ->select(['id', 'location_name'])
+                ->orderBy('location_name', 'asc')
+                ->get()
+                ->pluck('location_name', 'id')
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
         }
         
-        return $destinationOptions->toArray();
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
+    }
+
+    #[Renderless]
+    public function getPaginatedGuards($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        $query = User::query()
+            ->where('user_type', 0)
+            ->where('disabled', false)
+            ->select(['id', 'first_name', 'middle_name', 'last_name', 'username']);
+
+        // Apply search filter
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('first_name', 'like', $searchTerm)
+                  ->orWhere('middle_name', 'like', $searchTerm)
+                  ->orWhere('last_name', 'like', $searchTerm)
+                  ->orWhere('username', 'like', $searchTerm);
+            });
+        }
+
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = User::whereIn('id', $includeIds)
+                ->where('user_type', 0)
+                ->select(['id', 'first_name', 'middle_name', 'last_name', 'username'])
+                ->get()
+                ->mapWithKeys(function ($user) {
+                    $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
+                    return [$user->id => "{$name} @{$user->username}"];
+                })
+                ->toArray();
+        }
+
+        $query->orderBy('first_name', 'asc')->orderBy('last_name', 'asc');
+        
+        // Calculate offset
+        $offset = ($page - 1) * $perPage;
+        
+        // Get total count for this query
+        $total = $query->count();
+        
+        // Get paginated results
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        // Convert to array format - database ORDER BY ensures alphabetical order
+        $data = $results->mapWithKeys(function ($user) {
+            $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
+            return [$user->id => "{$name} @{$user->username}"];
+        })->toArray();
+        
+        // Handle includeIds for label loading only
+        if (!empty($includeIds)) {
+            $includedItems = User::whereIn('id', $includeIds)
+                ->where('user_type', 0)
+                ->select(['id', 'first_name', 'middle_name', 'last_name', 'username'])
+                ->orderBy('first_name', 'asc')->orderBy('last_name', 'asc')
+                ->get()
+                ->mapWithKeys(function ($user) {
+                    $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
+                    return [$user->id => "{$name} @{$user->username}"];
+                })
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+        
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
+    }
+
+    #[Renderless]
+    public function getPaginatedReasons($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        $query = Reason::query()
+            ->where('is_disabled', false)
+            ->select(['id', 'reason_text']);
+
+        // Apply search filter
+        if (!empty($search)) {
+            $query->where('reason_text', 'like', '%' . $search . '%');
+        }
+
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = Reason::whereIn('id', $includeIds)
+                ->select(['id', 'reason_text'])
+                ->get()
+                ->pluck('reason_text', 'id')
+                ->toArray();
+        }
+
+        $query->orderBy('reason_text', 'asc');
+        
+        // Calculate offset
+        $offset = ($page - 1) * $perPage;
+        
+        // Get total count for this query
+        $total = $query->count();
+        
+        // Get paginated results
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        // Convert to array format - database ORDER BY ensures alphabetical order
+        $data = $results->pluck('reason_text', 'id')->toArray();
+        
+        // Handle includeIds for label loading only
+        if (!empty($includeIds)) {
+            $includedItems = Reason::whereIn('id', $includeIds)
+                ->select(['id', 'reason_text'])
+                ->orderBy('reason_text', 'asc')
+                ->get()
+                ->pluck('reason_text', 'id')
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+        
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
 
     public function updatingSearch()
@@ -2491,29 +2366,9 @@ class Trucks extends Component
             'drivers' => $this->drivers,
             'trucks' => $this->trucks,
             'guards' => $this->guards,
-            'reasons' => $this->reasons, // ADD THIS LINE
-            'availableOriginsOptions' => $this->availableOriginsOptions,
-            'availableDestinationsOptions' => $this->availableDestinationsOptions,
             'availableStatuses' => $this->availableStatuses,
-            'filterTruckOptions' => $this->filterTruckOptions,
-            'filterDriverOptions' => $this->filterDriverOptions,
-            'filterHatcheryGuardOptions' => $this->filterHatcheryGuardOptions,
-            'filterReceivedGuardOptions' => $this->filterReceivedGuardOptions,
-            'filterOriginOptions' => $this->filterOriginOptions,
-            'filterDestinationOptions' => $this->filterDestinationOptions,
-            'createTruckOptions' => $this->createTruckOptions,
-            'createDriverOptions' => $this->createDriverOptions,
-            'createGuardOptions' => $this->createGuardOptions,
-            'createReceivedGuardOptions' => $this->createReceivedGuardOptions,
-            'detailsTruckOptions' => $this->detailsTruckOptions,
-            'detailsLocationOptions' => $this->detailsLocationOptions,
-            'detailsDriverOptions' => $this->detailsDriverOptions,
-            'editTruckOptions' => $this->editTruckOptions,
-            'editDriverOptions' => $this->editDriverOptions,
-            'editGuardOptions' => $this->editGuardOptions,
-            'editReceivedGuardOptions' => $this->editReceivedGuardOptions,
-            'editAvailableOriginsOptions' => $this->editAvailableOriginsOptions,
-            'editAvailableDestinationsOptions' => $this->editAvailableDestinationsOptions,
+            // NOTE: Filter/Create/Edit options removed - now using paginated dropdowns
+            // NOTE: Reasons removed - loaded lazily by reason-settings modal
         ]);
     }
 
@@ -2744,16 +2599,19 @@ class Trucks extends Component
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }
 
-    public function loadReasons()
-    {
-        $reasons = $this->getCachedReasons();
-        $this->reasonTexts = $reasons->pluck('reason_text', 'id')->toArray();
-    }
 
     public function getReasonsProperty()
     {
         $reasons = $this->getCachedReasons();
-        
+
+        // Filter by status if not 'all'
+        if ($this->filterReasonStatus !== 'all') {
+            $isDisabled = $this->filterReasonStatus === 'disabled';
+            $reasons = $reasons->filter(function($reason) use ($isDisabled) {
+                return $reason->is_disabled == $isDisabled;
+            });
+        }
+
         // Filter by search term if provided
         if (!empty($this->searchReasonSettings)) {
             $searchTerm = strtolower(trim($this->searchReasonSettings));
@@ -2761,7 +2619,7 @@ class Trucks extends Component
                 return str_contains(strtolower($reason->reason_text), $searchTerm);
             });
         }
-        
+
         // Convert collection to paginated result for Livewire
         $page = $this->reasonsPage;
         $perPage = 5;
@@ -2837,8 +2695,6 @@ class Trucks extends Component
             'reason_text' => trim($this->newReasonText),
             'disabled' => false,
         ]);
-        
-        $this->reasonTexts[$reason->id] = $reason->reason_text;
         
         // Log the create action
         Logger::create(
@@ -2936,9 +2792,6 @@ class Trucks extends Component
                 $reason->only(['reason_text', 'is_disabled'])
             );
 
-            // Update local cache
-            $this->reasonTexts[$this->editingReasonId] = $reason->reason_text;
-
             // Clear cache
             Cache::forget('reasons_all');
             Cache::forget('reasons_active');
@@ -3016,7 +2869,6 @@ class Trucks extends Component
             $reasonId = $reason->id;
             
             $reason->delete();
-            unset($this->reasonTexts[$this->reasonToDelete]);
             
             // Log the delete action
             Logger::delete(
@@ -3056,8 +2908,6 @@ class Trucks extends Component
 
     public function closeReasonsModal()
     {
-        // Reload reasons to discard any unsaved changes
-        $this->loadReasons();
         $this->newReasonText = '';
         $this->searchReasonSettings = '';
         $this->cancelEditing();
@@ -3070,8 +2920,6 @@ class Trucks extends Component
 
     public function openReasonsModal()
     {
-        // Reload reasons to discard any unsaved changes
-        $this->loadReasons();
         $this->newReasonText = '';
         $this->searchReasonSettings = '';
         $this->cancelEditing();

@@ -4,6 +4,7 @@ namespace App\Livewire\Trucks;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Renderless;
 use App\Models\DisinfectionSlip;
 use App\Models\Truck;
 use App\Models\Location;
@@ -95,7 +96,6 @@ class TruckList extends Component
     public $showSaveConfirmation = false;
     public $showUnsavedChangesConfirmation = false;
     public $savingReason = false;
-    public $reasonTexts = [];
     public $showDeleteReasonConfirmation = false;
     public $reasonToDelete = null;
     public $searchReasonSettings = '';
@@ -135,11 +135,6 @@ class TruckList extends Component
         // Check if we should open create modal from route parameter (only if location allows)
         if (request()->has('openCreate') && $this->type === 'outgoing' && $this->canCreateSlip) {
             $this->showCreateModal = true;
-        }
-        
-        // Load reasons if user is a super guard
-        if ($this->isSuperGuard()) {
-            $this->loadReasons();
         }
     }
     
@@ -237,86 +232,149 @@ class TruckList extends Component
         });
     }
     
-    // Computed properties for filtered options with search
-    public function getTruckOptionsProperty()
-    {
-        $trucks = $this->getCachedTrucks();
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchTruck)) {
-            $searchTerm = strtolower($this->searchTruck);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
-        }
-        
-        return is_array($options) ? $options : $options->toArray();
-    }
+    // NOTE: Old computed properties removed - now using paginated dropdowns
     
-    public function getLocationOptionsProperty()
+    // Paginated data fetching methods for searchable dropdowns
+    #[Renderless]
+    public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $locations = $this->getCachedLocations();
-        $allOptions = $locations->pluck('location_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchDestination)) {
-            $searchTerm = strtolower($this->searchDestination);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->destination_id, $allOptions);
+        $query = Truck::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'plate_number']);
+
+        if (!empty($search)) {
+            $query->where('plate_number', 'like', '%' . $search . '%');
         }
-        
-        return is_array($options) ? $options : $options->toArray();
-    }
-    
-    public function getDriverOptionsProperty()
-    {
-        $drivers = $this->getCachedDrivers();
-        $allOptions = $drivers->pluck('full_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchDriver)) {
-            $searchTerm = strtolower($this->searchDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Ensure selected value is always included
-            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
+
+        if (!empty($includeIds)) {
+            $includedItems = Truck::whereIn('id', $includeIds)
+                ->select(['id', 'plate_number'])
+                ->orderBy('plate_number', 'asc')
+                ->get()
+                ->pluck('plate_number', 'id')
+                ->toArray();
+            return ['data' => $includedItems, 'has_more' => false, 'total' => count($includedItems)];
         }
+
+        $query->orderBy('plate_number', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
         
-        return is_array($options) ? $options : $options->toArray();
+        return [
+            'data' => $results->pluck('plate_number', 'id')->toArray(),
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
-    
-    public function getReasonOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedDrivers($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
-        // Only cache id and reason_text to reduce memory usage
-        $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', '=', false, 'and')
-                ->select('id', 'reason_text', 'is_disabled')
+        $query = Driver::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'first_name', 'middle_name', 'last_name']);
+
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('first_name', 'like', $searchTerm)
+                  ->orWhere('middle_name', 'like', $searchTerm)
+                  ->orWhere('last_name', 'like', $searchTerm);
+            });
+        }
+
+        if (!empty($includeIds)) {
+            $includedItems = Driver::whereIn('id', $includeIds)
+                ->select(['id', 'first_name', 'middle_name', 'last_name'])
+                ->orderBy('first_name', 'asc')->orderBy('last_name', 'asc')
+                ->get()
+                ->mapWithKeys(fn($d) => [$d->id => trim("{$d->first_name} {$d->middle_name} {$d->last_name}")])
+                ->toArray();
+            return ['data' => $includedItems, 'has_more' => false, 'total' => count($includedItems)];
+        }
+
+        $query->orderBy('first_name', 'asc')->orderBy('last_name', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        return [
+            'data' => $results->mapWithKeys(fn($d) => [$d->id => trim("{$d->first_name} {$d->middle_name} {$d->last_name}")])->toArray(),
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
+    }
+
+    #[Renderless]
+    public function getPaginatedLocations($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        $currentLocationId = Session::get('location_id');
+        $query = Location::query()
+            ->where('id', '!=', $currentLocationId)
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'location_name']);
+
+        if (!empty($search)) {
+            $query->where('location_name', 'like', '%' . $search . '%');
+        }
+
+        if (!empty($includeIds)) {
+            $includedItems = Location::whereIn('id', $includeIds)
+                ->select(['id', 'location_name'])
+                ->orderBy('location_name', 'asc')
+                ->get()
+                ->pluck('location_name', 'id')
+                ->toArray();
+            return ['data' => $includedItems, 'has_more' => false, 'total' => count($includedItems)];
+        }
+
+        $query->orderBy('location_name', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
+        
+        return [
+            'data' => $results->pluck('location_name', 'id')->toArray(),
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
+    }
+
+    #[Renderless]
+    public function getPaginatedReasons($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        $query = Reason::query()
+            ->where('is_disabled', false)
+            ->select(['id', 'reason_text']);
+
+        if (!empty($search)) {
+            $query->where('reason_text', 'like', '%' . $search . '%');
+        }
+
+        if (!empty($includeIds)) {
+            $includedItems = Reason::whereIn('id', $includeIds)
+                ->select(['id', 'reason_text'])
                 ->orderBy('reason_text', 'asc')
-                ->get();
-        });
-        $allOptions = $reasons->pluck('reason_text', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchReason)) {
-            $searchTerm = strtolower($this->searchReason);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            // Only include selected value if it's in the available (non-disabled) options
-            if ($this->reason_id && isset($allOptions[$this->reason_id])) {
-                $options = $this->ensureSelectedInOptions($options, $this->reason_id, $allOptions);
-            }
+                ->get()
+                ->pluck('reason_text', 'id')
+                ->toArray();
+            return ['data' => $includedItems, 'has_more' => false, 'total' => count($includedItems)];
         }
+
+        $query->orderBy('reason_text', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
         
-        return is_array($options) ? $options : $options->toArray();
+        return [
+            'data' => $results->pluck('reason_text', 'id')->toArray(),
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
 
     public function updatedSearch()
@@ -1157,10 +1215,7 @@ class TruckList extends Component
             'trucks' => $this->trucks,
             'locations' => $this->locations,
             'drivers' => $this->drivers,
-            'truckOptions' => $this->truckOptions,
-            'locationOptions' => $this->locationOptions,
-            'driverOptions' => $this->driverOptions,
-            'reasons' => $this->isSuperGuard() ? $this->reasons : collect(),
+            // Creation modal now uses paginated dropdowns - no need to pass options
         ]);
     }
     
@@ -1175,11 +1230,6 @@ class TruckList extends Component
         });
     }
     
-    public function loadReasons()
-    {
-        $reasons = $this->getCachedReasons();
-        $this->reasonTexts = $reasons->pluck('reason_text', 'id')->toArray();
-    }
     
     public function getReasonsProperty()
     {
@@ -1270,8 +1320,6 @@ class TruckList extends Component
             'reason_text' => trim($this->newReasonText),
             'disabled' => false,
         ]);
-        
-        $this->reasonTexts[$reason->id] = $reason->reason_text;
         
         Logger::create(
             Reason::class,
@@ -1368,7 +1416,6 @@ class TruckList extends Component
                 $reason->only(['reason_text', 'is_disabled'])
             );
             
-            $this->reasonTexts[$this->editingReasonId] = $reason->reason_text;
             Cache::forget('reasons_all');
             Cache::forget('reasons_active');
             
@@ -1435,7 +1482,6 @@ class TruckList extends Component
     
     public function closeReasonsModal()
     {
-        $this->loadReasons();
         $this->newReasonText = '';
         $this->searchReasonSettings = '';
         $this->cancelEditing();
@@ -1452,7 +1498,6 @@ class TruckList extends Component
             return;
         }
         
-        $this->loadReasons();
         $this->newReasonText = '';
         $this->searchReasonSettings = '';
         $this->cancelEditing();

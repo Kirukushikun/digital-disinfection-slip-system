@@ -26,17 +26,24 @@ class Guards extends Component
     
     // Filter properties
     public $filterStatus = null; // null = All Guards, 0 = Enabled, 1 = Disabled
+    public $filterGuardType = null; // null = All Guards, 0 = Regular Guards, 1 = Super Guards
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
     public $appliedStatus = null; // null = All Guards, 0 = Enabled, 1 = Disabled
+    public $appliedGuardType = null; // null = All Guards, 0 = Regular Guards, 1 = Super Guards
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
     public $availableStatuses = [
         0 => 'Enabled',
         1 => 'Disabled',
+    ];
+    
+    public $availableGuardTypes = [
+        0 => 'Regular Guards',
+        1 => 'Super Guards',
     ];
     
     // Ensure filterStatus is properly typed when updated
@@ -57,6 +64,27 @@ class Guards extends Component
             }
         } else {
             $this->filterStatus = null;
+        }
+    }
+    
+    // Ensure filterGuardType is properly typed when updated
+    public function updatedFilterGuardType($value)
+    {
+        // Handle null, empty string, or numeric values (0, 1)
+        // null/empty = All Guards, 0 = Regular Guards, 1 = Super Guards
+        // The select will send values as strings, so we convert to int
+        if ($value === null || $value === '' || $value === false) {
+            $this->filterGuardType = null;
+        } elseif (is_numeric($value)) {
+            $intValue = (int)$value;
+            if ($intValue >= 0 && $intValue <= 1) {
+                // Store as integer (0 or 1)
+                $this->filterGuardType = $intValue;
+            } else {
+                $this->filterGuardType = null;
+            }
+        } else {
+            $this->filterGuardType = null;
         }
     }
     
@@ -145,6 +173,7 @@ class Guards extends Component
     public function applyFilters()
     {
         $this->appliedStatus = $this->filterStatus;
+        $this->appliedGuardType = $this->filterGuardType;
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
         $this->showFilters = false;
@@ -156,6 +185,9 @@ class Guards extends Component
         if ($filterName === 'status') {
             $this->appliedStatus = null;
             $this->filterStatus = null;
+        } elseif ($filterName === 'guardType') {
+            $this->appliedGuardType = null;
+            $this->filterGuardType = null;
         } elseif ($filterName === 'createdFrom') {
             $this->appliedCreatedFrom = '';
             $this->filterCreatedFrom = '';
@@ -169,9 +201,11 @@ class Guards extends Component
     public function clearFilters()
     {
         $this->appliedStatus = null;
+        $this->appliedGuardType = null;
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         $this->filterStatus = null;
+        $this->filterGuardType = null;
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         $this->resetPage();
@@ -678,6 +712,15 @@ class Guards extends Component
                     $query->where('disabled', true);
                 }
             })
+            ->when($this->appliedGuardType !== null, function ($query) {
+                if ($this->appliedGuardType === 0) {
+                    // Regular Guards (super_guard = false)
+                    $query->where('super_guard', false);
+                } elseif ($this->appliedGuardType === 1) {
+                    // Super Guards (super_guard = true)
+                    $query->where('super_guard', true);
+                }
+            })
             // Apply multi-column sorting
             ->when(!empty($this->sortColumns), function($query) {
                 // Initialize sortColumns if it's not an array
@@ -706,12 +749,13 @@ class Guards extends Component
             })
             ->paginate(10);
 
-        $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
+        $filtersActive = $this->appliedStatus !== null || $this->appliedGuardType !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
         return view('livewire.admin.guards', [
             'users' => $users,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
+            'availableGuardTypes' => $this->availableGuardTypes,
         ]);
     }
 
@@ -754,6 +798,15 @@ class Guards extends Component
                     $query->where('disabled', false);
                 } elseif ($this->appliedStatus === 1) {
                     $query->where('disabled', true);
+                }
+            })
+            ->when($this->appliedGuardType !== null, function ($query) {
+                if ($this->appliedGuardType === 0) {
+                    // Regular Guards (super_guard = false)
+                    $query->where('super_guard', false);
+                } elseif ($this->appliedGuardType === 1) {
+                    // Super Guards (super_guard = true)
+                    $query->where('super_guard', true);
                 }
             })
             ->orderBy('first_name', 'asc')
@@ -813,6 +866,7 @@ class Guards extends Component
         $filters = [
             'search' => $this->search,
             'status' => $this->appliedStatus,
+            'guard_type' => $this->appliedGuardType,
             'created_from' => $this->appliedCreatedFrom,
             'created_to' => $this->appliedCreatedTo,
         ];

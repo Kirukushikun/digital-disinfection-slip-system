@@ -4,6 +4,7 @@ namespace App\Livewire\Trucks;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Renderless;
 use App\Models\DisinfectionSlip;
 use App\Models\Truck;
 use App\Models\Location;
@@ -57,98 +58,181 @@ class TruckListCompleted extends Component
         $this->resetPage();
     }
     
-    // Computed properties for locations, drivers, trucks
-    // Only cache id and name fields to reduce memory usage with large datasets
+    // Lazy-load properties - only load what's in active filters
     public function getLocationsProperty()
     {
-        return Cache::remember('locations_all', 300, function() {
-            return Location::withTrashed()
-                ->select('id', 'location_name', 'disabled', 'deleted_at')
-                ->get();
-        });
+        $locationIds = $this->appliedDestination ?? [];
+        
+        if (empty($locationIds)) {
+            return collect();
+        }
+        
+        return Location::withTrashed()
+            ->whereIn('id', $locationIds)
+            ->select('id', 'location_name', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
     public function getDriversProperty()
     {
-        return Cache::remember('drivers_all', 300, function() {
-            return Driver::withTrashed()
-                ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')
-                ->get();
-        });
+        $driverIds = $this->appliedDriver ?? [];
+        
+        if (empty($driverIds)) {
+            return collect();
+        }
+        
+        return Driver::withTrashed()
+            ->whereIn('id', $driverIds)
+            ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
     public function getTrucksProperty()
     {
-        return Cache::remember('trucks_all', 300, function() {
-            return Truck::withTrashed()
-                ->select('id', 'plate_number', 'disabled', 'deleted_at')
-                ->get();
-        });
+        $truckIds = $this->appliedPlateNumber ?? [];
+        
+        if (empty($truckIds)) {
+            return collect();
+        }
+        
+        return Truck::withTrashed()
+            ->whereIn('id', $truckIds)
+            ->select('id', 'plate_number', 'disabled', 'deleted_at')
+            ->get()
+            ->keyBy('id');
     }
 
+    // NOTE: Old filter options properties removed - now using paginated dropdowns
     
-    // Computed properties for filtered options
-    // Only cache id and name fields to reduce memory usage with large datasets
-    public function getFilterTruckOptionsProperty()
+    // Paginated data fetching methods for searchable dropdowns
+    #[Renderless]
+    public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $trucks = Cache::remember('trucks_all', 300, function() {
-            return Truck::withTrashed()
-                ->select('id', 'plate_number', 'disabled', 'deleted_at')
-                ->get();
-        });
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchFilterPlateNumber)) {
-            $searchTerm = strtolower($this->searchFilterPlateNumber);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
+        $query = Truck::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'plate_number']);
+
+        if (!empty($search)) {
+            $query->where('plate_number', 'like', '%' . $search . '%');
         }
+
+        if (!empty($includeIds)) {
+            $includedItems = Truck::whereIn('id', $includeIds)
+                ->select(['id', 'plate_number'])
+                ->orderBy('plate_number', 'asc')
+                ->get()
+                ->pluck('plate_number', 'id')
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+
+        $query->orderBy('plate_number', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
+        $data = $results->pluck('plate_number', 'id')->toArray();
         
-        return $options->toArray();
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
-    
-    public function getFilterDriverOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedDrivers($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $drivers = Cache::remember('drivers_all', 300, function() {
-            return Driver::withTrashed()
-                ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')
-                ->get();
-        });
-        $allOptions = $drivers->pluck('full_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchFilterDriver)) {
-            $searchTerm = strtolower($this->searchFilterDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
+        $query = Driver::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'first_name', 'middle_name', 'last_name']);
+
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('first_name', 'like', $searchTerm)
+                  ->orWhere('middle_name', 'like', $searchTerm)
+                  ->orWhere('last_name', 'like', $searchTerm);
             });
         }
+
+        if (!empty($includeIds)) {
+            $includedItems = Driver::whereIn('id', $includeIds)
+                ->select(['id', 'first_name', 'middle_name', 'last_name'])
+                ->orderBy('first_name', 'asc')
+                ->orderBy('last_name', 'asc')
+                ->get()
+                ->mapWithKeys(function($driver) {
+                    return [$driver->id => trim("{$driver->first_name} {$driver->middle_name} {$driver->last_name}")];
+                })
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+
+        $query->orderBy('first_name', 'asc')->orderBy('last_name', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
         
-        return $options->toArray();
+        $data = $results->mapWithKeys(function($driver) {
+            return [$driver->id => trim("{$driver->first_name} {$driver->middle_name} {$driver->last_name}")];
+        })->toArray();
+        
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
-    
-    public function getFilterDestinationOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedLocations($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $locations = Cache::remember('locations_all', 300, function() {
-            return Location::withTrashed()
-                ->whereNull('deleted_at')
-                ->where('disabled', false)
-                ->select('id', 'location_name', 'disabled', 'deleted_at')
-                ->get();
-        });
-        $allOptions = $locations->pluck('location_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchFilterDestination)) {
-            $searchTerm = strtolower($this->searchFilterDestination);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
+        $query = Location::query()
+            ->whereNull('deleted_at')
+            ->where('disabled', false)
+            ->select(['id', 'location_name']);
+
+        if (!empty($search)) {
+            $query->where('location_name', 'like', '%' . $search . '%');
         }
+
+        if (!empty($includeIds)) {
+            $includedItems = Location::whereIn('id', $includeIds)
+                ->select(['id', 'location_name'])
+                ->orderBy('location_name', 'asc')
+                ->get()
+                ->pluck('location_name', 'id')
+                ->toArray();
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+
+        $query->orderBy('location_name', 'asc');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        $results = $query->skip($offset)->take($perPage)->get();
+        $data = $results->pluck('location_name', 'id')->toArray();
         
-        return $options->toArray();
+        return [
+            'data' => $data,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
     }
     
     

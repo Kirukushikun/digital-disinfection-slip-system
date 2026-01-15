@@ -137,9 +137,9 @@
                             Clear
                         </button>
                     </div>
-                    <x-forms.searchable-dropdown wireModel="filterPlateNumber" :options="$this->filterTruckOptions"
+                    <x-forms.searchable-dropdown-paginated wireModel="filterPlateNumber" data-method="getPaginatedTrucks"
                         search-property="searchFilterPlateNumber" placeholder="Select plate no..."
-                        search-placeholder="Search plate numbers..." :multiple="true" />
+                        search-placeholder="Search plate numbers..." :multiple="true" :per-page="20" />
                 </div>
 
                 {{-- Driver Filter --}}
@@ -151,8 +151,8 @@
                             Clear
                         </button>
                     </div>
-                    <x-forms.searchable-dropdown wireModel="filterDriver" :options="$this->filterDriverOptions" search-property="searchFilterDriver"
-                        placeholder="Select drivers..." search-placeholder="Search drivers..." :multiple="true" />
+                    <x-forms.searchable-dropdown-paginated wireModel="filterDriver" data-method="getPaginatedDrivers" search-property="searchFilterDriver"
+                        placeholder="Select drivers..." search-placeholder="Search drivers..." :multiple="true" :per-page="20" />
                 </div>
 
                 {{-- Destination Filter --}}
@@ -165,9 +165,9 @@
                             Clear
                         </button>
                     </div>
-                    <x-forms.searchable-dropdown wireModel="filterDestination" :options="$this->filterDestinationOptions"
+                    <x-forms.searchable-dropdown-paginated wireModel="filterDestination" data-method="getPaginatedLocations"
                         search-property="searchFilterDestination" placeholder="Select destination..."
-                        search-placeholder="Search destinations..." :multiple="true" />
+                        search-placeholder="Search destinations..." :multiple="true" :per-page="20" />
                 </div>
 
                 {{-- From Date Input --}}

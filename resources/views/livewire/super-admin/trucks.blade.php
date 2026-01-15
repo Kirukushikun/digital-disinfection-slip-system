@@ -670,9 +670,7 @@
             {{-- Normal Filter Modal - All Filters --}}
             <x-modals.filter-modal>
                 <x-slot name="filters">
-                    <x-modals.filter-admin-body :availableStatuses="$availableStatuses" :locations="$locations" :drivers="$drivers" :trucks="$trucks"
-                        :filterTruckOptions="$filterTruckOptions" :filterDriverOptions="$filterDriverOptions" :filterHatcheryGuardOptions="$filterHatcheryGuardOptions" :filterReceivedGuardOptions="$filterReceivedGuardOptions" :filterOriginOptions="$filterOriginOptions"
-                        :filterDestinationOptions="$filterDestinationOptions" :filterStatus="$filterStatus" />
+                    <x-modals.filter-admin-body :availableStatuses="$availableStatuses" :filterStatus="$filterStatus" />
                 </x-slot>
             </x-modals.filter-modal>
         @endif
@@ -681,11 +679,9 @@
         @include('livewire.admin.slip-details-modal')
 
         {{-- Admin Create Modal --}}
-        <x-modals.admin-slip-creation-modal :trucks="$trucks" :locations="$locations" :drivers="$drivers" :guards="$guards"
-            :available-origins-options="$availableOriginsOptions" :available-destinations-options="$availableDestinationsOptions" :create-truck-options="$createTruckOptions" :create-driver-options="$createDriverOptions" :create-guard-options="$createGuardOptions"
-            :create-received-guard-options="$createReceivedGuardOptions" :create-reason-options="$this->createReasonOptions" :is-creating="$isCreating" />
+        <x-modals.admin-slip-creation-modal :is-creating="$isCreating" />
 
-        <x-modals.reason-settings :reasons="$reasons" :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
+        <x-modals.reason-settings :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
         
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
@@ -746,9 +742,7 @@
                 message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
                 onConfirm="deleteSlip" />
 
-            <x-modals.admin-slip-edit-modal :trucks="$trucks" :locations="$locations" :drivers="$drivers" :guards="$guards"
-                :available-origins-options="$editAvailableOriginsOptions" :available-destinations-options="$editAvailableDestinationsOptions" :edit-truck-options="$editTruckOptions" :edit-driver-options="$editDriverOptions" :edit-guard-options="$editGuardOptions"
-                :edit-received-guard-options="$editReceivedGuardOptions" :edit-reason-options="$this->editReasonOptions" :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" />
+            <x-modals.admin-slip-edit-modal :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" />
         @endif
     </div>
 </div>

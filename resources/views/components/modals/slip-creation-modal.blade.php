@@ -1,11 +1,4 @@
 @props([
-    'trucks' => collect(),
-    'locations' => collect(),
-    'drivers' => collect(),
-    'truckOptions' => [],
-    'locationOptions' => [],
-    'driverOptions' => [],
-    'reasonOptions' => [],
     'isCreating' => false,
     'pendingAttachmentIds' => [],
 ])
@@ -24,8 +17,8 @@
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
             <div class="font-semibold text-gray-500">Plate No:<span class="text-red-500">*</span></div>
             <div class="text-gray-900">
-                <x-forms.searchable-dropdown wire-model="truck_id" :options="$truckOptions" search-property="searchTruck"
-                    placeholder="Select plate number..." search-placeholder="Search plates..." />
+                <x-forms.searchable-dropdown-paginated wire-model="truck_id" data-method="getPaginatedTrucks" search-property="searchTruck"
+                    placeholder="Select plate number..." search-placeholder="Search plates..." :per-page="20" />
                 @error('truck_id')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror
@@ -37,9 +30,9 @@
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
             <div class="font-semibold text-gray-500">Destination:<span class="text-red-500">*</span></div>
             <div class="text-gray-900">
-                <x-forms.searchable-dropdown wire-model="destination_id" :options="$locationOptions"
+                <x-forms.searchable-dropdown-paginated wire-model="destination_id" data-method="getPaginatedLocations"
                     search-property="searchDestination" placeholder="Select destination..."
-                    search-placeholder="Search locations..." />
+                    search-placeholder="Search locations..." :per-page="20" />
                 @error('destination_id')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror
@@ -51,8 +44,8 @@
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
             <div class="font-semibold text-gray-500">Driver Name:<span class="text-red-500">*</span></div>
             <div class="text-gray-900">
-                <x-forms.searchable-dropdown wire-model="driver_id" :options="$driverOptions" search-property="searchDriver"
-                    placeholder="Select driver..." search-placeholder="Search drivers..." />
+                <x-forms.searchable-dropdown-paginated wire-model="driver_id" data-method="getPaginatedDrivers" search-property="searchDriver"
+                    placeholder="Select driver..." search-placeholder="Search drivers..." :per-page="20" />
                 @error('driver_id')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror
@@ -64,8 +57,8 @@
         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
             <div class="font-semibold text-gray-500">Reason:<span class="text-red-500">*</span></div>
             <div class="text-gray-900">
-                <x-forms.searchable-dropdown wire-model="reason_id" :options="$reasonOptions" search-property="searchReason"
-                    placeholder="Select reason..." search-placeholder="Search reasons..." />
+                <x-forms.searchable-dropdown-paginated wire-model="reason_id" data-method="getPaginatedReasons" search-property="searchReason"
+                    placeholder="Select reason..." search-placeholder="Search reasons..." :per-page="20" />
                 @error('reason_id')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror

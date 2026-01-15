@@ -1,4 +1,4 @@
-@props(['reasons' => null, 'editingReasonId' => null, 'editingReasonText' => '', 'showUnsavedChangesConfirmation' => false, 'showSaveConfirmation' => false, 'savingReason' => false])
+@props(['editingReasonId' => null, 'editingReasonText' => '', 'showUnsavedChangesConfirmation' => false, 'showSaveConfirmation' => false, 'savingReason' => false])
 
 {{-- Reasons Settings Modal --}}
 <x-modals.modal-template 
@@ -17,10 +17,13 @@
                     </svg>
                 </div>
                 <input type="text" wire:model.live="searchReasonSettings"
-                    class="block w-full pl-10 {{ $this->searchReasonSettings ? 'pr-10' : 'pr-4' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    class="block w-full pl-10 {{ $this->searchReasonSettings ? 'pr-20' : 'pr-12' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                     placeholder="Search reasons...">
-                @if($this->searchReasonSettings)
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                
+                {{-- Right Side Buttons Container --}}
+                <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
+                    {{-- Clear Button (X) - Only when search has text --}}
+                    @if($this->searchReasonSettings)
                         <button wire:click="$set('searchReasonSettings', '')" type="button"
                             class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 hover:cursor-pointer cursor-pointer">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,8 +31,52 @@
                                     d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
+                    @endif
+
+                    {{-- Filter Dropdown --}}
+                    <div x-data="{ open: false }" @click.away="open = false" class="relative">
+                        <button @click="open = !open" type="button" title="Filter by status"
+                            class="flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150 focus:outline-none hover:cursor-pointer cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                                </path>
+                            </svg>
+                            @if($this->filterReasonStatus !== 'all')
+                                <span class="ml-1 flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-indigo-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                </span>
+                            @endif
+                        </button>
+
+                        {{-- Dropdown Menu --}}
+                        <div x-show="open" 
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="transform opacity-100 scale-100"
+                            x-transition:leave-end="transform opacity-0 scale-95"
+                            class="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                            style="display: none;">
+                            <div class="py-1">
+                                <button wire:click="$set('filterReasonStatus', 'all')" @click="open = false" type="button"
+                                    class="w-full text-left px-4 py-2 text-sm {{ $this->filterReasonStatus === 'all' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                    All
+                                </button>
+                                <button wire:click="$set('filterReasonStatus', 'enabled')" @click="open = false" type="button"
+                                    class="w-full text-left px-4 py-2 text-sm {{ $this->filterReasonStatus === 'enabled' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                    Enabled
+                                </button>
+                                <button wire:click="$set('filterReasonStatus', 'disabled')" @click="open = false" type="button"
+                                    class="w-full text-left px-4 py-2 text-sm {{ $this->filterReasonStatus === 'disabled' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                    Disabled
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                @endif
+                </div>
             </div>
             <x-buttons.submit-button wire:click="openCreateReasonModal" color="blue" size="lg">
                 <div class="flex items-center gap-2">
@@ -43,7 +90,7 @@
 
         {{-- Reasons List Container --}}
         <div class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
-            @forelse($reasons as $index => $reason)
+            @forelse($this->reasons as $index => $reason)
                 <div class="flex items-center gap-3 p-3">
                     {{-- Reason Display/Edit --}}
                     <div class="flex-1 flex items-center gap-3">
@@ -155,8 +202,8 @@
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
             {{-- Pagination --}}
             <div class="flex-1">
-                @if($reasons->hasPages())
-                    <x-buttons.nav-pagination :paginator="$reasons" pageName="reasonsPage" />
+                @if($this->reasons->hasPages())
+                    <x-buttons.nav-pagination :paginator="$this->reasons" pageName="reasonsPage" />
                 @endif
             </div>
             

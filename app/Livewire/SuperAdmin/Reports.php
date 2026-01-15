@@ -12,6 +12,7 @@ use App\Models\Attachment;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Renderless;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -516,135 +517,54 @@ class Reports extends Component
         return is_array($options) ? $optionsArray : collect($optionsArray);
     }
     
-    // Computed properties for edit modal filtered options
-    public function getEditTruckOptionsProperty()
-    {
-        $trucks = $this->getCachedTrucks();
-        $allOptions = $trucks->pluck('plate_number', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchEditTruck)) {
-            $searchTerm = strtolower($this->searchEditTruck);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            $options = $this->ensureSelectedInOptions($options, $this->editTruckId, $allOptions);
-        }
-        
-        return $options->toArray();
-    }
+    // NOTE: Old edit options properties removed - now using paginated dropdowns (same as Trucks/Admin Reports)
     
-    public function getEditDriverOptionsProperty()
+    #[Renderless]
+    public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $drivers = $this->getCachedDrivers();
-        $allOptions = $drivers->pluck('full_name', 'id');
-        $options = $allOptions;
-        
-        if (!empty($this->searchEditDriver)) {
-            $searchTerm = strtolower($this->searchEditDriver);
-            $options = $options->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            $options = $this->ensureSelectedInOptions($options, $this->editDriverId, $allOptions);
-        }
-        
-        return $options->toArray();
+        $query = Truck::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'plate_number']);
+        if (!empty($search)) $query->where('plate_number', 'like', '%' . $search . '%');
+        if (!empty($includeIds)) return ['data' => Truck::whereIn('id', $includeIds)->orderBy('plate_number')->get()->pluck('plate_number', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
+        $query->orderBy('plate_number');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        return ['data' => $query->skip($offset)->take($perPage)->get()->pluck('plate_number', 'id')->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
     }
-    
-    public function getEditGuardOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedDrivers($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        if ($this->editReceivedGuardId) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->editReceivedGuardId;
-            });
-        }
-        
-        if (!empty($this->searchEditHatcheryGuard)) {
-            $searchTerm = strtolower($this->searchEditHatcheryGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            if ($this->editHatcheryGuardId && $this->editHatcheryGuardId != $this->editReceivedGuardId) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->editHatcheryGuardId, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
+        $query = Driver::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'first_name', 'middle_name', 'last_name']);
+        if (!empty($search)) $query->where(function($q) use ($search) { $q->where('first_name', 'like', "%$search%")->orWhere('middle_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%"); });
+        if (!empty($includeIds)) return ['data' => Driver::whereIn('id', $includeIds)->orderBy('first_name')->orderBy('last_name')->get()->mapWithKeys(fn($d) => [$d->id => trim("{$d->first_name} {$d->middle_name} {$d->last_name}")])->toArray(), 'has_more' => false, 'total' => count($includeIds)];
+        $query->orderBy('first_name')->orderBy('last_name');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        return ['data' => $query->skip($offset)->take($perPage)->get()->mapWithKeys(fn($d) => [$d->id => trim("{$d->first_name} {$d->middle_name} {$d->last_name}")])->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
     }
-    
-    public function getEditReceivedGuardOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedGuards($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $guards = $this->getCachedGuards();
-        $allOptions = $guards;
-        
-        if ($this->editHatcheryGuardId) {
-            $guards = $guards->filter(function ($value, $key) {
-                return $key != $this->editHatcheryGuardId;
-            });
-        }
-        
-        if (!empty($this->searchEditReceivedGuard)) {
-            $searchTerm = strtolower($this->searchEditReceivedGuard);
-            $guards = $guards->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            if ($this->editReceivedGuardId && $this->editReceivedGuardId != $this->editHatcheryGuardId) {
-                $guards = $this->ensureSelectedInOptions($guards, $this->editReceivedGuardId, $allOptions);
-            }
-        }
-        
-        return $guards->toArray();
+        $query = User::query()->where('user_type', 0)->where('disabled', false)->select(['id', 'first_name', 'middle_name', 'last_name', 'username']);
+        if (!empty($search)) $query->where(function($q) use ($search) { $q->where('first_name', 'like', "%$search%")->orWhere('middle_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%")->orWhere('username', 'like', "%$search%"); });
+        if (!empty($includeIds)) return ['data' => User::whereIn('id', $includeIds)->orderBy('first_name')->orderBy('last_name')->get()->mapWithKeys(fn($u) => [$u->id => trim("{$u->first_name} {$u->middle_name} {$u->last_name}") . " @{$u->username}"])->toArray(), 'has_more' => false, 'total' => count($includeIds)];
+        $query->orderBy('first_name')->orderBy('last_name');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        return ['data' => $query->skip($offset)->take($perPage)->get()->mapWithKeys(fn($u) => [$u->id => trim("{$u->first_name} {$u->middle_name} {$u->last_name}") . " @{$u->username}"])->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
     }
-    
-    public function getEditAvailableOriginsOptionsProperty()
+
+    #[Renderless]
+    public function getPaginatedLocations($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $locations = $this->getCachedLocations()->where('disabled', false);
-        
-        $originOptions = $locations;
-        if ($this->editDestinationId) {
-            $originOptions = $originOptions->where('id', '!=', $this->editDestinationId);
-        }
-        $originOptions = $originOptions->pluck('location_name', 'id');
-        
-        if (!empty($this->searchEditOrigin)) {
-            $searchTerm = strtolower($this->searchEditOrigin);
-            $originOptions = $originOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            if ($this->editLocationId && $this->editLocationId != $this->editDestinationId) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $originOptions = $this->ensureSelectedInOptions($originOptions, $this->editLocationId, $allOptions);
-            }
-        }
-        
-        return $originOptions->toArray();
-    }
-    
-    public function getEditAvailableDestinationsOptionsProperty()
-    {
-        $locations = $this->getCachedLocations()->whereNull('deleted_at')->where('disabled', false);
-        
-        $destinationOptions = $locations;
-        if ($this->editLocationId) {
-            $destinationOptions = $destinationOptions->where('id', '!=', $this->editLocationId);
-        }
-        $destinationOptions = $destinationOptions->pluck('location_name', 'id');
-        
-        if (!empty($this->searchEditDestination)) {
-            $searchTerm = strtolower($this->searchEditDestination);
-            $destinationOptions = $destinationOptions->filter(function ($label) use ($searchTerm) {
-                return str_contains(strtolower($label), $searchTerm);
-            });
-            if ($this->editDestinationId && $this->editDestinationId != $this->editLocationId) {
-                $allOptions = $locations->pluck('location_name', 'id');
-                $destinationOptions = $this->ensureSelectedInOptions($destinationOptions, $this->editDestinationId, $allOptions);
-            }
-        }
-        
-        return $destinationOptions->toArray();
+        $query = Location::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'location_name']);
+        if (!empty($search)) $query->where('location_name', 'like', '%' . $search . '%');
+        if (!empty($includeIds)) return ['data' => Location::whereIn('id', $includeIds)->orderBy('location_name')->get()->pluck('location_name', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
+        $query->orderBy('location_name');
+        $offset = ($page - 1) * $perPage;
+        $total = $query->count();
+        return ['data' => $query->skip($offset)->take($perPage)->get()->pluck('location_name', 'id')->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
     }
     
     // Slip details modal methods
@@ -1567,7 +1487,7 @@ class Reports extends Component
     public function render()
     {
         $reports = $this->getFilteredReportsQuery()->paginate(15);
-        
+
         return view('livewire.super-admin.reports', [
             'reports' => $reports,
             'availableStatuses' => $this->availableStatuses,
@@ -1575,12 +1495,7 @@ class Reports extends Component
             'locations' => $this->getCachedLocations(),
             'drivers' => $this->getCachedDrivers(),
             'guards' => $this->getCachedGuards(),
-            'editTruckOptions' => $this->editTruckOptions,
-            'editDriverOptions' => $this->editDriverOptions,
-            'editGuardOptions' => $this->editGuardOptions,
-            'editReceivedGuardOptions' => $this->editReceivedGuardOptions,
-            'editAvailableOriginsOptions' => $this->editAvailableOriginsOptions,
-            'editAvailableDestinationsOptions' => $this->editAvailableDestinationsOptions,
+            // Edit modal now uses paginated dropdowns - no need to pass options
         ]);
     }
 }

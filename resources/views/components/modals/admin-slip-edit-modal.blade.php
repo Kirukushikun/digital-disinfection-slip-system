@@ -1,15 +1,4 @@
 @props([
-    'trucks' => collect(),
-    'locations' => collect(),
-    'drivers' => collect(),
-    'guards' => collect(),
-    'availableOriginsOptions' => [],
-    'availableDestinationsOptions' => [],
-    'editTruckOptions' => [],
-    'editDriverOptions' => [],
-    'editGuardOptions' => [],
-    'editReceivedGuardOptions' => [],
-    'editReasonOptions' => [],
     'slipStatus' => null,
     'editStatus' => null,
     'selectedSlip' => null,
@@ -84,8 +73,8 @@
                     @php
                         $isTruckSoftDeleted = $selectedSlip && $selectedSlip->truck && $selectedSlip->truck->trashed();
                     @endphp
-                    <x-forms.searchable-dropdown wire-model="editTruckId" :options="$editTruckOptions" search-property="searchEditTruck"
-                        placeholder="Select plate number..." search-placeholder="Search plates..." 
+                    <x-forms.searchable-dropdown-paginated wire-model="editTruckId" data-method="getPaginatedTrucks" search-property="searchEditTruck"
+                        placeholder="Select plate number..." search-placeholder="Search plates..." :per-page="20"
                         :disabled="$isTruckSoftDeleted" />
                     @if ($isTruckSoftDeleted)
                         <p class="text-xs text-red-600 mt-1">This truck has been deleted and cannot be changed.</p>
@@ -100,9 +89,9 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                 <div class="font-semibold text-gray-500">Driver:<span class="text-red-500">*</span></div>
                 <div class="text-gray-900">
-                    <x-forms.searchable-dropdown wire-model="editDriverId" :options="$editDriverOptions"
+                    <x-forms.searchable-dropdown-paginated wire-model="editDriverId" data-method="getPaginatedDrivers"
                         search-property="searchEditDriver" placeholder="Select driver..."
-                        search-placeholder="Search drivers..." />
+                        search-placeholder="Search drivers..." :per-page="20" />
                     @error('editDriverId')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
@@ -320,9 +309,9 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if (($status == 3 || $status == 4) && $selectedSlip->completed_at) bg-white @else bg-gray-100 @endif">
                 <div class="font-semibold text-gray-500">Reason:<span class="text-red-500">*</span></div>
                 <div class="text-gray-900">
-                    <x-forms.searchable-dropdown wire-model="editReasonId" :options="$editReasonOptions"
+                    <x-forms.searchable-dropdown-paginated wire-model="editReasonId" data-method="getPaginatedReasons"
                         search-property="searchEditReason" placeholder="Select reason..."
-                        search-placeholder="Search reasons..." />
+                        search-placeholder="Search reasons..." :per-page="20" />
                     @error('editReasonId')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
@@ -357,9 +346,9 @@
                 <div>
                     <div class="font-semibold text-gray-500 mb-0.5">Hatchery Guard:<span class="text-red-500">*</span></div>
                     <div class="text-gray-900">
-                        <x-forms.searchable-dropdown wire-model="editHatcheryGuardId" :options="$editGuardOptions"
+                        <x-forms.searchable-dropdown-paginated wire-model="editHatcheryGuardId" data-method="getPaginatedGuards"
                             search-property="searchEditHatcheryGuard" placeholder="Select hatchery guard..."
-                            search-placeholder="Search guards..." />
+                            search-placeholder="Search guards..." :per-page="20" />
                         @error('editHatcheryGuardId')
                             <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                         @enderror
@@ -384,9 +373,9 @@
                         @endif
                     </div>
                     <div class="text-gray-900">
-                        <x-forms.searchable-dropdown wire-model="editReceivedGuardId" :options="$editReceivedGuardOptions"
+                        <x-forms.searchable-dropdown-paginated wire-model="editReceivedGuardId" data-method="getPaginatedGuards"
                             search-property="searchEditReceivedGuard" placeholder="Select receiving guard..."
-                            search-placeholder="Search guards..." />
+                            search-placeholder="Search guards..." :per-page="20" />
                         @error('editReceivedGuardId')
                             <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                         @enderror

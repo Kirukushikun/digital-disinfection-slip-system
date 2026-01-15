@@ -67,9 +67,9 @@
                     <div class="font-semibold text-gray-500">Plate No:</div>
                     <div class="text-gray-900">
                     @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="truck_id" :options="$this->truckOptions"
+                        <x-forms.searchable-dropdown-paginated wire-model="truck_id" data-method="getPaginatedTrucks"
                             search-property="searchTruck" placeholder="Select plate number..."
-                            search-placeholder="Search plates..." />
+                            search-placeholder="Search plates..." :per-page="20" />
                         @error('truck_id')
                             <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                         @enderror
@@ -85,9 +85,9 @@
                     <div class="font-semibold text-gray-500">Driver:</div>
                     <div class="text-gray-900">
                     @if ($isEditing)
-                        <x-forms.searchable-dropdown wire-model="driver_id" :options="$this->driverOptions"
+                        <x-forms.searchable-dropdown-paginated wire-model="driver_id" data-method="getPaginatedDrivers"
                             search-property="searchDriver" placeholder="Select driver..."
-                            search-placeholder="Search drivers..." />
+                            search-placeholder="Search drivers..." :per-page="20" />
                         @error('driver_id')
                             <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                         @enderror
@@ -114,9 +114,9 @@
                     <div class="font-semibold text-gray-500">Destination:</div>
                     <div class="text-gray-900">
                         @if ($isEditing)
-                            <x-forms.searchable-dropdown wire-model="destination_id" :options="$this->locationOptions"
+                            <x-forms.searchable-dropdown-paginated wire-model="destination_id" data-method="getPaginatedLocations"
                                 search-property="searchDestination" placeholder="Select destination..."
-                                search-placeholder="Search locations..." />
+                                search-placeholder="Search locations..." :per-page="20" />
                             @error('destination_id')
                                 <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                             @enderror
@@ -143,9 +143,9 @@
                     <div class="font-semibold text-gray-500">Reason:<span class="text-red-500">*</span></div>
                     <div class="text-gray-900">
                         @if ($isEditing)
-                            <x-forms.searchable-dropdown wire-model="reason_id" :options="$this->reasonOptions"
+                            <x-forms.searchable-dropdown-paginated wire-model="reason_id" data-method="getPaginatedReasons"
                                 search-property="searchReason" placeholder="Select reason..."
-                                search-placeholder="Search reasons..." />
+                                search-placeholder="Search reasons..." :per-page="20" />
                             @error('reason_id')
                                 <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                             @enderror

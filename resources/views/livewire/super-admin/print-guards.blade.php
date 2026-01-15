@@ -126,6 +126,10 @@
                     <p><strong>Status:</strong> {{ $filters['status'] == 0 ? 'Enabled' : 'Disabled' }}</p>
                 @endif
                 
+                @if (isset($filters['guard_type']) && $filters['guard_type'] !== null)
+                    <p><strong>Guard Type:</strong> {{ $filters['guard_type'] == 0 ? 'Regular Guards' : 'Super Guards' }}</p>
+                @endif
+                
                 @if (!empty($filters['created_from']))
                     <p><strong>Created From:</strong> {{ \Carbon\Carbon::parse($filters['created_from'])->format('M d, Y') }}</p>
                 @endif

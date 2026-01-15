@@ -1,14 +1,5 @@
 @props([
     'availableStatuses' => [],
-    'locations' => collect(),
-    'drivers' => collect(),
-    'trucks' => collect(),
-    'filterTruckOptions' => [],
-    'filterDriverOptions' => [],
-    'filterHatcheryGuardOptions' => [],
-    'filterReceivedGuardOptions' => [],
-    'filterOriginOptions' => [],
-    'filterDestinationOptions' => [],
     'filterStatus' => null,
 ])
 
@@ -103,9 +94,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterPlateNumber" :options="$filterTruckOptions"
-            search-property="searchFilterPlateNumber" placeholder="Select plate no..."
-            search-placeholder="Search plate numbers..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterPlateNumber"
+            data-method="getPaginatedTrucks" search-property="searchFilterPlateNumber" 
+            placeholder="Select plate no..." search-placeholder="Search plate numbers..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- Driver Filter --}}
@@ -117,8 +109,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterDriver" :options="$filterDriverOptions" search-property="searchFilterDriver"
-            placeholder="Select drivers..." search-placeholder="Search drivers..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterDriver" 
+            data-method="getPaginatedDrivers" search-property="searchFilterDriver"
+            placeholder="Select drivers..." search-placeholder="Search drivers..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- Hatchery Guard Filter --}}
@@ -131,9 +125,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterHatcheryGuard" :options="$filterHatcheryGuardOptions"
-            search-property="searchFilterHatcheryGuard" placeholder="Select hatchery guards..."
-            search-placeholder="Search hatchery guards..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterHatcheryGuard" 
+            data-method="getPaginatedGuards" search-property="searchFilterHatcheryGuard" 
+            placeholder="Select hatchery guards..." search-placeholder="Search hatchery guards..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- Received Guard Filter --}}
@@ -146,9 +141,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterReceivedGuard" :options="$filterReceivedGuardOptions"
-            search-property="searchFilterReceivedGuard" placeholder="Select received guards..."
-            search-placeholder="Search received guards..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterReceivedGuard" 
+            data-method="getPaginatedGuards" search-property="searchFilterReceivedGuard" 
+            placeholder="Select received guards..." search-placeholder="Search received guards..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- Origin Filter --}}
@@ -160,8 +156,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterOrigin" :options="$filterOriginOptions" search-property="searchFilterOrigin"
-            placeholder="Select origin..." search-placeholder="Search origin..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterOrigin" 
+            data-method="getPaginatedLocations" search-property="searchFilterOrigin"
+            placeholder="Select origin..." search-placeholder="Search origin..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- Destination Filter --}}
@@ -174,9 +172,10 @@
                 Clear
             </button>
         </div>
-        <x-forms.searchable-dropdown wireModel="filterDestination" :options="$filterDestinationOptions"
-            search-property="searchFilterDestination" placeholder="Select destination..."
-            search-placeholder="Search destinations..." :multiple="true" />
+        <x-forms.searchable-dropdown-paginated wireModel="filterDestination" 
+            data-method="getPaginatedLocations" search-property="searchFilterDestination" 
+            placeholder="Select destination..." search-placeholder="Search destinations..." 
+            :multiple="true" :per-page="20" />
     </div>
 
     {{-- From Date Input --}}
