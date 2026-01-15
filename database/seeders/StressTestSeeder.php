@@ -20,7 +20,7 @@ class StressTestSeeder extends Seeder
 
     /**
      * Run the stress test seeder.
-     * This seeds normal data first, then adds 5,000 entries for stress testing.
+     * This seeds normal data first, then adds stress test entries (5,000 for most models, 1,000 for slips and reports).
      */
     public function run(): void
     {
@@ -30,7 +30,7 @@ class StressTestSeeder extends Seeder
         $this->command->info('Running normal DatabaseSeeder...');
         $this->call(DatabaseSeeder::class);
         
-        $this->command->info('Adding 5,000 stress test entries (processing in batches of 1,000)...');
+        $this->command->info('Adding stress test entries (processing in batches of 1,000)...');
         
         $batchSize = 1000;
         $totalBatches = 5;
@@ -155,8 +155,8 @@ class StressTestSeeder extends Seeder
         /** @phpstan-ignore-next-line */
         $guardIds = User::where('user_type', 0)->pluck('id')->toArray();
         
-        // Create 5,000 Disinfection Slips
-        $this->command->info('Creating 5,000 disinfection slips...');
+        // Create 1,000 Disinfection Slips
+        $this->command->info('Creating 1,000 disinfection slips...');
         
         // Helper function to generate slip ID for a specific year
         $generateSlipIdForYear = function($year) {
@@ -181,7 +181,8 @@ class StressTestSeeder extends Seeder
             return $yearCode . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
         };
         
-        for ($batch = 0; $batch < $totalBatches; $batch++) {
+        $slipBatches = 1; // Only 1 batch for slips (1,000 total)
+        for ($batch = 0; $batch < $slipBatches; $batch++) {
             for ($i = 0; $i < $batchSize; $i++) {
                 $status = fake()->randomElement([0, 1, 2, 3]);
                 $hasAttachment = fake()->boolean(60);
@@ -224,9 +225,9 @@ class StressTestSeeder extends Seeder
                     'updated_at' => $completedAt ?? $createdAt, // updated_at should be completed_at if completed, otherwise created_at
                 ]);
             }
-            $this->command->info("  Batch " . ($batch + 1) . "/{$totalBatches} completed");
+            $this->command->info("  Batch " . ($batch + 1) . "/{$slipBatches} completed");
         }
-        $this->command->info('✓ Created 5,000 disinfection slips');
+        $this->command->info('✓ Created 1,000 disinfection slips');
         
         // Create 5,000 Attachments
         $this->command->info('Creating 5,000 attachments...');
@@ -240,13 +241,14 @@ class StressTestSeeder extends Seeder
         }
         $this->command->info('✓ Created 5,000 attachments');
         
-        // Create 5,000 Reports
-        $this->command->info('Creating 5,000 reports...');
+        // Create 1,000 Reports
+        $this->command->info('Creating 1,000 reports...');
         /** @phpstan-ignore-next-line */
         $slipIds = DisinfectionSlip::pluck('id')->toArray();
         /** @phpstan-ignore-next-line */
         $adminsAndSuperAdmins = User::whereIn('user_type', [1, 2])->pluck('id')->toArray();
-        for ($batch = 0; $batch < $totalBatches; $batch++) {
+        $reportBatches = 1; // Only 1 batch for reports (1,000 total)
+        for ($batch = 0; $batch < $reportBatches; $batch++) {
             for ($i = 0; $i < $batchSize; $i++) {
                 $hasSlip = fake()->boolean(70);
                 $isResolved = fake()->boolean(30);
@@ -263,9 +265,9 @@ class StressTestSeeder extends Seeder
                     'resolved_by' => $resolvedBy,
                 ]);
             }
-            $this->command->info("  Batch " . ($batch + 1) . "/{$totalBatches} completed");
+            $this->command->info("  Batch " . ($batch + 1) . "/{$reportBatches} completed");
         }
-        $this->command->info('✓ Created 5,000 reports');
+        $this->command->info('✓ Created 1,000 reports');
         
         // Create 5,000 Audit Logs
         $this->command->info('Creating 5,000 audit logs...');
@@ -432,9 +434,9 @@ class StressTestSeeder extends Seeder
         $this->command->info('  - Drivers: 5,000');
         $this->command->info('  - Locations: 5,000');
         $this->command->info('  - Reasons: 5,000');
-        $this->command->info('  - Disinfection Slips: 5,000');
+        $this->command->info('  - Disinfection Slips: 1,000');
         $this->command->info('  - Attachments: 5,000');
-        $this->command->info('  - Reports: 5,000');
+        $this->command->info('  - Reports: 1,000');
         $this->command->info('  - Audit Logs: 5,000');
     }
 }
