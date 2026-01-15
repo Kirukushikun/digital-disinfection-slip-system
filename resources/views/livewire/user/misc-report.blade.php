@@ -14,7 +14,7 @@
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p class="text-sm font-medium text-green-800">
-                            Your report has been submitted successfully. It will be reviewed by administrators.
+                            Your issue has been submitted successfully. It will be reviewed by administrators.
                         </p>
                     </div>
                 </div>
@@ -53,7 +53,7 @@
                 <div class="flex flex-col gap-3 md:hidden">
                     <button type="submit"
                         class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Submit Report
+                        Submit Issue
                     </button>
                     <a href="{{ route('user.dashboard') }}"
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-center">
@@ -69,7 +69,7 @@
                     </a>
                     <button type="submit"
                         class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Submit Report
+                        Submit Issue
                     </button>
                 </div>
             </form>

@@ -10,7 +10,7 @@
             <!-- Stats Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 {{ ($canCreateSlip ?? false) ? 'lg:grid-cols-3' : '' }} gap-6 mb-8">
 
-                <!-- Incoming Trucks Card -->
+                <!-- Incoming Slips Card -->
                 <a href="{{ route('user.incoming-trucks') }}"
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-gray-200 hover:border-green-400"
                     wire:poll>
@@ -24,7 +24,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Incoming</h3>
-                                    <p class="text-xs text-gray-400 mt-0.5">Trucks Today</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">Slips Today</p>
                                 </div>
                             </div>
                             <svg class="h-5 w-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all"
@@ -46,7 +46,7 @@
                     </div>
                 </a>
 
-                <!-- Outgoing Trucks Card -->
+                <!-- Outgoing Slips Card -->
                 <a href="{{ route('user.outgoing-trucks') }}"
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-gray-200 hover:border-red-400"
                     wire:poll>
@@ -60,7 +60,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Outgoing</h3>
-                                    <p class="text-xs text-gray-400 mt-0.5">Trucks Today</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">Slips Today</p>
                                 </div>
                             </div>
                             <svg class="h-5 w-5 text-gray-400 group-hover:text-red-500 group-hover:translate-x-1 transition-all"
@@ -105,7 +105,7 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white mb-2">Create New Slip</h3>
-                                <p class="text-blue-100 text-sm">Add a new disinfection slip for outgoing trucks</p>
+                                <p class="text-blue-100 text-sm">Create a new disinfection slip</p>
                             </div>
                             <div class="mt-4 flex items-center text-white text-sm font-medium">
                                 <span class="mr-2">Quick Action</span>

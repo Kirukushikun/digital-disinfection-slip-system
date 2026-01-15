@@ -1,5 +1,5 @@
 <x-layout>
-    <x-navigation.navbar module="Incoming Trucks" />
+    <x-navigation.navbar module="Incoming Slips" />
 
     <!-- Truck Arrival Monitor -->
     <livewire:truck-arrival-monitor />

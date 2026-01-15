@@ -696,7 +696,7 @@
                             </x-buttons.submit-button>
                         </div>
                     @else
-                        {{-- Close Button (full width, for Incoming trucks) --}}
+                        {{-- Close Button (full width, for Incoming slips) --}}
                         <x-buttons.submit-button
                             wire:click="closeDetailsModal"
                             color="white"

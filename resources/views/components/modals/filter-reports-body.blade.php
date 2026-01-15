@@ -5,12 +5,12 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    {{-- Report Type Filter (full width) --}}
+    {{-- Issue Type Filter (full width) --}}
     <div class="md:col-span-2" x-data="{
         open: false,
         options: { 'slip': 'Slip', 'misc': 'Miscellaneous' },
         selected: @entangle('filterReportType').live,
-        placeholder: 'Select report type',
+        placeholder: 'Select issue type',
         get displayText() {
             if (this.selected === null || this.selected === undefined || this.selected === '') {
                 return this.placeholder;
@@ -35,7 +35,7 @@
     }" x-ref="typeDropdownContainer" @click.outside="closeDropdown()"
         @focusin.window="handleFocusIn($event)">
         <div class="flex items-center justify-between mb-1">
-            <label class="block text-sm font-medium text-gray-700">Report Type</label>
+            <label class="block text-sm font-medium text-gray-700">Issue Type</label>
             <button type="button" wire:click="$set('filterReportType', null)"
                 x-show="selected !== null && selected !== undefined && selected !== ''"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -262,11 +262,11 @@
             <input type="checkbox" wire:model="excludeDeletedItems"
                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
             <span class="text-sm font-medium text-gray-700">
-                Exclude reports with deleted items (users, slips)
+                Exclude issues with deleted items (users, slips)
             </span>
         </label>
         <p class="text-xs text-gray-500 mt-1 ml-7">
-            When enabled, hides reports where any related item has been deleted
+            When enabled, hides issues where any related item has been deleted
         </p>
     </div>
 @endif

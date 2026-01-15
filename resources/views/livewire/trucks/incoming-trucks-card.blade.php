@@ -8,7 +8,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13l3 3 4-4" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5" />
         </svg>
-        <span class="font-semibold text-lg whitespace-nowrap">Incoming Trucks Today</span>
+        <span class="font-semibold text-lg whitespace-nowrap">Incoming Slips Today</span>
     </div>
     <span
         class="text-red-600 font-bold text-2xl ml-auto min-w-[50px] mt-2 md:mt-0">{{ str_pad($this->count, 4, '0', STR_PAD_LEFT) }}</span>

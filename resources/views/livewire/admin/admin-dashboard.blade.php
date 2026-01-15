@@ -310,7 +310,7 @@
                                 </div>
                             </a>
 
-                            <!-- Reports -->
+                            <!-- Issues -->
                             <a href="{{ route('admin.reports') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-red-50 to-red-100/50 rounded-2xl border-2 border-red-200 hover:border-red-400 transition-all duration-300 hover:shadow-md cursor-pointer">
@@ -326,7 +326,7 @@
                                         <div class="flex-1">
                                             <p
                                                 class="text-xs font-semibold text-red-700 uppercase tracking-wide mb-0.5">
-                                                Unresolved Reports</p>
+                                                Unresolved Issues</p>
                                             <p class="text-3xl font-bold text-gray-900">
                                                 {{ number_format($this->stats['unresolved_reports']) }}</p>
                                         </div>

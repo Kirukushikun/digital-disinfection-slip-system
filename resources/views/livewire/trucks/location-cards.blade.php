@@ -50,7 +50,7 @@
                     <div
                         class="flex items-center justify-between bg-linear-to-r from-red-50 to-orange-50 rounded-xl p-3 sm:p-4">
                         <div class="flex flex-col">
-                            <span class="text-xs sm:text-sm font-medium text-gray-600 mb-1">Incoming Trucks</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-600 mb-1">Incoming Slips</span>
                             <span class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-red-600">
                                 {{ str_pad($location->in_transit_count, 2, '0', STR_PAD_LEFT) }}
                             </span>
@@ -86,7 +86,7 @@
                             <h3 class="text-sm font-semibold text-gray-800">
                                 {{ $location->location_name }}
                             </h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Incoming Trucks</p>
+                            <p class="text-xs text-gray-500 mt-0.5">Incoming Slips</p>
                         </div>
 
                         <!-- Count and Arrow -->

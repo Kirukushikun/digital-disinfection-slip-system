@@ -5,16 +5,16 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-900">
                 @if ($type === 'incoming')
-                    Incoming Trucks
+                    Incoming Trips
                 @else
-                    Outgoing Trucks
+                    Outgoing Trips
                 @endif
             </h1>
             <p class="text-gray-600 text-sm mt-1">
                 @if ($type === 'incoming')
-                    View all incoming trucks for disinfection
+                    View all incoming trips for disinfection
                 @else
-                    View all outgoing trucks and create new disinfection slips
+                    View all outgoing trips and create new disinfection slips
                 @endif
             </p>
         </div>
@@ -339,7 +339,7 @@
         @empty
 
             <div class="text-center py-6 text-gray-500">
-                No truck slips found.
+                No trip slips found.
             </div>
         @endforelse
 

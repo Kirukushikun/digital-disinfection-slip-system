@@ -3,7 +3,7 @@
 ])
 
 @php
-    // Determine if the "Trucks" dropdown should be active
+    // Determine if the "Slips" dropdown should be active
     $trucksRoutes = ['user.incoming-trucks', 'user.outgoing-trucks', 'user.completed-trucks'];
     $isTrucksActive = in_array($currentRoute, $trucksRoutes);
 @endphp
@@ -17,19 +17,19 @@
         Dashboard
     </x-navigation.horizontal-menu-item>
 
-    {{-- Trucks Dropdown --}}
-    <x-navigation.horizontal-menu-dropdown label="Trucks" :active="$isTrucksActive"
-        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trucks" class="w-5 h-5 object-contain" />'>
+    {{-- Slips Dropdown --}}
+    <x-navigation.horizontal-menu-dropdown label="Slips" :active="$isTrucksActive"
+        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-5 h-5 object-contain" />'>
         <x-navigation.sidebar-menu-item href="{{ route('user.incoming-trucks') }}" :active="$currentRoute === 'user.incoming-trucks'"
             icon='<img src="https://cdn-icons-png.flaticon.com/512/8591/8591505.png" alt="Incoming" class="w-5 h-5 object-contain" />'
             :indent="true">
-            Incoming Trucks
+            Incoming Slips
         </x-navigation.sidebar-menu-item>
 
         <x-navigation.sidebar-menu-item href="{{ route('user.outgoing-trucks') }}" :active="$currentRoute === 'user.outgoing-trucks'"
             icon='<img src="https://cdn-icons-png.flaticon.com/512/7468/7468319.png" alt="Outgoing" class="w-5 h-5 object-contain" />'
             :indent="true">
-            Outgoing Trucks
+            Outgoing Slips
         </x-navigation.sidebar-menu-item>
 
         <x-navigation.sidebar-menu-item href="{{ route('user.completed-trucks') }}" :active="$currentRoute === 'user.completed-trucks'"
@@ -37,16 +37,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>'
             :indent="true">
-            Completed Trucks
+            Completed Slips
         </x-navigation.sidebar-menu-item>
     </x-navigation.horizontal-menu-dropdown>
 
-    {{-- Reports --}}
+    {{-- Issues --}}
     <x-navigation.horizontal-menu-item href="{{ route('user.reports') }}" :active="$currentRoute === 'user.reports'"
         icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
             </svg>'>
-        Reports
+        Issues
     </x-navigation.horizontal-menu-item>
 </div>
 

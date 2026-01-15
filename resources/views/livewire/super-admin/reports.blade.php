@@ -4,8 +4,8 @@
         <div class="mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
-                    <p class="text-gray-600 text-sm mt-1">View and manage all reports</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Issues</h1>
+                    <p class="text-gray-600 text-sm mt-1">View and manage all issues</p>
                 </div>
 
                 {{-- Search and Filter Bar --}}
@@ -202,7 +202,7 @@
                         <tr>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Report ID
+                                Issue ID
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -482,7 +482,7 @@
                 $isResolved = $selectedReport->resolved_at !== null;
                 $headerClass = $isResolved ? 'border-t-4 border-t-green-500 bg-green-50' : 'border-t-4 border-t-red-500 bg-red-50';
             @endphp
-            <x-modals.modal-template show="showDetailsModal" title="REPORT DETAILS" max-width="max-w-3xl" header-class="{{ $headerClass }}">
+            <x-modals.modal-template show="showDetailsModal" title="ISSUE DETAILS" max-width="max-w-3xl" header-class="{{ $headerClass }}">
                 @if ($selectedReport)
                     {{-- Sub Header --}}
                     <div class="border-b border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mt-6 mb-2">
@@ -537,7 +537,7 @@
                             <div class="text-gray-900">
                                 @if ($selectedReport->slip_id)
                                     @if ($selectedReport->slip && !(method_exists($selectedReport->slip, 'trashed') && $selectedReport->slip->trashed()))
-                                        <span class="text-blue-600 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
+                                        <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? 'N/A' }}</span>
                                     @elseif ($selectedReport->slip)
                                         <span class="text-gray-900 font-semibold">Slip: {{ $selectedReport->slip->slip_id ?? $selectedReport->slip_id }} <span class="text-gray-500 italic">(deleted)</span></span>
                                     @else

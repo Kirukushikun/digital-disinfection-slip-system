@@ -3,7 +3,7 @@
     {{-- Simple Header --}}
     <div class="mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Completed & Incomplete Trucks</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Completed & Incomplete Trips</h1>
             <p class="text-gray-600 text-sm mt-1">View all completed and incomplete disinfection slips</p>
         </div>
     </div>
@@ -334,7 +334,7 @@
         @empty
 
             <div class="text-center py-6 text-gray-500">
-                No truck slips found.
+                No trip slips found.
             </div>
         @endforelse
 

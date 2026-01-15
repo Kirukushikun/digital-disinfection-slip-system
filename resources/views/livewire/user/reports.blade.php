@@ -4,8 +4,8 @@
     {{-- Simple Header --}}
     <div class="mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">My Reports</h1>
-            <p class="text-gray-600 text-sm mt-1">View and manage all your submitted reports</p>
+            <h1 class="text-2xl font-bold text-gray-900">My Issues</h1>
+            <p class="text-gray-600 text-sm mt-1">View and manage all your submitted issues</p>
         </div>
     </div>
 
@@ -144,12 +144,12 @@
     {{-- Pagination --}}
     <x-buttons.nav-pagination :paginator="$reports" />
 
-    {{-- Report Details Modal --}}
+    {{-- Issue Details Modal --}}
     @php
         $isResolved = $selectedReport?->resolved_at !== null;
         $headerClass = $isResolved ? 'border-t-4 border-t-green-500 bg-green-50' : 'border-t-4 border-t-red-500 bg-red-50';
     @endphp
-    <x-modals.modal-template show="showDetailsModal" title="REPORT DETAILS" max-width="max-w-2xl" header-class="{{ $headerClass }}">
+    <x-modals.modal-template show="showDetailsModal" title="ISSUE DETAILS" max-width="max-w-3xl" header-class="{{ $headerClass }}">
         @if ($selectedReport)
             {{-- Sub Header --}}
             <div class="border-b border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mt-6 mb-2">
