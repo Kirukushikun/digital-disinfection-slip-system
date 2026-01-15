@@ -22,8 +22,13 @@
                     <button
                         class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed">«</button>
                 @else
-                    <button wire:click="previousPage('{{ $pageName }}')"
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">«</button>
+                    @if($pageName === 'reasonsPage')
+                        <button wire:click="previousReasonsPage"
+                            class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">«</button>
+                    @else
+                        <button wire:click="previousPage('{{ $pageName }}')"
+                            class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">«</button>
+                    @endif
                 @endif
 
                 @php
@@ -53,17 +58,29 @@
                         <button
                             class="min-w-10 py-2.5 px-4 rounded-full bg-gray-100 text-gray-800 text-sm">{{ $i }}</button>
                     @else
-                        <button wire:click="gotoPage({{ $i }}, '{{ $pageName }}')"
-                            class="min-w-10 py-2.5 px-4 rounded-full hover:bg-gray-100 text-gray-800 text-sm hover:cursor-pointer cursor-pointer">
-                            {{ $i }}
-                        </button>
+                        @if($pageName === 'reasonsPage')
+                            <button wire:click="gotoReasonsPage({{ $i }})"
+                                class="min-w-10 py-2.5 px-4 rounded-full hover:bg-gray-100 text-gray-800 text-sm hover:cursor-pointer cursor-pointer">
+                                {{ $i }}
+                            </button>
+                        @else
+                            <button wire:click="gotoPage({{ $i }}, '{{ $pageName }}')"
+                                class="min-w-10 py-2.5 px-4 rounded-full hover:bg-gray-100 text-gray-800 text-sm hover:cursor-pointer cursor-pointer">
+                                {{ $i }}
+                            </button>
+                        @endif
                     @endif
                 @endfor
 
                 {{-- Next --}}
                 @if ($paginator->hasMorePages())
-                    <button wire:click="nextPage('{{ $pageName }}')"
-                        class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">»</button>
+                    @if($pageName === 'reasonsPage')
+                        <button wire:click="nextReasonsPage"
+                            class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">»</button>
+                    @else
+                        <button wire:click="nextPage('{{ $pageName }}')"
+                            class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">»</button>
+                    @endif
                 @else
                     <button
                         class="p-2.5 min-w-10 inline-flex justify-center items-center rounded-full text-gray-400 bg-gray-50 cursor-not-allowed">»</button>

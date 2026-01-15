@@ -928,31 +928,22 @@ class TruckList extends Component
         );
     }
     
-    public function gotoPage($page, $pageName = 'reasonsPage')
+    // Separate pagination methods for reasons (don't override default pagination)
+    public function gotoReasonsPage($page)
     {
-        if ($pageName === 'reasonsPage') {
-            $this->reasonsPage = $page;
-        } else {
-            parent::gotoPage($page, $pageName);
-        }
+        $this->reasonsPage = $page;
     }
     
-    public function previousPage($pageName = 'reasonsPage')
+    public function previousReasonsPage()
     {
-        if ($pageName === 'reasonsPage' && $this->reasonsPage > 1) {
+        if ($this->reasonsPage > 1) {
             $this->reasonsPage--;
-        } else {
-            parent::previousPage($pageName);
         }
     }
     
-    public function nextPage($pageName = 'reasonsPage')
+    public function nextReasonsPage()
     {
-        if ($pageName === 'reasonsPage') {
-            $this->reasonsPage++;
-        } else {
-            parent::nextPage($pageName);
-        }
+        $this->reasonsPage++;
     }
     
     public function openCreateReasonModal()
