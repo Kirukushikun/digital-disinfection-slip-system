@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'custom.throttle' => \App\Http\Middleware\CustomThrottleRequests::class,
             'super.guard' => \App\Http\Middleware\EnsureSuperGuard::class,
         ]);
+        
+        // Customize authentication redirect to go to landing page instead of login
+        $middleware->redirectGuestsTo(fn () => '/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $e) {
@@ -35,7 +38,15 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             // Handle 404 Not Found - redirect to landing
-            if ($exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            // Check for NotFoundHttpException and also ModelNotFoundException (which Laravel converts to 404)
+            if ($exception instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException ||
+                $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                return redirect('/')->with('status', 'The page you are looking for could not be found.');
+            }
+            
+            // Also handle any HttpException with 404 status code
+            if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException && 
+                $exception->getStatusCode() === 404) {
                 return redirect('/')->with('status', 'The page you are looking for could not be found.');
             }
 
@@ -56,7 +67,13 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             // Handle authentication exceptions (session expired)
+            // This catches when users try to access protected routes without being authenticated
             if ($exception instanceof \Illuminate\Auth\AuthenticationException) {
+                // For AJAX/JSON requests, return JSON response
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Unauthenticated.'], 401);
+                }
+                // For regular requests, redirect to landing page
                 return redirect('/')->with('status', 'Your session has expired. Please log in again.');
             }
 

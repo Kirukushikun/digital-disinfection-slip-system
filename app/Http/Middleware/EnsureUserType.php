@@ -44,7 +44,7 @@ class EnsureUserType
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             
-            return redirect()->route('login')->with('status', 'Your account has been disabled. Please contact an administrator.');
+            return redirect('/')->with('status', 'Your account has been disabled. Please contact an administrator.');
         }
 
         return $next($request);

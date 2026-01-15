@@ -112,6 +112,10 @@ class TruckList extends Component
     {
         $this->type = $type;
         
+        // Clean up any orphaned pending attachments from previous session
+        // This catches cases where user uploaded but didn't create slip and navigated away
+        $this->cleanupOrphanedPendingAttachments();
+        
         // Outgoing: set default filter values to today (for UI), but don't apply them automatically
         // Incoming: no default date filter
         if ($this->type === 'outgoing') {
@@ -375,8 +379,21 @@ class TruckList extends Component
     public function updatedShowCreateModal($value)
     {
         // When modal is closed (set to false) and there are pending attachments, clean them up
+        // This catches when modal is closed via backdrop click or X button
         if ($value === false && !empty($this->pendingAttachmentIds)) {
             $this->cleanupPendingAttachments();
+        }
+    }
+
+    public function dehydrate()
+    {
+        // Clean up pending attachments when component is being dehydrated (page navigation, refresh, etc.)
+        // This ensures cleanup even if modal wasn't properly closed or user navigates away
+        if (!empty($this->pendingAttachmentIds)) {
+            // Only cleanup if modal is not open (to avoid cleanup during normal operation)
+            if (!$this->showCreateModal) {
+                $this->cleanupPendingAttachments();
+            }
         }
     }
 
@@ -431,13 +448,44 @@ class TruckList extends Component
         $this->searchDestination = '';
         $this->searchDriver = '';
         $this->searchReason = '';
-        $this->pendingAttachmentIds = [];
+        // Clean up pending attachments before clearing the array
+        $this->cleanupPendingAttachments();
         $this->showAddAttachmentModal = false;
         $this->showRemovePendingAttachmentConfirmation = false;
         $this->pendingAttachmentToDelete = null;
         $this->showPendingAttachmentModal = false;
         $this->currentPendingAttachmentIndex = 0;
         $this->resetErrorBag();
+    }
+
+    /**
+     * Clean up orphaned pending attachments that are not referenced by any slip
+     * This catches cases where attachments were uploaded but slip creation was cancelled
+     * and the cleanup didn't run (e.g., page refresh, navigation away)
+     */
+    private function cleanupOrphanedPendingAttachments()
+    {
+        // Find all attachments with "pending" in filename that are not referenced by any slip
+        $orphanedAttachments = Attachment::where('file_path', 'like', 'images/uploads/disinfection_slip_pending_%')
+            ->get()
+            ->filter(function ($attachment) {
+                // Check if this attachment is referenced by any slip
+                $isReferenced = DisinfectionSlip::whereJsonContains('attachment_ids', $attachment->id)->exists();
+                return !$isReferenced;
+            });
+
+        foreach ($orphanedAttachments as $attachment) {
+            try {
+                // Delete the physical file from storage
+                if (Storage::disk('public')->exists($attachment->file_path)) {
+                    Storage::disk('public')->delete($attachment->file_path);
+                }
+                // Hard delete the attachment record
+                $attachment->forceDelete();
+            } catch (\Exception $e) {
+                Log::error('Failed to cleanup orphaned pending attachment ' . $attachment->id . ': ' . $e->getMessage());
+            }
+        }
     }
 
     /**

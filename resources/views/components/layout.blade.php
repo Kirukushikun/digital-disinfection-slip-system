@@ -1623,6 +1623,32 @@
 
     {{ $slot }}
     @livewireScripts
+    
+    <script>
+        // Handle Livewire errors (419, 404, etc.) and redirect to landing page
+        document.addEventListener('livewire:init', () => {
+            Livewire.hook('request', ({ fail }) => {
+                fail(({ status, preventDefault }) => {
+                    // Handle specific HTTP error codes that should redirect to landing page
+                    if ([419, 404, 403, 409, 401].includes(status)) {
+                        preventDefault();
+                        window.location.href = '/';
+                    }
+                });
+            });
+        });
+        
+        // Also handle general fetch errors (for non-Livewire AJAX requests)
+        window.addEventListener('unhandledrejection', (event) => {
+            if (event.reason && event.reason.response) {
+                const status = event.reason.response.status;
+                if ([419, 404, 403, 409, 401].includes(status)) {
+                    event.preventDefault();
+                    window.location.href = '/';
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
