@@ -38,6 +38,7 @@ class DisinfectionSlip extends Component
     
     // Protection flags
     public $isDeleting = false;
+    public $isSaving = false;
     public $isSubmitting = false;
     
     // Type property: 'incoming' or 'outgoing'
@@ -659,6 +660,14 @@ class DisinfectionSlip extends Component
 
     public function save()
     {
+        // Prevent multiple submissions
+        if ($this->isSaving) {
+            return;
+        }
+
+        $this->isSaving = true;
+
+        try {
         // Check if there are any changes to save
         if (!$this->hasChanges) {
             $this->dispatch('toast', message: 'No changes to save.', type: 'info');
@@ -755,6 +764,9 @@ class DisinfectionSlip extends Component
         $this->originalValues = [];
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
         $this->dispatch('slip-updated');
+        } finally {
+            $this->isSaving = false;
+        }
     }
 
     public function openReportModal()

@@ -141,6 +141,7 @@ class Trucks extends Component
     public $reason_id;
     public $remarks_for_disinfection;
     public $isCreating = false;
+    public $isUpdating = false;
     public $newReasonText = '';
     public $editingReasonId = null;
     public $editingReasonText = '';
@@ -1374,6 +1375,14 @@ class Trucks extends Component
 
     public function saveEdit()
     {
+        // Prevent multiple submissions
+        if ($this->isUpdating) {
+            return;
+        }
+
+        $this->isUpdating = true;
+
+        try {
         if (!$this->canEdit()) {
             $this->dispatch('toast', message: 'Cannot edit a completed slip.', type: 'error');
             return;
@@ -1628,6 +1637,9 @@ class Trucks extends Component
         $this->resetEditForm();
         $this->showEditModal = false;
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
+        } finally {
+            $this->isUpdating = false;
+        }
     }
 
     public function deleteSlip()

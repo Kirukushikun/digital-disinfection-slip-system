@@ -126,6 +126,7 @@ class Trucks extends Component
 
     // Protection flags
     public $isDeleting = false;
+    public $isUpdating = false;
 
     // Reasons Modal
     public $showReasonsModal = false;
@@ -1252,13 +1253,27 @@ class Trucks extends Component
         return $this->hasEditUnsavedChanges();
     }
 
-    public function confirmDeleteSlip()
+    public function updateSlip()
     {
-        $this->showDeleteConfirmation = true;
-    }
+        // Prevent multiple submissions
+        if ($this->isUpdating) {
+            return;
+        }
+
+        $this->isUpdating = true;
+
+        try {
 
     public function saveEdit()
     {
+        // Prevent multiple submissions
+        if ($this->isUpdating) {
+            return;
+        }
+
+        $this->isUpdating = true;
+
+        try {
         // Authorization check - Admins cannot edit completed slips
         if (!$this->canEdit()) {
             $this->dispatch('toast', message: 'You are not authorized to edit completed slips.', type: 'error');
@@ -1510,6 +1525,9 @@ class Trucks extends Component
         $this->resetEditForm();
         $this->showEditModal = false;
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
+        } finally {
+            $this->isUpdating = false;
+        }
     }
 
     public function deleteSlip()

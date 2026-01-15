@@ -594,7 +594,7 @@
             <div class="font-semibold text-gray-500">Remarks:</div>
                     <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
                         @if ($isEditing)
-                            <textarea wire:model.live="remarks_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                            <textarea wire:model.live.debounce.500ms="remarks_for_disinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
                             @error('remarks_for_disinfection')
                                 <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                             @enderror

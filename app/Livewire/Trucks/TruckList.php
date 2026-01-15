@@ -147,19 +147,17 @@ class TruckList extends Component
     // Computed properties for dynamic dropdown data
     public function getTrucksProperty()
     {
-        return Truck::all();
+        return $this->getCachedTrucks();
     }
-
+    
     public function getLocationsProperty()
     {
-        // Exclude the current location from the list
-        $currentLocationId = Session::get('location_id');
-        return Location::where('id', '!=', $currentLocationId)->get();
+        return $this->getCachedLocations();
     }
-
+    
     public function getDriversProperty()
     {
-        return Driver::all();
+        return $this->getCachedDrivers();
     }
 
     public function getCanCreateSlipProperty()
@@ -173,7 +171,7 @@ class TruckList extends Component
             return false;
         }
         
-        $location = Location::find($currentLocationId);
+        $location = Location::find($currentLocationId, ['id', 'create_slip']);
         return $location && ($location->create_slip ?? false);
     }
     
@@ -195,10 +193,37 @@ class TruckList extends Component
         return $optionsArray;
     }
     
+    // Helper methods to get cached collections
+    private function getCachedTrucks()
+    {
+        return Cache::remember('trucks_all', 300, function() {
+            return Truck::withTrashed()->whereNull('deleted_at')->where('disabled', '=', false, 'and')->orderBy('plate_number', 'asc')->get();
+        });
+    }
+    
+    private function getCachedLocations()
+    {
+        $currentLocationId = Session::get('location_id');
+        return Cache::remember("locations_all_{$currentLocationId}", 300, function() use ($currentLocationId) {
+            return Location::where('id', '!=', $currentLocationId, 'and')
+                ->whereNull('deleted_at')
+                ->where('disabled', '=', false, 'and')
+                ->orderBy('location_name', 'asc')
+                ->get();
+        });
+    }
+    
+    private function getCachedDrivers()
+    {
+        return Cache::remember('drivers_all', 300, function() {
+            return Driver::withTrashed()->whereNull('deleted_at')->where('disabled', '=', false, 'and')->orderBy('first_name', 'asc')->get();
+        });
+    }
+    
     // Computed properties for filtered options with search
     public function getTruckOptionsProperty()
     {
-        $trucks = Truck::withTrashed()->whereNull('deleted_at')->where('disabled', false)->orderBy('plate_number')->get();
+        $trucks = $this->getCachedTrucks();
         $allOptions = $trucks->pluck('plate_number', 'id');
         $options = $allOptions;
         
@@ -216,12 +241,7 @@ class TruckList extends Component
     
     public function getLocationOptionsProperty()
     {
-        $currentLocationId = Session::get('location_id');
-        $locations = Location::where('id', '!=', $currentLocationId)
-            ->whereNull('deleted_at')
-            ->where('disabled', false)
-            ->orderBy('location_name')
-            ->get();
+        $locations = $this->getCachedLocations();
         $allOptions = $locations->pluck('location_name', 'id');
         $options = $allOptions;
         
@@ -239,7 +259,7 @@ class TruckList extends Component
     
     public function getDriverOptionsProperty()
     {
-        $drivers = Driver::withTrashed()->whereNull('deleted_at')->where('disabled', false)->orderBy('first_name')->get();
+        $drivers = $this->getCachedDrivers();
         $allOptions = $drivers->pluck('full_name', 'id');
         $options = $allOptions;
         
@@ -259,7 +279,7 @@ class TruckList extends Component
     {
         // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
         $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', false)->orderBy('reason_text')->get();
+            return Reason::where('is_disabled', '=', false, 'and')->orderBy('reason_text', 'asc')->get();
         });
         $allOptions = $reasons->pluck('reason_text', 'id');
         $options = $allOptions;
@@ -366,19 +386,23 @@ class TruckList extends Component
 
     private function cleanupPendingAttachments()
     {
-        foreach ($this->pendingAttachmentIds as $attachmentId) {
+        if (empty($this->pendingAttachmentIds)) {
+            return;
+        }
+        
+        // Optimize: Fetch all attachments in one query instead of N queries
+        $attachments = Attachment::whereIn('id', $this->pendingAttachmentIds, 'and', false)->get();
+        
+        foreach ($attachments as $attachment) {
             try {
-                $attachment = Attachment::find($attachmentId);
-                if ($attachment) {
-                    // Delete the physical file from storage
-                    if (Storage::disk('public')->exists($attachment->file_path)) {
-                        Storage::disk('public')->delete($attachment->file_path);
-                    }
-                    // Hard delete the attachment record
-                    $attachment->forceDelete();
+                // Delete the physical file from storage
+                if (Storage::disk('public')->exists($attachment->file_path)) {
+                    Storage::disk('public')->delete($attachment->file_path);
                 }
+                // Hard delete the attachment record
+                $attachment->forceDelete();
             } catch (\Exception $e) {
-                Log::error('Failed to cleanup attachment ' . $attachmentId . ': ' . $e->getMessage());
+                Log::error('Failed to cleanup attachment ' . $attachment->id . ': ' . $e->getMessage());
             }
         }
     }
@@ -454,7 +478,7 @@ class TruckList extends Component
                 'exists:reasons,id',
                 function ($attribute, $value, $fail) {
                     if ($value) {
-                        $reason = Reason::find($value);
+                        $reason = Reason::find($value, ['id', 'is_disabled']);
                         if (!$reason || $reason->is_disabled) {
                             $fail('The selected reason is not available.');
                         }
@@ -663,7 +687,7 @@ class TruckList extends Component
             $key = array_search($attachmentId, $this->pendingAttachmentIds);
             if ($key !== false) {
                 // Get the attachment record before deletion
-                $attachment = Attachment::find($attachmentId);
+                $attachment = Attachment::find($attachmentId, ['id', 'user_id', 'file_path']);
                 if ($attachment) {
                     // Check if current user is the one who uploaded this attachment (unless admin/superadmin)
                     $user = Auth::user();
@@ -764,7 +788,7 @@ class TruckList extends Component
             return collect([]);
         }
         
-        return Attachment::whereIn('id', $this->pendingAttachmentIds)->get();
+        return Attachment::whereIn('id', $this->pendingAttachmentIds, 'and', false)->get();
     }
     
     /**
@@ -782,7 +806,7 @@ class TruckList extends Component
             return false;
         }
 
-        $attachment = Attachment::find($attachmentId);
+        $attachment = Attachment::find($attachmentId, ['id', 'user_id']);
         if (!$attachment) {
             return false;
         }
@@ -882,9 +906,16 @@ class TruckList extends Component
                 $q->where('status', $this->appliedStatus);
             })
 
-            ->with(['truck' => function($q) {
-                $q->withTrashed();
-            }]) // Load relationship with soft deleted records
+            ->with([
+                'truck' => function($q) {
+                    $q->withTrashed();
+                },
+                'location',
+                'destination',
+                'driver',
+                'hatcheryGuard',
+                'receivedGuard'
+            ]) // Eager load all relationships to prevent N+1 queries
             ->when($this->sortDirection === 'asc', function($q) {
                 $q->orderBy('slip_id', 'asc');
             })
@@ -913,7 +944,7 @@ class TruckList extends Component
     private function getCachedReasons()
     {
         return Cache::remember('reasons_all', 300, function() {
-            return Reason::orderBy('reason_text')->get();
+            return Reason::orderBy('reason_text', 'asc')->get();
         });
     }
     
@@ -997,7 +1028,7 @@ class TruckList extends Component
                 'min:1',
                 function ($attribute, $value, $fail) {
                     $trimmedValue = trim($value);
-                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                         ->exists();
                     if ($exists) {
                         $fail('This reason already exists.');
@@ -1036,7 +1067,7 @@ class TruckList extends Component
             return;
         }
         
-        $reason = Reason::find($reasonId);
+        $reason = Reason::find($reasonId, ['id', 'reason_text']);
         if ($reason) {
             $this->editingReasonId = $reasonId;
             $this->editingReasonText = $reason->reason_text;
@@ -1059,8 +1090,8 @@ class TruckList extends Component
                     'min:1',
                     function ($attribute, $value, $fail) {
                         $trimmedValue = trim($value);
-                        $exists = Reason::where('id', '!=', $this->editingReasonId)
-                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        $exists = Reason::where('id', '!=', $this->editingReasonId, 'and')
+                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                             ->exists();
                         if ($exists) {
                             $fail('This reason already exists.');
@@ -1095,7 +1126,7 @@ class TruckList extends Component
         }
         
         $this->savingReason = true;
-        $reason = Reason::find($this->editingReasonId);
+        $reason = Reason::find($this->editingReasonId, ['id', 'reason_text', 'is_disabled']);
         
         if ($reason) {
             $oldValues = $reason->only(['reason_text', 'is_disabled']);
@@ -1136,7 +1167,7 @@ class TruckList extends Component
             return;
         }
         
-        $reason = Reason::find($reasonId);
+        $reason = Reason::find($reasonId, ['id', 'reason_text', 'is_disabled']);
         if ($reason) {
             $oldValues = $reason->only(['reason_text', 'is_disabled']);
             $reason->disabled = !$reason->disabled;
