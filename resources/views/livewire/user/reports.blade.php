@@ -135,7 +135,7 @@
                 @if ($search || !is_null($appliedResolved) || !empty($appliedCreatedFrom) || !empty($appliedCreatedTo))
                     <p class="text-lg font-medium">No results match your filters.</p>
                 @else
-                    <p class="text-lg font-medium">You haven't submitted any reports yet.</p>
+                    <p class="text-lg font-medium">You haven't submitted any issues yet.</p>
                 @endif
             </div>
         @endforelse

@@ -35,11 +35,11 @@
                                 @enderror
                             </div>
 
-                            {{-- Resolved Reports Retention Months --}}
+                            {{-- Resolved Issues Retention Months --}}
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
                                 <label for="resolved_reports_retention_months"
                                     class="block text-sm font-semibold text-gray-800 mb-3">
-                                    Resolved Reports Retention
+                                    Resolved Issues Retention
                                 </label>
                                 <div class="flex items-center gap-3 mb-2">
                                     <input type="number" id="resolved_reports_retention_months"
@@ -49,7 +49,7 @@
                                     <span class="text-sm font-medium text-gray-700">months</span>
                                 </div>
                                 <p class="text-xs text-gray-600 leading-relaxed">
-                                    Resolved reports older than this period will be automatically deleted. Default is 3
+                                    Resolved issues older than this period will be automatically deleted. Default is 3
                                     months.
                                 </p>
                                 @error('resolved_reports_retention_months')
@@ -71,7 +71,7 @@
                                     <span class="text-sm font-medium text-gray-700">months</span>
                                 </div>
                                 <p class="text-xs text-gray-600 leading-relaxed">
-                                    Soft-deleted records (users, trucks, drivers, locations, slips, reports) older than this period will be permanently deleted. Related disinfection slips will be cascade deleted. Default is 3 months.
+                                    Soft-deleted records (users, plate  numbers, drivers, locations, slips, issues) older than this period will be permanently deleted. Related disinfection slips will be cascade deleted. Default is 3 months.
                                 </p>
                                 @error('soft_deleted_retention_months')
                                     <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
@@ -240,11 +240,11 @@
                                 </div>
                             </div>
 
-                            {{-- Reports Cleanup --}}
+                            {{-- Issues Cleanup --}}
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
-                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Reports Cleanup</h3>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Issues Cleanup</h3>
                                         <p class="text-sm text-gray-600 leading-relaxed">
                                             Delete resolved reports older than the retention period to keep the system clean and focused on active issues.
                                         </p>
@@ -324,17 +324,17 @@
                 onConfirm="runAttachmentCleanup"
                 confirmText="Run Cleanup" cancelText="Cancel" />
 
-            {{-- Reports Cleanup Modal --}}
-            <x-modals.delete-confirmation show="showReportsCleanupModal" title="Clean Up Resolved Reports"
-                message="Are you sure you want to run reports cleanup?"
-                :details="'This will permanently delete resolved reports older than <strong>' . $resolved_reports_retention_months . ' months</strong>.'"
+            {{-- Issues Cleanup Modal --}}
+            <x-modals.delete-confirmation show="showReportsCleanupModal" title="Clean Up Resolved Issues"
+                message="Are you sure you want to run issues cleanup?"
+                :details="'This will permanently delete resolved issues older than <strong>' . $resolved_reports_retention_months . ' months</strong>.'"
                 onConfirm="runReportsCleanup"
                 confirmText="Run Cleanup" cancelText="Cancel" />
 
             {{-- Soft-Delete Cleanup Modal --}}
             <x-modals.delete-confirmation show="showSoftDeleteCleanupModal" title="Clean Up Soft-Deleted Records"
                 message="Are you sure you want to run soft-deleted records cleanup?"
-                :details="'This will permanently delete soft-deleted records (users, trucks, drivers, locations, slips, reports) older than <strong>' . $soft_deleted_retention_months . ' months</strong>.'"
+                :details="'This will permanently delete soft-deleted records (users, trucks, drivers, locations, slips, issues) older than <strong>' . $soft_deleted_retention_months . ' months</strong>.'"
                 onConfirm="runSoftDeleteCleanup"
                 confirmText="Run Cleanup" cancelText="Cancel" />
 

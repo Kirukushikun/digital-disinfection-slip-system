@@ -1426,7 +1426,7 @@ class Reports extends Component
             // Report was already restored or doesn't exist
             $this->showRestoreModal = false;
             $this->reset(['selectedReportId', 'selectedReportName']);
-            $this->dispatch('toast', message: 'This report was already restored or does not exist. Please refresh the page.', type: 'error');
+            $this->dispatch('toast', message: 'This issue was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
@@ -1438,14 +1438,14 @@ class Reports extends Component
         Logger::restore(
             Report::class,
             $report->id,
-            "Restored report {$reportType}"
+            "Restored issue {$reportType}"
         );
         
         Cache::forget('reports_all');
         $this->showRestoreModal = false;
         $this->reset(['selectedReportId', 'selectedReportName']);
         $this->resetPage();
-        $this->dispatch('toast', message: 'Report has been restored.', type: 'success');
+        $this->dispatch('toast', message: 'Issue has been restored.', type: 'success');
         } finally {
             $this->isRestoring = false;
         }

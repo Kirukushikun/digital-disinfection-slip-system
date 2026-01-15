@@ -76,7 +76,7 @@
                     @if (!is_null($appliedReportType))
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Type: {{ $appliedReportType === 'slip' ? 'Slip Reports' : 'Miscellaneous Reports' }}
+                            Type: {{ $appliedReportType === 'slip' ? 'Slip Issues' : 'Miscellaneous Issues' }}
                             <button wire:click="removeFilter('report_type')"
                                 class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -311,7 +311,7 @@
                                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                             </path>
                                         </svg>
-                                        <p class="text-gray-500 text-sm">No reports found</p>
+                                        <p class="text-gray-500 text-sm">No issues found</p>
                                     </div>
                                 </td>
                             </tr>
@@ -508,10 +508,10 @@
                 onConfirm="deleteSlip" />
         @endif
 
-        {{-- Report Delete Confirmation Modal --}}
+        {{-- Issue Delete Confirmation Modal --}}
         @if ($showDeleteConfirmation && $selectedReportId)
-            <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE REPORT?"
-                message="Delete this report?" :details="'Report ID: <span class=\'font-semibold\'>' . $selectedReportId . '</span>'" warning="This action cannot be undone!"
+            <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE ISSUE?"
+                message="Delete this issue?" :details="'Issue ID: <span class=\'font-semibold\'>' . $selectedReportId . '</span>'" warning="This action cannot be undone!"
                 onConfirm="deleteReport" />
         @endif
     </div>

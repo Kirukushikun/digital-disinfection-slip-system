@@ -45,7 +45,7 @@
                     <div class="flex items-center">
                         <button wire:click="openReportModal" type="button"
                             class="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
-                            title="Report">
+                            title="Report Issue">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
@@ -974,8 +974,8 @@
 
     {{-- Add Photos Modal is now inline Alpine.js modal above --}}
 
-    {{-- Report Modal --}}
-    <x-modals.modal-template show="showReportModal" title="REPORT DISINFECTION SLIP" max-width="max-w-3xl"
+    {{-- Report Issue Modal --}}
+    <x-modals.modal-template show="showReportModal" title="REPORT AN ISSUE" max-width="max-w-3xl"
         header-class="border-t-4 border-t-red-500 bg-red-50">
         @if ($selectedSlip)
             {{-- Sub Header --}}
@@ -1013,7 +1013,7 @@
             <div class="flex flex-col gap-2 w-full -mt-8">
                 <x-buttons.submit-button wire:click.prevent="submitReport" color="red" wire:loading.attr="disabled" wire:target="submitReport"
                     x-bind:disabled="$wire.isSubmitting">
-                    <span wire:loading.remove wire:target="submitReport">Submit Report</span>
+                    <span wire:loading.remove wire:target="submitReport">Submit Issue</span>
                     <span wire:loading.inline-flex wire:target="submitReport" class="inline-flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

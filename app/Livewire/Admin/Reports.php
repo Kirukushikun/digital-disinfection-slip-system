@@ -421,16 +421,16 @@ class Reports extends Component
     public function clearFilters()
     {
         $this->filterReportType = null;
-        $this->filterResolved = null;
+        $this->filterResolved = '0'; // Reset to default: Unresolved
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         
         $this->appliedReportType = null;
-        $this->appliedResolved = null;
+        $this->appliedResolved = '0'; // Reset to default: Unresolved
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         
-        $this->filtersActive = false;
+        $this->filtersActive = true; // Reset to default: true (since we filter by unresolved by default)
         $this->resetPage();
     }
     
