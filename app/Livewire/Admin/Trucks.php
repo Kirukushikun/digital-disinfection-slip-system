@@ -1253,17 +1253,6 @@ class Trucks extends Component
         return $this->hasEditUnsavedChanges();
     }
 
-    public function updateSlip()
-    {
-        // Prevent multiple submissions
-        if ($this->isUpdating) {
-            return;
-        }
-
-        $this->isUpdating = true;
-
-        try {
-
     public function saveEdit()
     {
         // Prevent multiple submissions
