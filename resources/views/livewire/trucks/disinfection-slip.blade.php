@@ -150,11 +150,7 @@
                                 <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                             @enderror
                         @else
-                            @php
-                                $reason = $selectedSlip->reason_id ? \App\Models\Reason::find($selectedSlip->reason_id) : null;
-                                $displayReason = $reason && !$reason->is_disabled ? $reason->reason_text : 'N/A';
-                            @endphp
-                            {{ $displayReason }}
+                            {{ $this->displayReason }}
                         @endif
                     </div>
                 </div>
@@ -467,7 +463,7 @@
                                 
                                 <div class="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2">
                                     <h3 class="text-base sm:text-lg font-semibold text-gray-900">Add Photos</h3>
-                                    <button @click="tryCancel()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                                    <button @click="tryCancel()" class="text-gray-400 hover:text-gray-600 shrink-0">
                                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>

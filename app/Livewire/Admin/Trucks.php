@@ -119,7 +119,7 @@ class Trucks extends Component
             return collect([]);
         }
         
-        return Attachment::whereIn('id', $this->selectedSlip->attachment_ids)
+        return Attachment::whereIn('id', $this->selectedSlip->attachment_ids, 'and', false)
             ->with('user')
             ->get();
     }
@@ -233,38 +233,38 @@ class Trucks extends Component
     private function getCachedLocations()
     {
         return Cache::remember('locations_all', 300, function() {
-            return Location::orderBy('location_name')->get();
+            return Location::orderBy('location_name', 'asc')->get();
         });
     }
     
     private function getCachedDrivers()
     {
         return Cache::remember('drivers_all', 300, function() {
-            return Driver::orderBy('first_name')->get();
+            return Driver::orderBy('first_name', 'asc')->get();
         });
     }
     
     private function getCachedTrucks()
     {
         return Cache::remember('trucks_all', 300, function() {
-            return Truck::orderBy('plate_number')->get();
+            return Truck::orderBy('plate_number', 'asc')->get();
         });
     }
     
     private function getCachedReasons()
     {
         return Cache::remember('reasons_all', 300, function() {
-            return Reason::orderBy('reason_text')->get();
+            return Reason::orderBy('reason_text', 'asc')->get();
         });
     }
     
     private function getCachedGuards()
     {
         return Cache::remember('guards_all', 300, function() {
-            return User::where('user_type', 0)
-                ->where('disabled', false)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
+            return User::where('user_type', '=', 0, 'and')
+                ->where('disabled', '=', false, 'and')
+                ->orderBy('first_name', 'asc')
+                ->orderBy('last_name', 'asc')
                 ->get()
                 ->mapWithKeys(function ($user) {
                 $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
@@ -277,9 +277,9 @@ class Trucks extends Component
     private function getFilterGuardsCollection()
     {
         if ($this->cachedFilterGuardsCollection === null) {
-            $this->cachedFilterGuardsCollection = User::where('user_type', 0)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
+            $this->cachedFilterGuardsCollection = User::where('user_type', '=', 0, 'and')
+                ->orderBy('first_name', 'asc')
+                ->orderBy('last_name', 'asc')
                 ->get();
         }
         return $this->cachedFilterGuardsCollection;
@@ -587,7 +587,7 @@ class Trucks extends Component
     {
         // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
         $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', false)->orderBy('reason_text')->get();
+            return Reason::where('is_disabled', '=', false, 'and')->orderBy('reason_text', 'asc')->get();
         });
         $allOptions = $reasons->pluck('reason_text', 'id');
         $options = $allOptions;
@@ -754,7 +754,7 @@ class Trucks extends Component
     {
         // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
         $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', false)->orderBy('reason_text')->get();
+            return Reason::where('is_disabled', '=', false, 'and')->orderBy('reason_text', 'asc')->get();
         });
         $allOptions = $reasons->pluck('reason_text', 'id');
         $options = $allOptions;
@@ -1088,11 +1088,25 @@ class Trucks extends Component
             'location',
             'destination',
             'driver',
+            'reason',
             'hatcheryGuard',
             'receivedGuard'
         ])->find($id);
 
         $this->showDetailsModal = true;
+    }
+    
+    /**
+     * Get the display text for the reason on the selected slip
+     */
+    public function getDisplayReasonProperty()
+    {
+        if (!$this->selectedSlip || !$this->selectedSlip->reason_id) {
+            return 'N/A';
+        }
+        
+        $reason = $this->selectedSlip->reason;
+        return ($reason && !$reason->is_disabled) ? $reason->reason_text : 'N/A';
     }
 
     public function canEdit()
@@ -1523,7 +1537,7 @@ class Trucks extends Component
         ]);
         
         // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
+        $deleted = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id, 'and')
             ->whereNull('deleted_at') // Only delete if not already deleted
             ->update(['deleted_at' => now()]);
         
@@ -2466,7 +2480,7 @@ class Trucks extends Component
                 'min:1',
                 function ($attribute, $value, $fail) {
                     $trimmedValue = trim($value);
-                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                         ->exists();
                     if ($exists) {
                         $fail('This reason already exists.');
@@ -2527,8 +2541,8 @@ class Trucks extends Component
                     'min:1',
                     function ($attribute, $value, $fail) {
                         $trimmedValue = trim($value);
-                        $exists = Reason::where('id', '!=', $this->editingReasonId)
-                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        $exists = Reason::where('id', '!=', $this->editingReasonId, 'and')
+                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                             ->exists();
                         if ($exists) {
                             $fail('This reason already exists.');

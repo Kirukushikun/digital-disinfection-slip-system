@@ -206,12 +206,13 @@ class AdminController extends Controller
                 if (now()->lt(Session::get($expiresKey))) {
                     $slipId = Session::get($sessionKey);
                     $slip = \App\Models\DisinfectionSlip::with([
-                        'truck' => function($q) { $q->withTrashed(); },
-                        'location' => function($q) { $q->withTrashed(); },
-                        'destination' => function($q) { $q->withTrashed(); },
-                        'driver' => function($q) { $q->withTrashed(); },
-                        'hatcheryGuard' => function($q) { $q->withTrashed(); },
-                        'receivedGuard' => function($q) { $q->withTrashed(); }
+                        'truck',
+                        'location',
+                        'destination',
+                        'driver',
+                        'reason',
+                        'hatcheryGuard',
+                        'receivedGuard'
                     ])
                         ->find($slipId);
                     Session::forget([$sessionKey, $expiresKey]);
@@ -223,8 +224,15 @@ class AdminController extends Controller
             abort(404, 'Slip not found or expired');
         }
         
+        // Get display reason text
+        $displayReason = 'N/A';
+        if ($slip->reason_id && $slip->reason) {
+            $displayReason = ($slip->reason && !$slip->reason->is_disabled) ? $slip->reason->reason_text : 'N/A';
+        }
+        
         return view('livewire.admin.print-slip', [
-            'slip' => $slip
+            'slip' => $slip,
+            'displayReason' => $displayReason
         ]);
     }
 

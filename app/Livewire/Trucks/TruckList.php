@@ -754,6 +754,26 @@ class TruckList extends Component
         }
         return $this->pendingAttachmentIds[$this->currentPendingAttachmentIndex] ?? null;
     }
+    
+    /**
+     * Get pending attachments collection
+     */
+    public function getPendingAttachmentsProperty()
+    {
+        if (empty($this->pendingAttachmentIds)) {
+            return collect([]);
+        }
+        
+        return Attachment::whereIn('id', $this->pendingAttachmentIds)->get();
+    }
+    
+    /**
+     * Get total count of pending attachments
+     */
+    public function getTotalPendingAttachmentsProperty()
+    {
+        return count($this->pendingAttachmentIds);
+    }
 
     public function canDeleteCurrentPendingAttachment()
     {

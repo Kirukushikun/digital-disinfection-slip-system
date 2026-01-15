@@ -30,7 +30,7 @@
         x-transition:leave-end="opacity-0"
         @click="open = false"
         x-cloak
-        class="fixed inset-0 bg-black/50 z-30 sm:hidden"
+        class="fixed top-0 left-0 right-0 bottom-16 bg-black/50 z-30 sm:hidden"
         style="display: none;">
     </div>
 

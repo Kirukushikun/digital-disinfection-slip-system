@@ -39,7 +39,7 @@
 
 @if($isSuperGuard)
     {{-- Super Guard Bottom Navigation --}}
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 sm:hidden">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-60 sm:hidden">
         <div class="grid grid-cols-4 items-center h-16">
             <x-navigation.bottom-nav-item 
                 href="{{ route('user.dashboard') }}" 
@@ -95,9 +95,9 @@
             </x-navigation.mobile-dropup>
 
             <x-navigation.mobile-dropup 
-                label="Trucks" 
+                label="Slips" 
                 :active="$isTrucksActive"
-                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trucks" class="w-6 h-6 object-contain" />'>
+                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
                 <x-navigation.mobile-dropup-item 
                     href="{{ route('user.incoming-trucks') }}" 
                     :active="$currentRoute === 'user.incoming-trucks'"
@@ -134,7 +134,7 @@
     </nav>
 @elseif($userType === 0)
     {{-- Guards/User Bottom Navigation --}}
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 sm:hidden">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-60 sm:hidden">
         <div class="grid grid-cols-5 items-center h-16">
             <x-navigation.bottom-nav-item 
                 href="{{ route('user.dashboard') }}" 
@@ -180,7 +180,7 @@
     </nav>
 @elseif($userType === 1)
     {{-- Admin Bottom Navigation --}}
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 sm:hidden">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-60 sm:hidden">
         <div class="grid grid-cols-5 items-center h-16">
             <x-navigation.bottom-nav-item 
                 href="{{ route('admin.dashboard') }}" 
@@ -238,8 +238,8 @@
             <x-navigation.bottom-nav-item 
                 href="{{ route('admin.trucks') }}" 
                 :active="$currentRoute === 'admin.trucks'"
-                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trucks" class="w-6 h-6 object-contain" />'>
-                Trucks
+                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
+                Slips
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
@@ -263,7 +263,7 @@
     </nav>
 @elseif($userType === 2)
     {{-- Superadmin Bottom Navigation --}}
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 sm:hidden">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-60 sm:hidden">
         <div class="grid grid-cols-6 items-center h-16">
             <x-navigation.bottom-nav-item 
                 href="{{ route('superadmin.dashboard') }}" 
@@ -330,8 +330,8 @@
             <x-navigation.bottom-nav-item 
                 href="{{ route('superadmin.trucks') }}" 
                 :active="$currentRoute === 'superadmin.trucks'"
-                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trucks" class="w-6 h-6 object-contain" />'>
-                Trucks
+                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
+                Slips
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 

@@ -78,10 +78,10 @@ class DisinfectionSlip extends Component
     {
         $currentLocationId = Session::get('location_id');
         return Cache::remember("locations_all_{$currentLocationId}", 300, function() use ($currentLocationId) {
-            return Location::where('id', '!=', $currentLocationId)
+            return Location::where('id', '!=', $currentLocationId, 'and')
                 ->whereNull('deleted_at')
-                ->where('disabled', false)
-                ->orderBy('location_name')
+                ->where('disabled', '=', false, 'and')
+                ->orderBy('location_name', 'asc')
                 ->get();
         });
     }
@@ -177,7 +177,7 @@ class DisinfectionSlip extends Component
     {
         // Get only non-disabled reasons for dropdown (disabled reasons cannot be selected)
         $reasons = Cache::remember('reasons_active', 300, function() {
-            return Reason::where('is_disabled', false)->orderBy('reason_text')->get();
+            return Reason::where('is_disabled', '=', false, 'and')->orderBy('reason_text', 'asc')->get();
         });
         $allOptions = $reasons->pluck('reason_text', 'id');
         $options = $allOptions;
@@ -194,6 +194,19 @@ class DisinfectionSlip extends Component
         }
         
         return is_array($options) ? $options : $options->toArray();
+    }
+    
+    /**
+     * Get the display text for the reason on the selected slip
+     */
+    public function getDisplayReasonProperty()
+    {
+        if (!$this->selectedSlip || !$this->selectedSlip->reason_id) {
+            return 'N/A';
+        }
+        
+        $reason = $this->selectedSlip->reason;
+        return ($reason && !$reason->is_disabled) ? $reason->reason_text : 'N/A';
     }
 
     public function openDetailsModal($id, $type = null)
@@ -438,8 +451,8 @@ class DisinfectionSlip extends Component
         }
 
         // Only for OUTGOING: Status 0 (Pending) -> 1 (Disinfecting)
-        $updated = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
-            ->where('status', 0) // Only update if still Pending
+        $updated = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id, 'and')
+            ->where('status', '=', 0, 'and') // Only update if still Pending
             ->update(['status' => 1]);
 
         if ($updated === 0) {

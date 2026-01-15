@@ -135,5 +135,12 @@
             </div>
         @endforelse
         </div>
+        
+        {{-- Pagination --}}
+        @if($locations->hasPages())
+            <div class="mt-6">
+                <x-buttons.nav-pagination :paginator="$locations" />
+            </div>
+        @endif
     </div>
 </div>

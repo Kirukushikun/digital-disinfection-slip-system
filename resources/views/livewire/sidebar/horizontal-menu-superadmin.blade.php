@@ -70,10 +70,10 @@
         </x-navigation.sidebar-menu-item>
     </x-navigation.horizontal-menu-dropdown>
 
-    {{-- Trucks --}}
+    {{-- Slips --}}
     <x-navigation.horizontal-menu-item href="{{ route('superadmin.trucks') }}" :active="$currentRoute === 'superadmin.trucks'"
-        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trucks" class="w-5 h-5 object-contain" />'>
-        Trucks
+        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-5 h-5 object-contain" />'>
+        Slips
     </x-navigation.horizontal-menu-item>
 
     {{-- Issues --}}

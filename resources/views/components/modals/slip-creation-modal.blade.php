@@ -609,10 +609,8 @@
 {{-- Pending Photos Carousel Modal --}}
 <x-modals.modal-template show="showPendingAttachmentModal" title="Photos" max-width="w-[96%] sm:max-w-4xl" backdrop-opacity="40">
     @php
-        $pendingAttachments = collect($pendingAttachmentIds ?? [])->map(function($id) {
-            return \App\Models\Attachment::find($id);
-        })->filter();
-        $totalPendingAttachments = $pendingAttachments->count();
+        $pendingAttachments = $this->pendingAttachments;
+        $totalPendingAttachments = $this->totalPendingAttachments;
     @endphp
 
     @if ($totalPendingAttachments > 0)

@@ -67,12 +67,7 @@ Follow these steps to set up the system:
 
 6. (Optional) Edit the database seeder file (`database/seeders/DatabaseSeeder.php`) to customize initial data as needed.
 
-7. Set up database (choose one):
-   ```bash
-   php artisan migrate --seed
-   ```
-   
-   Or use the custom setup command:
+7. Set up database:
    ```bash
    php artisan db:setup --seed
    ```

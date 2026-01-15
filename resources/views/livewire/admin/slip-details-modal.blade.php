@@ -126,11 +126,7 @@
                 <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
                     <div class="font-semibold text-gray-500">Reason:</div>
                     <div class="text-gray-900">
-                        @php
-                            $reason = $selectedSlip->reason_id ? \App\Models\Reason::find($selectedSlip->reason_id) : null;
-                            $displayReason = $reason && !$reason->is_disabled ? $reason->reason_text : 'N/A';
-                        @endphp
-                        {{ $displayReason }}
+                        {{ $this->displayReason }}
                     </div>
                 </div>
 
