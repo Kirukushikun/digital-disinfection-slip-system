@@ -9,6 +9,7 @@ use App\Models\Driver;
 use App\Models\Location;
 use App\Models\User;
 use App\Models\Attachment;
+use App\Models\Reason;
 
 class DisinfectionSlipFactory extends Factory
 {
@@ -27,12 +28,21 @@ class DisinfectionSlipFactory extends Factory
         // Generate optional fields
         $hasAttachment = $this->faker->boolean(60); // 60% chance
         $hasReceivedGuard = $this->faker->boolean(80); // 80% chance
+        $hasReason = $this->faker->boolean(70); // 70% chance
+        
+        // Get reason_id if reason exists, otherwise null
+        $reasonId = null;
+        if ($hasReason) {
+            $existingReason = Reason::inRandomOrder()->first();
+            $reasonId = $existingReason ? $existingReason->id : null;
+        }
         
         return [
             'truck_id' => Truck::factory(),
             'location_id' => Location::factory(),
             'destination_id' => Location::factory(),
             'driver_id' => Driver::factory(),
+            'reason_id' => $reasonId,
             'remarks_for_disinfection' => $this->faker->optional(0.7)->sentence(),
             'attachment_ids' => $hasAttachment ? [Attachment::factory()->create()->id] : null,
             'hatchery_guard_id' => User::factory()->guard(),

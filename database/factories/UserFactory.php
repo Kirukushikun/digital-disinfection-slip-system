@@ -19,6 +19,7 @@ class UserFactory extends Factory
             'username' => fake()->unique()->userName(), // Temporary, will be replaced in afterCreating
             'user_type' => fake()->randomElement([0, 1, 2]), // 0: Guard, 1: Admin, 2: SuperAdmin
             'password' => static::$password ??= Hash::make('brookside25'),
+            'super_guard' => false, // Default to false, only set to true for specific super admins
             'disabled' => false, // Default to enabled
         ];
     }

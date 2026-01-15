@@ -26,6 +26,7 @@ class LocationFactory extends Factory
             'location_name' => $name,
             'attachment_id' => $this->faker->optional(0.7)->passthrough(Attachment::factory()->logo()),
             'disabled' => false,
+            'create_slip' => $this->faker->boolean(80), // 80% can create slips
         ];
     }
 
