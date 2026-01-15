@@ -147,7 +147,7 @@
                         <div class="font-semibold text-gray-500 mb-0.5">Hatchery Guard:</div>
                         <div>
                             @if ($selectedSlip->hatcheryGuard)
-                                <span class="text-gray-900">{{ $selectedSlip->hatcheryGuard->first_name . ' ' . $selectedSlip->hatcheryGuard->last_name }} @{{ $selectedSlip->hatcheryGuard->username }}</span>
+                                <span class="text-gray-900">{{ $selectedSlip->hatcheryGuard->first_name . ' ' . $selectedSlip->hatcheryGuard->last_name }}@if(isset($selectedSlip->hatcheryGuard->username)) &#64;{{ $selectedSlip->hatcheryGuard->username }}@endif</span>
                                 @if ($selectedSlip->hatcheryGuard->trashed())
                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                 @endif
@@ -160,7 +160,7 @@
                         <div class="font-semibold text-gray-500 mb-0.5">Received By:</div>
                         <div>
                             @if ($selectedSlip->receivedGuard)
-                                <span class="text-gray-900">{{ $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name }} @{{ $selectedSlip->receivedGuard->username }}</span>
+                                <span class="text-gray-900">{{ $selectedSlip->receivedGuard->first_name . ' ' . $selectedSlip->receivedGuard->last_name }}@if(isset($selectedSlip->receivedGuard->username)) &#64;{{ $selectedSlip->receivedGuard->username }}@endif</span>
                                 @if ($selectedSlip->receivedGuard->trashed())
                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                 @endif
@@ -177,14 +177,33 @@
 
         {{-- Footer --}}
         <x-slot name="footer">
-            <div class="flex justify-end w-full gap-2">
+            {{-- Mobile Layout --}}
+            <div class="flex flex-col gap-2 w-full md:hidden">
+                @if ($this->canEdit())
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <x-buttons.submit-button wire:click="openEditModal" color="orange" class="w-full">
+                            Edit
+                        </x-buttons.submit-button>
+                        <x-buttons.submit-button wire:click="closeDetailsModal" color="white" class="w-full">
+                            Close
+                        </x-buttons.submit-button>
+                    </div>
+                @else
+                    <x-buttons.submit-button wire:click="closeDetailsModal" color="white" class="w-full">
+                        Close
+                    </x-buttons.submit-button>
+                @endif
+            </div>
+
+            {{-- Desktop Layout --}}
+            <div class="hidden md:flex justify-end w-full gap-2">
                 <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
                     Close
                 </x-buttons.submit-button>
-
-                {{-- Edit Button --}}
+                
+                {{-- Edit Button (Only for non-completed/incomplete slips) --}}
                 @if ($this->canEdit())
-                    <x-buttons.submit-button wire:click="openEditModal" color="blue">
+                    <x-buttons.submit-button wire:click="openEditModal" color="orange">
                         Edit
                     </x-buttons.submit-button>
                 @endif

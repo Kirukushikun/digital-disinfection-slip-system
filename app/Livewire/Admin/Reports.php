@@ -119,12 +119,13 @@ class Reports extends Component
         // Reload selectedSlip with trashed relations if it exists
         if ($this->selectedSlip && $this->selectedSlip->id) {
             $this->selectedSlip = DisinfectionSlipModel::with([
-                'truck' => function($q) { $q->withTrashed(); },
-                'location' => function($q) { $q->withTrashed(); },
-                'destination' => function($q) { $q->withTrashed(); },
-                'driver' => function($q) { $q->withTrashed(); },
-                'hatcheryGuard' => function($q) { $q->withTrashed(); },
-                'receivedGuard' => function($q) { $q->withTrashed(); }
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason'
             ])->find($this->selectedSlip->id);
         }
         
@@ -381,17 +382,18 @@ class Reports extends Component
     {
         // Close report details modal if open
         $this->selectedReport = null;
-        
+
         // Set modal state FIRST to prevent polling from interfering
         $this->showDetailsModal = true;
-        
+
         $this->selectedSlip = DisinfectionSlipModel::with([
-            'truck' => function($q) { $q->withTrashed(); },
-            'location' => function($q) { $q->withTrashed(); },
-            'destination' => function($q) { $q->withTrashed(); },
-            'driver' => function($q) { $q->withTrashed(); },
-            'hatcheryGuard' => function($q) { $q->withTrashed(); },
-            'receivedGuard' => function($q) { $q->withTrashed(); }
+            'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+            'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+            'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+            'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+            'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+            'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+            'reason'
         ])->find($slipId);
     }
 
@@ -680,6 +682,19 @@ class Reports extends Component
     }
     
     // Slip details modal methods (stubs for slip-details-modal component)
+    /**
+     * Get the display text for the reason on the selected slip
+     */
+    public function getDisplayReasonProperty()
+    {
+        if (!$this->selectedSlip || !$this->selectedSlip->reason_id) {
+            return 'N/A';
+        }
+
+        $reason = $this->selectedSlip->reason;
+        return ($reason && !$reason->is_disabled) ? $reason->reason_text : 'N/A';
+    }
+
     public function canEdit()
     {
         if (!$this->selectedSlip) {
@@ -1131,7 +1146,8 @@ class Reports extends Component
                 'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason'
             ])->find($this->selectedSlip->id);
         }
     }

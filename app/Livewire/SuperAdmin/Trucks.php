@@ -181,6 +181,7 @@ class Trucks extends Component
     // Edit Modal
     public $showEditModal = false;
     public $showCancelEditConfirmation = false;
+    public $showFinalStatusConfirmation = false;
     public $editTruckId;
     public $editLocationId; // Origin (for status 0)
     public $editDestinationId;
@@ -1082,7 +1083,7 @@ class Trucks extends Component
         
         // Optimize attachment loading by only selecting needed fields
         return Attachment::whereIn('id', $this->selectedSlip->attachment_ids)
-            ->select('id', 'file_path', 'file_name', 'file_size', 'mime_type', 'user_id', 'created_at', 'updated_at', 'deleted_at')
+            ->select('id', 'file_path', 'user_id', 'created_at', 'updated_at')
             ->with(['user' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'deleted_at')->withTrashed(); }])
             ->get();
     }
@@ -1128,11 +1129,23 @@ class Trucks extends Component
         return !empty($attachmentIds);
     }
 
-    public function openEditModal()
+    public function openEditModal($id = null)
     {
+        // Load the slip if ID is provided (when called from table row)
+        if ($id) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($id);
+        }
         // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
         // Optimize relationship loading by only selecting needed fields
-        if ($this->selectedSlip && $this->selectedSlip->id) {
+        elseif ($this->selectedSlip && $this->selectedSlip->id) {
             $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
                 'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
                 'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -1940,9 +1953,7 @@ class Trucks extends Component
         if ($this->destination_id == $this->location_id) {
             $this->destination_id = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchOrigin = '';
-        $this->searchDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedDestinationId()
@@ -1951,9 +1962,7 @@ class Trucks extends Component
         if ($this->location_id == $this->destination_id) {
             $this->location_id = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchOrigin = '';
-        $this->searchDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedHatcheryGuardId()
@@ -1962,9 +1971,7 @@ class Trucks extends Component
         if ($this->received_guard_id == $this->hatchery_guard_id) {
             $this->received_guard_id = null;
         }
-        // Clear search when selection changes
-        $this->searchHatcheryGuard = '';
-        $this->searchReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedReceivedGuardId()
@@ -1973,8 +1980,7 @@ class Trucks extends Component
         if ($this->received_guard_id == $this->hatchery_guard_id) {
             $this->hatchery_guard_id = null;
         }
-        // Clear search when selection changes
-        $this->searchReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditLocationId()
@@ -1983,9 +1989,7 @@ class Trucks extends Component
         if ($this->editDestinationId == $this->editLocationId) {
             $this->editDestinationId = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditDestinationId()
@@ -1994,9 +1998,7 @@ class Trucks extends Component
         if ($this->editLocationId == $this->editDestinationId) {
             $this->editLocationId = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditHatcheryGuardId()
@@ -2005,9 +2007,7 @@ class Trucks extends Component
         if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
             $this->editReceivedGuardId = null;
         }
-        // Clear search when selection changes
-        $this->searchEditHatcheryGuard = '';
-        $this->searchEditReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditReceivedGuardId()
@@ -2016,8 +2016,7 @@ class Trucks extends Component
         if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
             $this->editHatcheryGuardId = null;
         }
-        // Clear search when selection changes
-        $this->searchEditReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function openAttachmentModal($index = 0)

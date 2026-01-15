@@ -637,7 +637,7 @@
 
         {{-- Admin Edit Modal --}}
         @if ($selectedSlip && $showEditModal)
-            <x-modals.admin-slip-edit-modal :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" :editing="$editing" />
+            <x-modals.admin-slip-edit-modal :slip-status="$selectedSlip->status" :edit-status="$editStatus" :selected-slip="$selectedSlip" />
         @endif
 
         {{-- Slip Delete Confirmation Modal --}}

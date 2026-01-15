@@ -52,7 +52,7 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                 <div class="font-semibold text-gray-500">Status:<span class="text-red-500">*</span></div>
                 <div class="text-gray-900">
-                    <select wire:model.live="editStatus"
+                    <select wire:model="editStatus"
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500 hover:cursor-pointer cursor-pointer">
                         <option value="0">Pending</option>
                         <option value="1">Disinfecting</option>
@@ -102,99 +102,9 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
                 <div class="font-semibold text-gray-500">Origin:<span class="text-red-500">*</span></div>
                 <div class="text-gray-900">
-                    @php
-                        $allLocations = $locations->pluck('location_name', 'id')->toArray();
-                    @endphp
-                    <div class="relative" x-data="{
-                        open: false,
-                        searchTerm: '',
-                        allOptions: @js($allLocations),
-                        selectedDestination: @entangle('editDestinationId'),
-                        selectedOrigin: @entangle('editLocationId'),
-                        get displayText() {
-                            if (!this.selectedOrigin) return 'Select origin...';
-                            const key = String(this.selectedOrigin);
-                            return this.allOptions[key] || this.allOptions[Number(key)] || 'Select origin...';
-                        },
-                        get availableOptions() {
-                            // Exclude selected destination
-                            const filtered = {};
-                            for (const [key, value] of Object.entries(this.allOptions)) {
-                                if (this.selectedDestination && Number(key) === Number(this.selectedDestination)) {
-                                    continue;
-                                }
-                                filtered[key] = value;
-                            }
-                            return filtered;
-                        },
-                        get filteredOptions() {
-                            if (!this.searchTerm) {
-                                return this.availableOptions;
-                            }
-                            const term = this.searchTerm.toLowerCase();
-                            const filtered = {};
-                            for (const [key, value] of Object.entries(this.availableOptions)) {
-                                if (String(value).toLowerCase().includes(term)) {
-                                    filtered[key] = value;
-                                }
-                            }
-                            return filtered;
-                        },
-                        closeDropdown() {
-                            this.open = false;
-                            this.searchTerm = '';
-                        }
-                    }" x-ref="editOriginDropdown" @click.outside="closeDropdown()"
-                        @focusin.window="
-                                const target = $event.target;
-                                const container = $refs.editOriginDropdown;
-                                if (!container.contains(target)) {
-                                    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA' || (target.tagName === 'BUTTON' && target.closest('[x-data]'))) {
-                                        closeDropdown();
-                                    }
-                                }
-                            ">
-                        <button type="button" x-on:click="open = !open"
-                            class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500"
-                            :class="{ 'ring-2 ring-blue-500': open }">
-                            <span :class="{ 'text-gray-400': !selectedOrigin }">
-                                <span x-text="displayText"></span>
-                            </span>
-                            <svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5 ml-2 -mr-1 transition-transform"
-                                :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-transition:enter="transition ease-out duration-100"
-                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
-                            x-transition:leave-end="opacity-0 scale-95"
-                            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1"
-                            style="display: none; z-index: 9999;" x-cloak @click.stop>
-                            <input type="text" x-model="searchTerm" x-on:keydown.escape="closeDropdown()"
-                                class="block w-full px-4 py-2 text-gray-800 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Search locations..." autocomplete="off">
-                            <div class="overflow-y-auto" style="max-height: 200px;">
-                                <template x-for="[value, label] in Object.entries(filteredOptions)" :key="value">
-                                    <a href="#"
-                                        x-on:click.prevent="
-                                                $wire.set('editLocationId', Number(value));
-                                                closeDropdown();
-                                            "
-                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
-                                        :class="$wire.get('editLocationId') == Number(value) ? 'bg-blue-50 text-blue-700' : ''">
-                                        <span x-text="label"></span>
-                                    </a>
-                                </template>
-                                <div x-show="Object.keys(filteredOptions).length === 0"
-                                    class="px-4 py-6 text-center text-sm text-gray-500" style="display: none;">
-                                    No results found
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <x-forms.searchable-dropdown-paginated wire-model="editLocationId" data-method="getPaginatedLocations"
+                        search-property="searchEditOrigin" placeholder="Select origin..."
+                        search-placeholder="Search locations..." :per-page="20" />
                     @error('editLocationId')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
@@ -205,100 +115,9 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                 <div class="font-semibold text-gray-500">Destination:<span class="text-red-500">*</span></div>
                 <div class="text-gray-900">
-                    @php
-                        $allLocations = $locations->pluck('location_name', 'id')->toArray();
-                    @endphp
-                    <div class="relative" x-data="{
-                        open: false,
-                        searchTerm: '',
-                        allOptions: @js($allLocations),
-                        selectedOrigin: @entangle('editLocationId'),
-                        selectedDestination: @entangle('editDestinationId'),
-                        get displayText() {
-                            if (!this.selectedDestination) return 'Select destination...';
-                            const key = String(this.selectedDestination);
-                            return this.allOptions[key] || this.allOptions[Number(key)] || 'Select destination...';
-                        },
-                        get availableOptions() {
-                            // Exclude selected origin
-                            const filtered = {};
-                            for (const [key, value] of Object.entries(this.allOptions)) {
-                                if (this.selectedOrigin && Number(key) === Number(this.selectedOrigin)) {
-                                    continue;
-                                }
-                                filtered[key] = value;
-                            }
-                            return filtered;
-                        },
-                        get filteredOptions() {
-                            if (!this.searchTerm) {
-                                return this.availableOptions;
-                            }
-                            const term = this.searchTerm.toLowerCase();
-                            const filtered = {};
-                            for (const [key, value] of Object.entries(this.availableOptions)) {
-                                if (String(value).toLowerCase().includes(term)) {
-                                    filtered[key] = value;
-                                }
-                            }
-                            return filtered;
-                        },
-                        closeDropdown() {
-                            this.open = false;
-                            this.searchTerm = '';
-                        }
-                    }" x-ref="editDestinationDropdown"
-                        @click.outside="closeDropdown()"
-                        @focusin.window="
-                            const target = $event.target;
-                            const container = $refs.editDestinationDropdown;
-                            if (!container.contains(target)) {
-                                if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA' || (target.tagName === 'BUTTON' && target.closest('[x-data]'))) {
-                                    closeDropdown();
-                                }
-                            }
-                        ">
-                        <button type="button" x-on:click="open = !open"
-                            class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500"
-                            :class="{ 'ring-2 ring-blue-500': open }">
-                            <span :class="{ 'text-gray-400': !selectedDestination }">
-                                <span x-text="displayText"></span>
-                            </span>
-                            <svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5 ml-2 -mr-1 transition-transform"
-                                :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-transition:enter="transition ease-out duration-100"
-                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
-                            x-transition:leave-end="opacity-0 scale-95"
-                            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1"
-                            style="display: none; z-index: 9999;" x-cloak @click.stop>
-                            <input type="text" x-model="searchTerm" x-on:keydown.escape="closeDropdown()"
-                                class="block w-full px-4 py-2 text-gray-800 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Search locations..." autocomplete="off">
-                            <div class="overflow-y-auto" style="max-height: 200px;">
-                                <template x-for="[value, label] in Object.entries(filteredOptions)" :key="value">
-                                    <a href="#"
-                                        x-on:click.prevent="
-                                            $wire.set('editDestinationId', Number(value));
-                                            closeDropdown();
-                                        "
-                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
-                                        :class="$wire.get('editDestinationId') == Number(value) ? 'bg-blue-50 text-blue-700' : ''">
-                                        <span x-text="label"></span>
-                                    </a>
-                                </template>
-                                <div x-show="Object.keys(filteredOptions).length === 0"
-                                    class="px-4 py-6 text-center text-sm text-gray-500" style="display: none;">
-                                    No results found
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <x-forms.searchable-dropdown-paginated wire-model="editDestinationId" data-method="getPaginatedLocations"
+                        search-property="searchEditDestination" placeholder="Select destination..."
+                        search-placeholder="Search locations..." :per-page="20" />
                     @error('editDestinationId')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
@@ -332,7 +151,7 @@
             <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs @if (($status == 3 || $status == 4) && $selectedSlip->completed_at) bg-white @else bg-gray-100 @endif">
                 <div class="font-semibold text-gray-500">Remarks:</div>
                 <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
-                    <textarea wire:model.live="editRemarksForDisinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
+                    <textarea wire:model="editRemarksForDisinfection" class="w-full border rounded px-2 py-2 text-sm" rows="6"></textarea>
                     @error('editRemarksForDisinfection')
                         <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                     @enderror
@@ -403,7 +222,7 @@
                     Cancel
                 </x-buttons.submit-button>
 
-                <x-buttons.submit-button wire:click.prevent="saveEdit" color="green" wire:loading.attr="disabled" wire:target="saveEdit"
+                <x-buttons.submit-button wire:click.prevent="checkBeforeSave" color="green" wire:loading.attr="disabled" wire:target="saveEdit"
                     x-bind:disabled="!$wire.hasChanges">
                     <span wire:loading.remove wire:target="saveEdit">Save Changes</span>
                     <span wire:loading.inline-flex wire:target="saveEdit" class="inline-flex items-center gap-2">
@@ -424,3 +243,55 @@
 <x-modals.unsaved-confirmation show="showCancelEditConfirmation" title="DISCARD CHANGES?"
     message="Are you sure you want to cancel?" warning="All unsaved changes will be lost." onConfirm="cancelEdit"
     confirmText="Cancel" cancelText="Continue" />
+
+{{-- Final Status Confirmation Modal --}}
+@if ($selectedSlip)
+<x-modals.modal-template show="showFinalStatusConfirmation" max-width="max-w-md">
+    <x-slot name="titleSlot">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-red-600 font-bold">FINAL STATUS WARNING</span>
+        </div>
+    </x-slot>
+
+    <div class="p-6">
+        <div class="mb-4">
+            <p class="text-gray-700 mb-3">
+                You are about to save this slip as <span class="font-bold text-red-600">{{ $editStatus == 3 ? 'COMPLETED' : 'INCOMPLETE' }}</span>.
+            </p>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-3">
+                <p class="text-sm text-red-800">
+                    <span class="font-bold">⚠️ This action is FINAL and IRREVERSIBLE.</span>
+                </p>
+                <p class="text-sm text-red-700 mt-2">
+                    Once saved, this slip <span class="font-semibold">cannot be edited or modified</span> by admins anymore.
+                    Only super admins will have access to edit completed or incomplete slips.
+                </p>
+            </div>
+            <p class="text-gray-700">
+                Are you absolutely sure all information is correct?
+            </p>
+        </div>
+    </div>
+
+    <x-slot name="footer">
+        <div class="flex justify-end w-full gap-2">
+            <x-buttons.submit-button wire:click="$set('showFinalStatusConfirmation', false)" color="white">
+                Go Back
+            </x-buttons.submit-button>
+            <x-buttons.submit-button wire:click="saveEdit" color="red" wire:loading.attr="disabled" wire:target="saveEdit">
+                <span wire:loading.remove wire:target="saveEdit">Yes, Save as {{ $editStatus == 3 ? 'Completed' : 'Incomplete' }}</span>
+                <span wire:loading.inline-flex wire:target="saveEdit" class="inline-flex items-center gap-2">
+                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                </span>
+            </x-buttons.submit-button>
+        </div>
+    </x-slot>
+</x-modals.modal-template>
+@endif

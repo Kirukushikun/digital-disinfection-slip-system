@@ -122,7 +122,7 @@ class Trucks extends Component
         
         // Optimize attachment loading by only selecting needed fields
         return Attachment::whereIn('id', $this->selectedSlip->attachment_ids, 'and', false)
-            ->select('id', 'file_path', 'file_name', 'file_size', 'mime_type', 'user_id', 'created_at', 'updated_at', 'deleted_at')
+            ->select('id', 'file_path', 'user_id', 'created_at', 'updated_at')
             ->with('user:id,first_name,middle_name,last_name,username,deleted_at')
             ->get();
     }
@@ -187,6 +187,7 @@ class Trucks extends Component
     // Edit Modal
     public $showEditModal = false;
     public $showCancelEditConfirmation = false;
+    public $showFinalStatusConfirmation = false;
     public $editTruckId;
     public $editLocationId; // Origin (for status 0)
     public $editDestinationId;
@@ -1000,9 +1001,9 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin cannot edit completed slips (status == 3 or completed_at is set)
-        // Only SuperAdmins can edit completed slips
-        return $this->selectedSlip->status != 3 && $this->selectedSlip->completed_at === null;
+        // Admin cannot edit completed (status 3) or incomplete (status 4) slips
+        // Only SuperAdmins can edit completed/incomplete slips
+        return $this->selectedSlip->status != 3 && $this->selectedSlip->status != 4 && $this->selectedSlip->completed_at === null;
     }
 
     public function canDelete()
@@ -1030,8 +1031,27 @@ class Trucks extends Component
         return !empty($attachmentIds);
     }
 
-    public function openEditModal()
+    public function openEditModal($id = null)
     {
+        // Load the slip if ID is provided (when called from table row)
+        if ($id) {
+            $this->selectedSlip = DisinfectionSlipModel::with([
+                'truck:id,plate_number,disabled,deleted_at',
+                'location:id,location_name,disabled,deleted_at',
+                'destination:id,location_name,disabled,deleted_at',
+                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
+                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+            ])->find($id);
+        }
+        
+        // Check if admin can edit this slip
+        if (!$this->canEdit()) {
+            $this->dispatch('toast', message: 'You are not authorized to edit completed or incomplete slips.', type: 'error');
+            return;
+        }
+        
         // Load slip data into edit fields
         $this->editTruckId = $this->selectedSlip->truck_id;
         $this->editLocationId = $this->selectedSlip->location_id;
@@ -1138,6 +1158,25 @@ class Trucks extends Component
         return $this->hasEditUnsavedChanges();
     }
 
+    public function checkBeforeSave()
+    {
+        // Check if the status is being set to Completed (3) or Incomplete (4)
+        // AND the admin doesn't have permission to edit completed/incomplete slips
+        if (($this->editStatus == 3 || $this->editStatus == 4) && !$this->canEdit()) {
+            // This shouldn't happen normally, but just in case
+            $this->dispatch('toast', message: 'You cannot save slips as completed or incomplete.', type: 'error');
+            return;
+        }
+        
+        // If setting to Completed or Incomplete, show warning modal
+        if ($this->editStatus == 3 || $this->editStatus == 4) {
+            $this->showFinalStatusConfirmation = true;
+        } else {
+            // For other statuses, save directly
+            $this->saveEdit();
+        }
+    }
+
     public function saveEdit()
     {
         // Prevent multiple submissions
@@ -1148,9 +1187,9 @@ class Trucks extends Component
         $this->isUpdating = true;
 
         try {
-        // Authorization check - Admins cannot edit completed slips
+        // Authorization check - Admins cannot edit completed or incomplete slips
         if (!$this->canEdit()) {
-            $this->dispatch('toast', message: 'You are not authorized to edit completed slips.', type: 'error');
+            $this->dispatch('toast', message: 'You are not authorized to edit completed or incomplete slips.', type: 'error');
             return;
         }
 
@@ -1403,10 +1442,22 @@ class Trucks extends Component
         
         $this->resetEditForm();
         $this->showEditModal = false;
+        $this->showFinalStatusConfirmation = false;
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
         } finally {
             $this->isUpdating = false;
         }
+    }
+
+    public function confirmDeleteSlip()
+    {
+        // Check if admin can delete this slip
+        if (!$this->canDelete()) {
+            $this->dispatch('toast', message: 'Cannot delete a completed or incomplete slip.', type: 'error');
+            return;
+        }
+        
+        $this->showDeleteConfirmation = true;
     }
 
     public function deleteSlip()
@@ -1420,7 +1471,7 @@ class Trucks extends Component
 
         try {
         if (!$this->canDelete()) {
-            $this->dispatch('toast', message: 'Cannot delete a completed slip.', type: 'error');
+            $this->dispatch('toast', message: 'Cannot delete a completed or incomplete slip.', type: 'error');
             return;
         }
 
@@ -1688,9 +1739,7 @@ class Trucks extends Component
         if ($this->destination_id == $this->location_id) {
             $this->destination_id = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchOrigin = '';
-        $this->searchDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedDestinationId()
@@ -1699,9 +1748,7 @@ class Trucks extends Component
         if ($this->location_id == $this->destination_id) {
             $this->location_id = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchOrigin = '';
-        $this->searchDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedHatcheryGuardId()
@@ -1710,9 +1757,7 @@ class Trucks extends Component
         if ($this->received_guard_id == $this->hatchery_guard_id) {
             $this->received_guard_id = null;
         }
-        // Clear search when selection changes
-        $this->searchHatcheryGuard = '';
-        $this->searchReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedReceivedGuardId()
@@ -1721,8 +1766,7 @@ class Trucks extends Component
         if ($this->received_guard_id == $this->hatchery_guard_id) {
             $this->hatchery_guard_id = null;
         }
-        // Clear search when selection changes
-        $this->searchReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditLocationId()
@@ -1731,9 +1775,7 @@ class Trucks extends Component
         if ($this->editDestinationId == $this->editLocationId) {
             $this->editDestinationId = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditDestinationId()
@@ -1742,9 +1784,7 @@ class Trucks extends Component
         if ($this->editLocationId == $this->editDestinationId) {
             $this->editLocationId = null;
         }
-        // Clear search when selection changes to show all options
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditHatcheryGuardId()
@@ -1753,9 +1793,7 @@ class Trucks extends Component
         if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
             $this->editReceivedGuardId = null;
         }
-        // Clear search when selection changes
-        $this->searchEditHatcheryGuard = '';
-        $this->searchEditReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function updatedEditReceivedGuardId()
@@ -1764,8 +1802,7 @@ class Trucks extends Component
         if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
             $this->editHatcheryGuardId = null;
         }
-        // Clear search when selection changes
-        $this->searchEditReceivedGuard = '';
+        // Don't clear search - dropdowns manage their own state
     }
 
     public function openAttachmentModal($index = 0)

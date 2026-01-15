@@ -167,7 +167,7 @@ $maxHeight = $maxShown * 40 . 'px';
                 }
             }
         }
-    }" @else <div class="relative" wire:ignore x-data="{
+    }"     @else <div class="relative" wire:ignore x-data="{
         open: false,
         searchTerm: '',
         options: [],
@@ -175,17 +175,26 @@ $maxHeight = $maxShown * 40 . 'px';
         hasMore: true,
         loading: false,
         selectedLabel: '',
+        selectedId: null,
         async init() {
+            // Initialize selected ID from Livewire
+            this.selectedId = $wire.get('{{ $wireModel }}');
             this.loadSelectedLabel();
             // Don't eager load - wait until dropdown is opened for better performance
+            
+            // Watch for changes from Livewire (but don't trigger on every poll)
+            this.$watch('selectedId', (newId) => {
+                if (newId) {
+                    this.loadSelectedLabel();
+                }
+            });
         },
         async loadSelectedLabel() {
             try {
-                const selectedId = Livewire.find('{{ $__livewire->getId() }}').get('{{ $wireModel }}');
-                if (selectedId) {
-                    const response = await Livewire.find('{{ $__livewire->getId() }}').call('{{ $dataMethod }}', '', 1, {{ $perPage }}, [selectedId]);
-                    if (response && response.data && response.data[selectedId]) {
-                        this.selectedLabel = response.data[selectedId];
+                if (this.selectedId) {
+                    const response = await Livewire.find('{{ $__livewire->getId() }}').call('{{ $dataMethod }}', '', 1, {{ $perPage }}, [this.selectedId]);
+                    if (response && response.data && response.data[this.selectedId]) {
+                        this.selectedLabel = response.data[this.selectedId];
                     }
                 }
             } catch (error) {
@@ -253,20 +262,19 @@ $maxHeight = $maxShown * 40 . 'px';
             this.hasMore = true;
         },
         async selectOption(id) {
-            Livewire.find('{{ $__livewire->getId() }}').set('{{ $wireModel }}', Number(id));
+            this.selectedId = Number(id);
+            Livewire.find('{{ $__livewire->getId() }}').set('{{ $wireModel }}', this.selectedId);
             const option = this.options.find(opt => opt.id === id);
             this.selectedLabel = option ? option.label : '';
             this.closeDropdown();
         },
         getDisplayText() {
-            try {
-                const selected = Livewire.find('{{ $__livewire->getId() }}').get('{{ $wireModel }}');
-                if (!selected) return '{{ $placeholder }}';
-                const option = this.options.find(opt => opt.id === selected);
-                return this.selectedLabel || (option ? option.label : '') || '{{ $placeholder }}';
-            } catch (error) {
-                return this.selectedLabel || '{{ $placeholder }}';
-            }
+            if (!this.selectedId) return '{{ $placeholder }}';
+            // Use cached selectedLabel for display to prevent flashing
+            if (this.selectedLabel) return this.selectedLabel;
+            // Fallback to options if label not loaded yet
+            const option = this.options.find(opt => opt.id === this.selectedId);
+            return option ? option.label : '{{ $placeholder }}';
         },
         handleFocusIn(event) {
             const target = event.target;
@@ -292,7 +300,7 @@ $maxHeight = $maxShown * 40 . 'px';
                 class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer"
                 :class="{ 'ring-2 ring-blue-500': open }">
                 <span
-                    :class="{ 'text-gray-400': @if ($multiple) localSelection.length === 0 @else !(function() { try { return Livewire.find('{{ $__livewire->getId() }}').get('{{ $wireModel }}'); } catch(e) { return false; } })() @endif }">
+                    :class="{ 'text-gray-400': @if ($multiple) localSelection.length === 0 @else !selectedId @endif }">
                     <span x-text="getDisplayText()"></span>
                 </span>
                 <svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5 ml-2 -mr-1 transition-transform"
@@ -348,7 +356,7 @@ $maxHeight = $maxShown * 40 . 'px';
                             <a href="#"
                                 x-on:click.prevent.stop="selectOption(option.id)"
                                 class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
-                                :class="(function() { try { return Livewire.find('{{ $__livewire->getId() }}').get('{{ $wireModel }}') == option.id; } catch(e) { return false; } })() ? 'bg-blue-50 text-blue-700' : ''">
+                                :class="selectedId == option.id ? 'bg-blue-50 text-blue-700' : ''">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <div x-text="option.label.split(' @')[0]"></div>
