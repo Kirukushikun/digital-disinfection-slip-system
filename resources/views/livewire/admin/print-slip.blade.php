@@ -182,7 +182,7 @@
             <div class="form-label">Vehicle:</div>
             <div class="form-value">
                 @if ($slip->truck)
-                    {{ $slip->truck->plate_number }}
+                    {{ $slip->truck->vehicle }}
                     @if ($slip->truck->trashed())
                         <span style="color: #dc2626; font-weight: bold;">(Deleted)</span>
                     @endif

@@ -22,7 +22,7 @@ class AdminDashboard extends Component
             'total_disinfected' => $this->getTotalDisinfectedCount(),
             'total_guards' => $this->getGuardsCount(),
             'total_drivers' => $this->getDriversCount(),
-            'total_plate_numbers' => $this->getPlateNumbersCount(),
+            'total_vehicles' => $this->getVehiclesCount(),
             'total_locations' => $this->getLocationsCount(),
             'unresolved_issues' => $this->getUnresolvedIssuesCount(),
             'total_created_slips_today' => $this->getTotalCreatedSlipsTodayCount(),
@@ -93,9 +93,9 @@ class AdminDashboard extends Component
     }
 
     /**
-     * Get count of unique plate numbers (not disabled, not soft deleted)
+     * Get count of unique vehicles (not disabled, not soft deleted)
      */
-    private function getPlateNumbersCount()
+    private function getVehiclesCount()
     {
         return Vehicle::where('disabled', false)
             ->count();

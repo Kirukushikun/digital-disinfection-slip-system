@@ -24,7 +24,7 @@ class TruckListCompleted extends Component
     // Filter properties
     public $filterDestination = [];
     public $filterDriver = [];
-    public $filterPlateNumber = [];
+    public $filterVehicle = [];
     public $filterCompletedFrom = '';
     public $filterCompletedTo = '';
     public $filterStatus = 'all';
@@ -32,7 +32,7 @@ class TruckListCompleted extends Component
     // Applied filters
     public $appliedDestination = [];
     public $appliedDriver = [];
-    public $appliedPlateNumber = [];
+    public $appliedVehicle = [];
     public $appliedCompletedFrom = null;
     public $appliedCompletedTo = null;
     public $appliedStatus = 'all';
@@ -42,7 +42,7 @@ class TruckListCompleted extends Component
     public $filterSortDirection = null; // null, 'asc', 'desc' (temporary, in filter modal)
     
     // Search properties for filter dropdowns
-    public $searchFilterPlateNumber = '';
+    public $searchFilterVehicle = '';
     public $searchFilterDriver = '';
     public $searchFilterDestination = '';
 
@@ -91,7 +91,7 @@ class TruckListCompleted extends Component
 
     public function getTrucksProperty()
     {
-        $truckIds = $this->appliedPlateNumber ?? [];
+        $truckIds = $this->appliedVehicle ?? [];
         
         if (empty($truckIds)) {
             return collect();
@@ -99,7 +99,7 @@ class TruckListCompleted extends Component
         
         return Vehicle::withTrashed()
             ->whereIn('id', $truckIds)
-            ->select('id', 'plate_number', 'disabled', 'deleted_at')
+            ->select('id', 'vehicle', 'disabled', 'deleted_at')
             ->get()
             ->keyBy('id');
     }
@@ -113,18 +113,18 @@ class TruckListCompleted extends Component
         $query = Vehicle::query()
             ->whereNull('deleted_at')
             ->where('disabled', false)
-            ->select(['id', 'plate_number']);
+            ->select(['id', 'vehicle']);
 
         if (!empty($search)) {
-            $query->where('plate_number', 'like', '%' . $search . '%');
+            $query->where('vehicle', 'like', '%' . $search . '%');
         }
 
         if (!empty($includeIds)) {
             $includedItems = Vehicle::whereIn('id', $includeIds)
-                ->select(['id', 'plate_number'])
-                ->orderBy('plate_number', 'asc')
+                ->select(['id', 'vehicle'])
+                ->orderBy('vehicle', 'asc')
                 ->get()
-                ->pluck('plate_number', 'id')
+                ->pluck('vehicle', 'id')
                 ->toArray();
             return [
                 'data' => $includedItems,
@@ -133,11 +133,11 @@ class TruckListCompleted extends Component
             ];
         }
 
-        $query->orderBy('plate_number', 'asc');
+        $query->orderBy('vehicle', 'asc');
         $offset = ($page - 1) * $perPage;
         $total = $query->count();
         $results = $query->skip($offset)->take($perPage)->get();
-        $data = $results->pluck('plate_number', 'id')->toArray();
+        $data = $results->pluck('vehicle', 'id')->toArray();
         
         return [
             'data' => $data,
@@ -240,7 +240,7 @@ class TruckListCompleted extends Component
     {
         $this->appliedDestination = $this->filterDestination;
         $this->appliedDriver = $this->filterDriver;
-        $this->appliedPlateNumber = $this->filterPlateNumber;
+        $this->appliedVehicle = $this->filterVehicle;
         $this->appliedCompletedFrom = $this->filterCompletedFrom;
         $this->appliedCompletedTo = $this->filterCompletedTo;
         $this->appliedStatus = $this->filterStatus ?: 'all';
@@ -255,7 +255,7 @@ class TruckListCompleted extends Component
     {
         $this->filterDestination = [];
         $this->filterDriver = [];
-        $this->filterPlateNumber = [];
+        $this->filterVehicle = [];
         $this->filterCompletedFrom = '';
         $this->filterCompletedTo = '';
         $this->filterStatus = 'all';
@@ -263,7 +263,7 @@ class TruckListCompleted extends Component
         
         $this->appliedDestination = [];
         $this->appliedDriver = [];
-        $this->appliedPlateNumber = [];
+        $this->appliedVehicle = [];
         $this->appliedCompletedFrom = null;
         $this->appliedCompletedTo = null;
         $this->appliedStatus = 'all';
@@ -284,9 +284,9 @@ class TruckListCompleted extends Component
                 $this->filterDriver = [];
                 $this->appliedDriver = [];
                 break;
-            case 'plateNumber':
-                $this->filterPlateNumber = [];
-                $this->appliedPlateNumber = [];
+            case 'vehicle':
+                $this->filterVehicle = [];
+                $this->appliedVehicle = [];
                 break;
             case 'completedFrom':
                 $this->filterCompletedFrom = '';
@@ -313,9 +313,9 @@ class TruckListCompleted extends Component
                 $this->filterDriver = array_values(array_filter($this->filterDriver, fn($id) => $id != $value));
                 $this->appliedDriver = array_values(array_filter($this->appliedDriver, fn($id) => $id != $value));
                 break;
-            case 'plateNumber':
-                $this->filterPlateNumber = array_values(array_filter($this->filterPlateNumber, fn($id) => $id != $value));
-                $this->appliedPlateNumber = array_values(array_filter($this->appliedPlateNumber, fn($id) => $id != $value));
+            case 'vehicle':
+                $this->filterVehicle = array_values(array_filter($this->filterVehicle, fn($id) => $id != $value));
+                $this->appliedVehicle = array_values(array_filter($this->appliedVehicle, fn($id) => $id != $value));
                 break;
         }
         
@@ -327,7 +327,7 @@ class TruckListCompleted extends Component
     {
         $this->filtersActive = !empty($this->appliedDestination) ||
                               !empty($this->appliedDriver) ||
-                              !empty($this->appliedPlateNumber) ||
+                              !empty($this->appliedVehicle) ||
                               !empty($this->appliedCompletedFrom) ||
                               !empty($this->appliedCompletedTo) ||
                               ($this->appliedStatus !== 'all' && $this->appliedStatus !== null) ||
@@ -347,7 +347,7 @@ class TruckListCompleted extends Component
         // This significantly reduces memory usage with large datasets (5,000+ records)
         $query = DisinfectionSlip::with([
             'truck' => function($q) {
-                $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed();
+                $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed();
             },
             'location' => function($q) {
                 $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed();
@@ -392,8 +392,8 @@ class TruckListCompleted extends Component
             ->when(!empty($this->appliedDriver), function($q) {
                 $q->whereIn('driver_id', $this->appliedDriver);
             })
-            ->when(!empty($this->appliedPlateNumber), function($q) {
-                $q->whereIn('truck_id', $this->appliedPlateNumber);
+            ->when(!empty($this->appliedVehicle), function($q) {
+                $q->whereIn('truck_id', $this->appliedVehicle);
             })
             ->when($this->appliedCompletedFrom, function($q) {
                 $q->whereDate('completed_at', '>=', $this->appliedCompletedFrom);

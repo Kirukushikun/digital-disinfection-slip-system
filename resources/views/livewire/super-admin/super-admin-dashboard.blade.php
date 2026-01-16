@@ -302,7 +302,7 @@
                                                 class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-0.5">
                                                 Vehicles</p>
                                             <p class="text-3xl font-bold text-gray-900">
-                                                {{ number_format($this->stats['total_plate_numbers']) }}</p>
+                                                {{ number_format($this->stats['total_vehicles']) }}</p>
                                         </div>
                                     </div>
                                 </div>

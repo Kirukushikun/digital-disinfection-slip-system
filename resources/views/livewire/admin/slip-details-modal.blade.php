@@ -54,7 +54,7 @@
                     <div class="font-semibold text-gray-500">Plate No:</div>
                     <div class="text-gray-900">
                         @if ($selectedSlip->truck)
-                            {{ $selectedSlip->truck->plate_number }}
+                            {{ $selectedSlip->truck->vehicle }}
                             @if ($selectedSlip->truck->trashed())
                                 <span class="text-red-600 font-semibold">(Deleted)</span>
                             @endif

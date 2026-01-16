@@ -5,7 +5,7 @@ A web-based system for managing truck disinfection slips with role-based access 
 ## Features
 
 ### Super Admin
-- **Data Management**: Manage Guards (including Super Guards), Admins, Plate Numbers, Locations, Reasons, and Drivers
+- **Data Management**: Manage Guards (including Super Guards), Admins, Vehicles, Locations, Reasons, and Drivers
   - Create, update, delete, restore, disable, and enable records
   - Reset user passwords
 - **Slip Management**: View and manage all disinfection slips
@@ -16,7 +16,7 @@ A web-based system for managing truck disinfection slips with role-based access 
 - **Export Data**: Export data to CSV files or print reports
 
 ### Admin
-- **Data Management**: Manage Guards (including Super Guards), Plate Numbers, Locations, Reasons, and Drivers
+- **Data Management**: Manage Guards (including Super Guards), Vehicles, Locations, Reasons, and Drivers
   - Create, update, disable, and enable records
   - Reset user passwords
 - **Slip Management**: View and manage all disinfection slips
@@ -25,7 +25,7 @@ A web-based system for managing truck disinfection slips with role-based access 
 - **Issues**: View and resolve reported issues
 
 ### Super Guard
-- **Data Management**: Manage Guards, Plate Numbers, Locations, Reasons, and Drivers
+- **Data Management**: Manage Guards, Vehicles, Locations, Reasons, and Drivers
   - Create, update, disable, and enable records
   - Reset user passwords
 - **Slip Management**: Manage slips for their assigned location

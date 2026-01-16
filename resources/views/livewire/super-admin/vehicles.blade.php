@@ -217,11 +217,11 @@
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
                                     <span>Vehicle</span>
-                                    <button wire:click.prevent="applySort('plate_number')" type="button"
+                                    <button wire:click.prevent="applySort('vehicle')" type="button"
                                         class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
                                         title="Sort by Vehicle">
                                         @php
-                                            $plateDir = $this->getSortDirection('plate_number');
+                                            $plateDir = $this->getSortDirection('vehicle');
                                         @endphp
                                         @if ($plateDir === 'asc')
                                             <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor"
@@ -318,7 +318,7 @@
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
-                                        {{ $truck->plate_number }}
+                                        {{ $truck->vehicle }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -474,10 +474,10 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="plate_number" maxlength="20"
+                                    <input type="text" wire:model="vehicle" maxlength="20"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                                         placeholder="Enter vehicle">
-                                    @error('plate_number')
+                                    @error('vehicle')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
@@ -596,10 +596,10 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle <span
                                             class="text-red-500">*</span></label>
-                                    <input type="text" wire:model="create_plate_number" maxlength="20"
+                                    <input type="text" wire:model="create_vehicle" maxlength="20"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                                         placeholder="Enter vehicle">
-                                    @error('create_plate_number')
+                                    @error('create_vehicle')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
@@ -661,15 +661,15 @@
                         </div>
 
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="restorePlateNumber"
+                            <button wire:click="closeModal" wire:loading.attr="disabled" wire:target="restoreVehicle"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 hover:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 Cancel
                             </button>
-                            <button wire:click.prevent="restorePlateNumber" wire:loading.attr="disabled" wire:target="restorePlateNumber"
+                                <button wire:click.prevent="restoreVehicle" wire:loading.attr="disabled" wire:target="restoreVehicle"
                                 x-bind:disabled="$wire.isRestoring"
                                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                <span wire:loading.remove wire:target="restorePlateNumber">Restore Vehicle</span>
-                                <span wire:loading.inline-flex wire:target="restorePlateNumber" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Restoring...
+                                <span wire:loading.remove wire:target="restoreVehicle">Restore Vehicle</span>
+                                <span wire:loading.inline-flex wire:target="restoreVehicle" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Restoring...
                                 </span>
                             </button>
                         </div>

@@ -11,17 +11,17 @@ class VehicleFactory extends Factory
 
     public function definition()
     {
-        // Generate realistic plate number format: 3 letters, dash, 4 numbers
+        // Generate realistic vehicle format: 3 letters, dash, 4 numbers
         // Example: ABC-1234, XYZ-5678
-        $plateNumber = strtoupper($this->faker->bothify('???-####'));
+        $vehicle = strtoupper($this->faker->bothify('???-####'));
         
-        // Ensure uniqueness by checking existing plate numbers
-        while (Vehicle::where('plate_number', $plateNumber)->exists()) {
-            $plateNumber = strtoupper($this->faker->bothify('???-####'));
+        // Ensure uniqueness by checking existing vehicles
+        while (Vehicle::where('vehicle', $vehicle)->exists()) {
+            $vehicle = strtoupper($this->faker->bothify('???-####'));
         }
 
         return [
-            'plate_number' => $plateNumber,
+            'vehicle' => $vehicle,
             'disabled' => false,
         ];
     }

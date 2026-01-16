@@ -20,15 +20,15 @@ class Vehicles extends Component
     public $showFilters = false;
     
     // Sorting properties
-    public $sortColumns = ['plate_number' => 'asc']; // Default sort by plate_number ascending
+    public $sortColumns = ['vehicle' => 'asc']; // Default sort by vehicle ascending
     
     // Filter properties
-    public $filterStatus = null; // null = All Plate Numbers, 0 = Enabled, 1 = Disabled
+    public $filterStatus = null; // null = All Vehicles, 0 = Enabled, 1 = Disabled
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
-    public $appliedStatus = null; // null = All Plate Numbers, 0 = Enabled, 1 = Disabled
+    public $appliedStatus = null; // null = All Vehicles, 0 = Enabled, 1 = Disabled
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
@@ -47,7 +47,7 @@ class Vehicles extends Component
     public function updatedFilterStatus($value)
     {
         // Handle null, empty string, or numeric values (0, 1)
-        // null/empty = All Plate Numbers, 0 = Enabled, 1 = Disabled
+        // null/empty = All Vehicles, 0 = Enabled, 1 = Disabled
         // The select will send values as strings, so we convert to int
         if ($value === null || $value === '' || $value === false) {
             $this->filterStatus = null;
@@ -80,10 +80,10 @@ class Vehicles extends Component
     public $showDeleted = false; // Toggle to show deleted items
 
     // Edit form fields
-    public $plate_number;
+    public $vehicle;
 
     // Create form fields
-    public $create_plate_number;
+    public $create_vehicle;
 
     protected $queryString = ['search'];
     
@@ -107,9 +107,9 @@ class Vehicles extends Component
             $this->sortColumns[$column] = 'asc';
         }
         
-        // If no sorts remain, default to plate_number ascending
+        // If no sorts remain, default to vehicle ascending
         if (empty($this->sortColumns)) {
-            $this->sortColumns = ['plate_number' => 'asc'];
+            $this->sortColumns = ['vehicle' => 'asc'];
         }
         
         $this->resetPage();
@@ -161,16 +161,16 @@ class Vehicles extends Component
         $this->resetPage();
     }
 
-    public $original_plate_number;
+    public $original_vehicle;
 
     public function openEditModal($truckId)
     {
         $truck = Vehicle::findOrFail($truckId);
         $this->selectedTruckId = $truckId;
-        $this->plate_number = $truck->plate_number;
+        $this->vehicle = $truck->vehicle;
         
         // Store original value for change detection
-        $this->original_plate_number = $truck->plate_number;
+        $this->original_vehicle = $truck->vehicle;
         
         $this->showEditModal = true;
     }
@@ -181,9 +181,9 @@ class Vehicles extends Component
             return false;
         }
 
-        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number ?? '');
+        $vehicle = $this->sanitizeAndUppercaseVehicle($this->vehicle ?? '');
 
-        return $this->original_plate_number !== $plateNumber;
+        return $this->original_vehicle !== $vehicle;
     }
 
     public function updateTruck()
@@ -200,57 +200,57 @@ class Vehicles extends Component
         }
 
         // Sanitize and uppercase input BEFORE validation
-        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->plate_number ?? '');
+        $vehicle = $this->sanitizeAndUppercaseVehicle($this->vehicle ?? '');
         
         // Basic validation - just ensure it's not empty after sanitization
-        if (empty(trim($plateNumber))) {
-            $this->addError('plate_number', 'Plate number is required.');
+        if (empty(trim($vehicle))) {
+            $this->addError('vehicle', 'Vehicle is required.');
             return;
         }
 
         // Update the property with sanitized value for validation
-        $this->plate_number = $plateNumber;
+        $this->vehicle = $vehicle;
 
         // Validate with sanitized value
         $this->validate([
-            'plate_number' => ['required', 'string', 'max:20', 'unique:trucks,plate_number,' . $this->selectedTruckId],
+            'vehicle' => ['required', 'string', 'max:20', 'unique:trucks,vehicle,' . $this->selectedTruckId],
         ], [
-            'plate_number.required' => 'Plate number is required.',
-            'plate_number.max' => 'Plate number must not exceed 20 characters.',
-            'plate_number.unique' => 'This plate number already exists.',
+            'vehicle.required' => 'Vehicle is required.',
+            'vehicle.max' => 'Vehicle must not exceed 20 characters.',
+            'vehicle.unique' => 'This vehicle already exists.',
         ], [
-            'plate_number' => 'Plate Number',
+            'vehicle' => 'Vehicle',
         ]);
 
         $truck = Vehicle::findOrFail($this->selectedTruckId);
         
         // Check if there are any changes
-        if ($truck->plate_number === $plateNumber) {
+        if ($truck->vehicle === $vehicle) {
             $this->dispatch('toast', message: 'No changes detected.', type: 'info');
             return;
         }
         
         // Capture old values for logging
-        $oldValues = $truck->only(['plate_number', 'disabled']);
+        $oldValues = $truck->only(['vehicle', 'disabled']);
         
         $truck->update([
-            'plate_number' => $plateNumber,
+            'vehicle' => $vehicle,
         ]);
         
         // Log the update action
         Logger::update(
             Vehicle::class,
             $truck->id,
-            "Updated to \"{$plateNumber}\"",
+            "Updated to \"{$vehicle}\"",
             $oldValues,
-            ['plate_number' => $plateNumber]
+            ['vehicle' => $vehicle]
         );
 
         Cache::forget('trucks_all');
 
         $this->showEditModal = false;
-        $this->reset(['selectedTruckId', 'plate_number', 'original_plate_number']);
-        $this->dispatch('toast', message: "Plate number {$plateNumber} has been updated.", type: 'success');
+        $this->reset(['selectedTruckId', 'vehicle', 'original_vehicle']);
+        $this->dispatch('toast', message: "Vehicle {$vehicle} has been updated.", type: 'success');
     }
 
     public function openDisableModal($truckId)
@@ -291,7 +291,7 @@ class Vehicles extends Component
             $truck->refresh();
             $this->showDisableModal = false;
             $this->reset(['selectedTruckId', 'selectedTruckDisabled']);
-            $this->dispatch('toast', message: 'The plate number status was changed by another administrator. Please refresh the page.', type: 'error');
+            $this->dispatch('toast', message: 'The vehicle status was changed by another administrator. Please refresh the page.', type: 'error');
             return;
         }
         
@@ -301,14 +301,14 @@ class Vehicles extends Component
         // Always reset to first page to avoid pagination issues when truck disappears/appears from filtered results
         $this->resetPage();
         
-        $plateNumber = $truck->plate_number;
-        $message = !$wasDisabled ? "Plate number {$plateNumber} has been disabled." : "Plate number {$plateNumber} has been enabled.";
+        $vehicle = $truck->vehicle;
+        $message = !$wasDisabled ? "Vehicle {$vehicle} has been disabled." : "Vehicle {$vehicle} has been enabled.";
 
         // Log the status change
         Logger::update(
             Vehicle::class,
             $truck->id,
-            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " plate number \"{$plateNumber}\"",
+            ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " vehicle \"{$vehicle}\"",
             ['disabled' => $wasDisabled],
             ['disabled' => $newStatus]
         );
@@ -327,7 +327,7 @@ class Vehicles extends Component
     {
         $truck = Vehicle::findOrFail($truckId);
         $this->selectedTruckId = $truckId;
-        $this->selectedTruckName = $truck->plate_number;
+        $this->selectedTruckName = $truck->vehicle;
         $this->showDeleteModal = true;
     }
 
@@ -348,11 +348,11 @@ class Vehicles extends Component
 
         $truck = Vehicle::findOrFail($this->selectedTruckId);
         $truckIdForLog = $truck->id;
-        $plateNumber = $truck->plate_number;
+        $vehicle = $truck->vehicle;
         
         // Capture old values for logging
         $oldValues = $truck->only([
-            'plate_number',
+            'vehicle',
             'disabled'
         ]);
         
@@ -363,7 +363,7 @@ class Vehicles extends Component
         Logger::delete(
             Vehicle::class,
             $truckIdForLog,
-            "Deleted \"{$plateNumber}\"",
+            "Deleted \"{$vehicle}\"",
             $oldValues
         );
 
@@ -372,7 +372,7 @@ class Vehicles extends Component
         $this->showDeleteModal = false;
         $this->reset(['selectedTruckId', 'selectedTruckName']);
         $this->resetPage();
-        $this->dispatch('toast', message: "Plate number {$plateNumber} has been deleted.", type: 'success');
+        $this->dispatch('toast', message: "Vehicle {$vehicle} has been deleted.", type: 'success');
         } finally {
             $this->isDeleting = false;
         }
@@ -385,50 +385,50 @@ class Vehicles extends Component
         $this->showDeleteModal = false;
         $this->showCreateModal = false;
         $this->showRestoreModal = false;
-        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'selectedTruckName', 'plate_number', 'original_plate_number', 'create_plate_number']);
+        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'selectedTruckName', 'vehicle', 'original_vehicle', 'create_vehicle']);
         $this->resetValidation();
     }
 
     public function openCreateModal()
     {
-        $this->reset(['create_plate_number']);
+        $this->reset(['create_vehicle']);
         $this->resetValidation();
         $this->showCreateModal = true;
     }
 
     /**
-     * Sanitize and uppercase plate number
+     * Sanitize and uppercase vehicle
      * Removes HTML tags, trims whitespace, and converts to uppercase
      * 
-     * @param string $plateNumber
+     * @param string $vehicle
      * @return string
      */
-    private function sanitizeAndUppercasePlateNumber($plateNumber)
+    private function sanitizeAndUppercaseVehicle($vehicle)
     {
-        if (empty($plateNumber)) {
+        if (empty($vehicle)) {
             return '';
         }
 
         // Remove HTML tags and trim whitespace
-        $plateNumber = strip_tags(trim($plateNumber));
+        $vehicle = strip_tags(trim($vehicle));
         
         // Decode HTML entities (e.g., &amp; becomes &, &#39; becomes ')
-        $plateNumber = html_entity_decode($plateNumber, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $vehicle = html_entity_decode($vehicle, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         
         // Remove any null bytes and other control characters (except newlines/spaces)
-        $plateNumber = preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/u', '', $plateNumber);
+        $vehicle = preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/u', '', $vehicle);
         
         // Convert dashes to spaces for backward compatibility
-        $plateNumber = str_replace('-', ' ', $plateNumber);
+        $vehicle = str_replace('-', ' ', $vehicle);
         
         // Normalize whitespace (replace multiple spaces with single space)
-        $plateNumber = preg_replace('/\s+/', ' ', $plateNumber);
+        $vehicle = preg_replace('/\s+/', ' ', $vehicle);
         
         // Trim again after normalization
-        $plateNumber = trim($plateNumber);
+        $vehicle = trim($vehicle);
         
         // Convert to uppercase
-        return mb_strtoupper($plateNumber, 'UTF-8');
+        return mb_strtoupper($vehicle, 'UTF-8');
     }
 
     public function createTruck()
@@ -439,31 +439,31 @@ class Vehicles extends Component
         }
 
         // Sanitize and uppercase input BEFORE validation
-        $plateNumber = $this->sanitizeAndUppercasePlateNumber($this->create_plate_number);
+        $vehicle = $this->sanitizeAndUppercaseVehicle($this->create_vehicle);
         
         // Basic validation - just ensure it's not empty after sanitization
-        if (empty(trim($plateNumber))) {
-            $this->addError('create_plate_number', 'Plate number is required.');
+        if (empty(trim($vehicle))) {
+            $this->addError('create_vehicle', 'Vehicle is required.');
             return;
         }
 
         // Update the property with sanitized value for validation
-        $this->create_plate_number = $plateNumber;
+        $this->create_vehicle = $vehicle;
 
         // Validate with sanitized value
         $this->validate([
-            'create_plate_number' => ['required', 'string', 'max:20', 'unique:trucks,plate_number'],
+            'create_vehicle' => ['required', 'string', 'max:20', 'unique:trucks,vehicle'],
         ], [
-            'create_plate_number.required' => 'Plate number is required.',
-            'create_plate_number.max' => 'Plate number must not exceed 20 characters.',
-            'create_plate_number.unique' => 'This plate number already exists.',
+            'create_vehicle.required' => 'Vehicle is required.',
+            'create_vehicle.max' => 'Vehicle must not exceed 20 characters.',
+            'create_vehicle.unique' => 'This vehicle already exists.',
         ], [
-            'create_plate_number' => 'Plate Number',
+            'create_vehicle' => 'Vehicle',
         ]);
 
         // Create truck
         $truck = Vehicle::create([
-            'plate_number' => $plateNumber,
+            'vehicle' => $vehicle,
             'disabled' => false,
         ]);
 
@@ -473,13 +473,13 @@ class Vehicles extends Component
         Logger::create(
             Vehicle::class,
             $truck->id,
-            "Created \"{$plateNumber}\"",
-            $truck->only(['plate_number', 'disabled'])
+            "Created \"{$vehicle}\"",
+            $truck->only(['vehicle', 'disabled'])
         );
 
         $this->showCreateModal = false;
-        $this->reset(['create_plate_number']);
-        $this->dispatch('toast', message: "Plate number {$plateNumber} has been created.", type: 'success');
+        $this->reset(['create_vehicle']);
+        $this->dispatch('toast', message: "Vehicle {$vehicle} has been created.", type: 'success');
         $this->resetPage();
     }
 
@@ -503,8 +503,8 @@ class Vehicles extends Component
                 // Escape special characters for LIKE
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
                 
-                // Search plate number
-                $query->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                // Search vehicle
+                $query->where('vehicle', 'like', '%' . $escapedSearchTerm . '%');
             })
             ->when($this->appliedCreatedFrom, function ($query) {
                 $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
@@ -525,7 +525,7 @@ class Vehicles extends Component
             ->when(!empty($this->sortColumns) && !$this->showDeleted, function($query) {
                 // Initialize sortColumns if it's not an array
                 if (!is_array($this->sortColumns)) {
-                    $this->sortColumns = ['plate_number' => 'asc'];
+                    $this->sortColumns = ['vehicle' => 'asc'];
                 }
                 
                 $firstSort = true;
@@ -545,7 +545,7 @@ class Vehicles extends Component
             })
             ->when(empty($this->sortColumns) && !$this->showDeleted, function($query) {
                 // Default sort if no sorts are set
-                $query->orderBy('plate_number', 'asc');
+                $query->orderBy('vehicle', 'asc');
             })
             ->when($this->showDeleted, function ($query) {
                 $query->orderBy('deleted_at', 'desc');
@@ -554,7 +554,7 @@ class Vehicles extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.super-admin.plate-numbers', [
+        return view('livewire.super-admin.vehicles', [
             'trucks' => $trucks,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
@@ -574,7 +574,7 @@ class Vehicles extends Component
                     return $query;
                 }
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
-                $query->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                $query->where('vehicle', 'like', '%' . $escapedSearchTerm . '%');
                 return $query;
             })
             ->when($this->appliedCreatedFrom, function ($query) {
@@ -591,7 +591,7 @@ class Vehicles extends Component
                 }
             })
             ->when(!$this->showDeleted, function ($query) {
-                $query->orderBy('plate_number', 'asc');
+                $query->orderBy('vehicle', 'asc');
             })
             ->when($this->showDeleted, function ($query) {
                 $query->orderBy('deleted_at', 'desc');
@@ -606,7 +606,7 @@ class Vehicles extends Component
         }
         
         $data = $this->getExportData();
-        $filename = 'plate_numbers_' . date('Y-m-d_His') . '.csv';
+        $filename = 'vehicles_' . date('Y-m-d_His') . '.csv';
         
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -617,12 +617,12 @@ class Vehicles extends Component
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            fputcsv($file, ['Plate Number', 'Status', 'Created Date']);
+            fputcsv($file, ['Vehicle', 'Status', 'Created Date']);
             
             foreach ($data as $truck) {
                 $status = $truck->disabled ? 'Disabled' : 'Enabled';
                 fputcsv($file, [
-                    $truck->plate_number,
+                    $truck->vehicle,
                     $status,
                     $truck->created_at->format('Y-m-d H:i:s')
                 ]);
@@ -672,11 +672,11 @@ class Vehicles extends Component
     {
         $truck = Vehicle::onlyTrashed()->findOrFail($truckId);
         $this->selectedTruckId = $truckId;
-        $this->selectedTruckName = $truck->plate_number;
+        $this->selectedTruckName = $truck->vehicle;
         $this->showRestoreModal = true;
     }
 
-    public function restorePlateNumber()
+    public function restoreVehicle()
     {
         // Prevent multiple submissions
         if ($this->isRestoring) {
@@ -705,7 +705,7 @@ class Vehicles extends Component
             // Truck was already restored or doesn't exist
             $this->showRestoreModal = false;
             $this->reset(['selectedTruckId', 'selectedTruckName']);
-            $this->dispatch('toast', message: 'This plate number was already restored or does not exist. Please refresh the page.', type: 'error');
+            $this->dispatch('toast', message: 'This vehicle was already restored or does not exist. Please refresh the page.', type: 'error');
             $this->resetPage();
             return;
         }
@@ -717,7 +717,7 @@ class Vehicles extends Component
         Logger::restore(
             Vehicle::class,
             $truck->id,
-            "Restored plate number {$truck->plate_number}"
+            "Restored vehicle {$truck->vehicle}"
         );
         
         Cache::forget('trucks_all');
@@ -725,7 +725,7 @@ class Vehicles extends Component
         $this->showRestoreModal = false;
         $this->reset(['selectedTruckId', 'selectedTruckName']);
         $this->resetPage();
-        $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
+        $this->dispatch('toast', message: "{$truck->vehicle} has been restored.", type: 'success');
         } finally {
             $this->isRestoring = false;
         }
@@ -740,7 +740,7 @@ class Vehicles extends Component
         $data = $this->getExportData();
         $exportData = $data->map(function($truck) {
             return [
-                'plate_number' => $truck->plate_number,
+                'vehicle' => $truck->vehicle,
                 'disabled' => $truck->disabled,
                 'created_at' => $truck->created_at->toIso8601String(),
             ];
@@ -753,7 +753,7 @@ class Vehicles extends Component
             'created_to' => $this->appliedCreatedTo,
         ];
         
-        $sorting = $this->sortColumns ?? ['plate_number' => 'asc'];
+        $sorting = $this->sortColumns ?? ['vehicle' => 'asc'];
         
         $token = Str::random(32);
         Session::put("export_data_{$token}", $exportData);

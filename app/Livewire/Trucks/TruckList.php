@@ -201,8 +201,8 @@ class TruckList extends Component
             return Vehicle::withTrashed()
                 ->whereNull('deleted_at')
                 ->where('disabled', '=', false, 'and')
-                ->select('id', 'plate_number', 'disabled', 'deleted_at')
-                ->orderBy('plate_number', 'asc')
+                ->select('id', 'vehicle', 'disabled', 'deleted_at')
+                ->orderBy('vehicle', 'asc')
                 ->get();
         });
     }
@@ -241,29 +241,29 @@ class TruckList extends Component
         $query = Vehicle::query()
             ->whereNull('deleted_at')
             ->where('disabled', false)
-            ->select(['id', 'plate_number']);
+            ->select(['id', 'vehicle']);
 
         if (!empty($search)) {
-            $query->where('plate_number', 'like', '%' . $search . '%');
+            $query->where('vehicle', 'like', '%' . $search . '%');
         }
 
         if (!empty($includeIds)) {
             $includedItems = Vehicle::whereIn('id', $includeIds)
-                ->select(['id', 'plate_number'])
-                ->orderBy('plate_number', 'asc')
+                ->select(['id', 'vehicle'])
+                ->orderBy('vehicle', 'asc')
                 ->get()
-                ->pluck('plate_number', 'id')
+                ->pluck('vehicle', 'id')
                 ->toArray();
             return ['data' => $includedItems, 'has_more' => false, 'total' => count($includedItems)];
         }
 
-        $query->orderBy('plate_number', 'asc');
+        $query->orderBy('vehicle', 'asc');
         $offset = ($page - 1) * $perPage;
         $total = $query->count();
         $results = $query->skip($offset)->take($perPage)->get();
         
         return [
-            'data' => $results->pluck('plate_number', 'id')->toArray(),
+            'data' => $results->pluck('vehicle', 'id')->toArray(),
             'has_more' => ($offset + $perPage) < $total,
             'total' => $total,
         ];
@@ -1190,7 +1190,7 @@ class TruckList extends Component
             // This significantly reduces memory usage with large datasets (5,000+ records)
             ->with([
                 'truck' => function($q) {
-                    $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed();
+                    $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed();
                 },
                 'location:id,location_name,disabled,deleted_at',
                 'destination:id,location_name,disabled,deleted_at',

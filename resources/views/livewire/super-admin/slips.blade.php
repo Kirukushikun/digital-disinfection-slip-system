@@ -203,15 +203,15 @@
                         @endforeach
                     @endif
 
-                    @if (!empty($appliedPlateNumber))
-                        @foreach ($appliedPlateNumber as $truckId)
+                    @if (!empty($appliedVehicle))
+                        @foreach ($appliedVehicle as $truckId)
                             @php
                                 $truck = $trucks->find($truckId);
                             @endphp
                             <span
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Plate: @if ($truck){{ $truck->plate_number }}@if ($truck->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif@else<span class="text-red-600 font-semibold">(Deleted)</span>@endif
-                                <button wire:click="removeSpecificFilter('plateNumber', {{ $truckId }})"
+                                Plate: @if ($truck){{ $truck->vehicle }}@if ($truck->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif@else<span class="text-red-600 font-semibold">(Deleted)</span>@endif
+                                <button wire:click="removeSpecificFilter('vehicle', {{ $truckId }})"
                                     class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
@@ -493,7 +493,7 @@
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             @if ($slip->truck)
-                                                {{ $slip->truck->plate_number }}
+                                                {{ $slip->truck->vehicle }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif
@@ -504,7 +504,7 @@
                                     @else
                                         <div class="text-sm font-semibold text-gray-900">
                                             @if ($slip->truck)
-                                                {{ $slip->truck->plate_number }}
+                                                {{ $slip->truck->vehicle }}
                                                 @if ($slip->truck->trashed())
                                                     <span class="text-red-600 font-semibold">(Deleted)</span>
                                                 @endif

@@ -60,14 +60,14 @@ class Slips extends Component
     public $filterOrigin = [];
     public $filterDestination = [];
     public $filterDriver = [];
-    public $filterPlateNumber = [];
+    public $filterVehicle = [];
     public $filterHatcheryGuard = [];
     public $filterReceivedGuard = [];
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Search properties for filter dropdowns
-    public $searchFilterPlateNumber = '';
+    public $searchFilterVehicle = '';
     public $searchFilterDriver = '';
     public $searchFilterOrigin = '';
     public $searchFilterDestination = '';
@@ -79,7 +79,7 @@ class Slips extends Component
     public $appliedOrigin = [];
     public $appliedDestination = [];
     public $appliedDriver = [];
-    public $appliedPlateNumber = [];
+    public $appliedVehicle = [];
     public $appliedHatcheryGuard = [];
     public $appliedReceivedGuard = [];
     public $appliedCreatedFrom = null;
@@ -216,13 +216,13 @@ class Slips extends Component
         $this->filterOrigin = [];
         $this->filterDestination = [];
         $this->filterDriver = [];
-        $this->filterPlateNumber = [];
+        $this->filterVehicle = [];
         $this->filterHatcheryGuard = [];
         $this->filterReceivedGuard = [];
         $this->appliedOrigin = [];
         $this->appliedDestination = [];
         $this->appliedDriver = [];
-        $this->appliedPlateNumber = [];
+        $this->appliedVehicle = [];
         $this->appliedHatcheryGuard = [];
         $this->appliedReceivedGuard = [];
         
@@ -258,12 +258,12 @@ class Slips extends Component
         });
     }
 
-    private function getCachedTrucks()
+    private function getCachedVehicles()
     {
-        // Only cache id and plate_number to reduce memory usage with large datasets
-        return Cache::remember('trucks_all', 300, function() {
-            return Vehicle::select(['id', 'plate_number', 'disabled', 'deleted_at'])
-                ->orderBy('plate_number', 'asc')
+        // Only cache id and vehicle to reduce memory usage with large datasets
+        return Cache::remember('vehicles_all', 300, function() {
+            return Vehicle::select(['id', 'vehicle', 'disabled', 'deleted_at'])
+                ->orderBy('vehicle', 'asc')
                 ->get();
         });
     }
@@ -355,16 +355,16 @@ class Slips extends Component
     public function getTrucksProperty()
     {
         // Only load trucks that are actually used in applied filters
-        $truckIds = $this->filterPlateNumber ?? [];
+        $truckIds = $this->filterVehicle ?? [];
         
-        if (empty($truckIds)) {
+        if (empty($vehicleIds)) {
             return collect();
         }
         
         // Only fetch the trucks we actually need
         return Vehicle::withTrashed()
             ->whereIn('id', $truckIds)
-            ->select('id', 'plate_number', 'disabled', 'deleted_at')
+            ->select('id', 'vehicle', 'disabled', 'deleted_at')
             ->get()
             ->keyBy('id');
     }
@@ -455,23 +455,23 @@ class Slips extends Component
         $query = Vehicle::query()
             ->whereNull('deleted_at')
             ->where('disabled', false)
-            ->select(['id', 'plate_number']);
+            ->select(['id', 'vehicle']);
 
         // Apply search filter
         if (!empty($search)) {
-            $query->where('plate_number', 'like', '%' . $search . '%');
+            $query->where('vehicle', 'like', '%' . $search . '%');
         }
 
         // Include specific IDs (for selected items)
         if (!empty($includeIds)) {
             $includedItems = Vehicle::whereIn('id', $includeIds)
-                ->select(['id', 'plate_number'])
+                ->select(['id', 'vehicle'])
                 ->get()
-                ->pluck('plate_number', 'id')
+                ->pluck('vehicle', 'id')
                 ->toArray();
         }
 
-        $query->orderBy('plate_number', 'asc');
+        $query->orderBy('vehicle', 'asc');
         
         // Calculate offset
         $offset = ($page - 1) * $perPage;
@@ -483,15 +483,15 @@ class Slips extends Component
         $results = $query->skip($offset)->take($perPage)->get();
         
         // Convert to array format - database ORDER BY ensures alphabetical order
-        $data = $results->pluck('plate_number', 'id')->toArray();
+        $data = $results->pluck('vehicle', 'id')->toArray();
         
         // Handle includeIds for label loading only
         if (!empty($includeIds)) {
             $includedItems = Vehicle::whereIn('id', $includeIds)
-                ->select(['id', 'plate_number'])
-                ->orderBy('plate_number', 'asc')
+                ->select(['id', 'vehicle'])
+                ->orderBy('vehicle', 'asc')
                 ->get()
-                ->pluck('plate_number', 'id')
+                ->pluck('vehicle', 'id')
                 ->toArray();
             return [
                 'data' => $includedItems,
@@ -795,7 +795,7 @@ class Slips extends Component
         $this->appliedOrigin = array_values(array_map('intval', $this->filterOrigin ?? []));
         $this->appliedDestination = array_values(array_map('intval', $this->filterDestination ?? []));
         $this->appliedDriver = array_values(array_map('intval', $this->filterDriver ?? []));
-        $this->appliedPlateNumber = array_values(array_map('intval', $this->filterPlateNumber ?? []));
+        $this->appliedVehicle = array_values(array_map('intval', $this->filterVehicle ?? []));
         $this->appliedHatcheryGuard = array_values(array_map('intval', $this->filterHatcheryGuard ?? []));
         $this->appliedReceivedGuard = array_values(array_map('intval', $this->filterReceivedGuard ?? []));
         $this->appliedCreatedFrom = !empty($this->filterCreatedFrom) ? $this->filterCreatedFrom : null;
@@ -807,7 +807,7 @@ class Slips extends Component
             !empty($this->appliedOrigin) ||
             !empty($this->appliedDestination) ||
             !empty($this->appliedDriver) ||
-            !empty($this->appliedPlateNumber) ||
+            !empty($this->appliedVehicle) ||
             !empty($this->appliedHatcheryGuard) ||
             !empty($this->appliedReceivedGuard) ||
             $this->appliedCreatedFrom ||
@@ -837,9 +837,9 @@ class Slips extends Component
                 $this->appliedDriver = [];
                 $this->filterDriver = [];
                 break;
-            case 'plateNumber':
-                $this->appliedPlateNumber = [];
-                $this->filterPlateNumber = [];
+            case 'vehicle':
+                $this->appliedVehicle = [];
+                $this->filterVehicle = [];
                 break;
             case 'hatcheryGuard':
                 $this->appliedHatcheryGuard = [];
@@ -884,11 +884,11 @@ class Slips extends Component
                 }));
                 $this->filterDriver = $this->appliedDriver;
                 break;
-            case 'plateNumber':
-                $this->appliedPlateNumber = array_values(array_filter($this->appliedPlateNumber, function($id) use ($valueToRemove) {
+            case 'vehicle':
+                $this->appliedVehicle = array_values(array_filter($this->appliedVehicle, function($id) use ($valueToRemove) {
                     return $id != $valueToRemove;
                 }));
-                $this->filterPlateNumber = $this->appliedPlateNumber;
+                $this->filterVehicle = $this->appliedVehicle;
                 break;
             case 'hatcheryGuard':
                 $this->appliedHatcheryGuard = array_values(array_filter($this->appliedHatcheryGuard, function($id) use ($valueToRemove) {
@@ -917,7 +917,7 @@ class Slips extends Component
             !empty($this->appliedOrigin) ||
             !empty($this->appliedDestination) ||
             !empty($this->appliedDriver) ||
-            !empty($this->appliedPlateNumber) ||
+            !empty($this->appliedVehicle) ||
             !empty($this->appliedHatcheryGuard) ||
             !empty($this->appliedReceivedGuard) ||
             $this->appliedCreatedFrom ||
@@ -935,14 +935,14 @@ class Slips extends Component
         $this->filterOrigin = [];
         $this->filterDestination = [];
         $this->filterDriver = [];
-        $this->filterPlateNumber = [];
+        $this->filterVehicle = [];
         $this->filterHatcheryGuard = [];
         $this->filterReceivedGuard = [];
         $this->filterCreatedFrom = null;
         $this->filterCreatedTo = null;
         
         // Clear search properties
-        $this->searchFilterPlateNumber = '';
+        $this->searchFilterVehicle = '';
         $this->searchFilterDriver = '';
         $this->searchFilterOrigin = '';
         $this->searchFilterDestination = '';
@@ -953,7 +953,7 @@ class Slips extends Component
         $this->appliedOrigin = [];
         $this->appliedDestination = [];
         $this->appliedDriver = [];
-        $this->appliedPlateNumber = [];
+        $this->appliedVehicle = [];
         $this->appliedHatcheryGuard = [];
         $this->appliedReceivedGuard = [];
         $this->appliedCreatedFrom = null;
@@ -970,7 +970,7 @@ class Slips extends Component
         // Optimize relationship loading by only selecting needed fields
         // This significantly reduces memory usage with large datasets
         $this->selectedSlip = DisinfectionSlipModel::with([
-            'truck:id,plate_number,disabled,deleted_at',
+            'truck:id,vehicle,disabled,deleted_at',
             'location:id,location_name,disabled,deleted_at',
             'destination:id,location_name,disabled,deleted_at',
             'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
@@ -1036,7 +1036,7 @@ class Slips extends Component
         // Load the slip if ID is provided (when called from table row)
         if ($id) {
             $this->selectedSlip = DisinfectionSlipModel::with([
-                'truck:id,plate_number,disabled,deleted_at',
+                'truck:id,vehicle,disabled,deleted_at',
                 'location:id,location_name,disabled,deleted_at',
                 'destination:id,location_name,disabled,deleted_at',
                 'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
@@ -1345,7 +1345,7 @@ class Slips extends Component
         }
 
         $this->validate($rules, [], [
-            'editTruckId' => 'Plate Number',
+            'editTruckId' => 'Vehicle',
             'editLocationId' => 'Origin',
             'editDestinationId' => 'Destination',
             'editDriverId' => 'Driver',
@@ -1819,7 +1819,7 @@ class Slips extends Component
         if ($this->selectedSlip) {
             // Optimize relationship loading by only selecting needed fields
             $this->selectedSlip = DisinfectionSlipModel::with([
-                'truck:id,plate_number,disabled,deleted_at',
+                'truck:id,vehicle,disabled,deleted_at',
                 'location:id,location_name,disabled,deleted_at',
                 'destination:id,location_name,disabled,deleted_at',
                 'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
@@ -1974,7 +1974,7 @@ class Slips extends Component
         // Optimize relationship loading by only selecting needed fields
         // This significantly reduces memory usage with large datasets (5,000+ records)
         $slips = DisinfectionSlipModel::with([
-            'truck:id,plate_number,disabled,deleted_at',
+            'truck:id,vehicle,disabled,deleted_at',
             'location:id,location_name,disabled,deleted_at',
             'destination:id,location_name,disabled,deleted_at',
             'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
@@ -1997,7 +1997,7 @@ class Slips extends Component
                 $query->where(function($q) use ($escapedSearchTerm) {
                     $q->where('slip_id', 'like', '%' . $escapedSearchTerm . '%')
                         ->orWhereHas('truck', function($truckQuery) use ($escapedSearchTerm) {
-                            $truckQuery->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                            $truckQuery->where('vehicle', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
                             $driverQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
@@ -2045,9 +2045,9 @@ class Slips extends Component
             ->when($this->filtersActive && !empty($this->appliedDriver), function($query) {
                 $query->whereIn('driver_id', $this->appliedDriver);
             })
-            // Plate number filter
-            ->when($this->filtersActive && !empty($this->appliedPlateNumber), function($query) {
-                $query->whereIn('truck_id', $this->appliedPlateNumber);
+            // Vehicle filter
+            ->when($this->filtersActive && !empty($this->appliedVehicle), function($query) {
+                $query->whereIn('truck_id', $this->appliedVehicle);
             })
             // Hatchery guard filter
             ->when(!empty($this->appliedHatcheryGuard), function($query) {
@@ -2141,7 +2141,7 @@ class Slips extends Component
                 $query->where(function($q) use ($escapedSearchTerm) {
                     $q->where('slip_id', 'like', '%' . $escapedSearchTerm . '%')
                         ->orWhereHas('truck', function($truckQuery) use ($escapedSearchTerm) {
-                            $truckQuery->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                            $truckQuery->where('vehicle', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
                             $driverQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
@@ -2170,8 +2170,8 @@ class Slips extends Component
             ->when(!empty($this->appliedDriver), function($query) {
                 $query->whereIn('driver_id', $this->appliedDriver);
             })
-            ->when(!empty($this->appliedPlateNumber), function($query) {
-                $query->whereIn('truck_id', $this->appliedPlateNumber);
+            ->when(!empty($this->appliedVehicle), function($query) {
+                $query->whereIn('truck_id', $this->appliedVehicle);
             })
             ->when(!empty($this->appliedHatcheryGuard), function($query) {
                 $query->whereIn('hatchery_guard_id', $this->appliedHatcheryGuard);
@@ -2237,7 +2237,7 @@ class Slips extends Component
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            fputcsv($file, ['Slip ID', 'Plate Number', 'Origin', 'Destination', 'Driver', 'Status', 'Hatchery Guard', 'Received Guard', 'Created Date', 'Completed Date']);
+            fputcsv($file, ['Slip ID', 'Vehicle', 'Origin', 'Destination', 'Driver', 'Status', 'Hatchery Guard', 'Received Guard', 'Created Date', 'Completed Date']);
             
             foreach ($data as $slip) {
                 $statuses = ['Pending', 'Disinfecting', 'In-Transit', 'Completed', 'Incomplete'];
@@ -2248,7 +2248,7 @@ class Slips extends Component
                 
                 fputcsv($file, [
                     $slip->slip_id,
-                    $slip->truck->plate_number ?? 'N/A',
+                    $slip->truck->vehicle ?? 'N/A',
                     $slip->location->location_name ?? 'N/A',
                     $slip->destination->location_name ?? 'N/A',
                     $driver,
@@ -2279,7 +2279,7 @@ class Slips extends Component
     
             return [
                 'slip_id' => $slip->slip_id,
-                'plate_number' => $slip->truck ? $slip->truck->plate_number : 'N/A',
+                'vehicle' => $slip->truck ? $slip->truck->vehicle : 'N/A',
                 'origin' => $slip->location ? $slip->location->location_name : 'N/A',
                 'destination' => $slip->destination ? $slip->destination->location_name : 'N/A',
                 'driver' => $slip->driver ? 
@@ -2299,7 +2299,7 @@ class Slips extends Component
             'origin' => $this->appliedOrigin,
             'destination' => $this->appliedDestination,
             'driver' => $this->appliedDriver,
-            'plate_number' => $this->appliedPlateNumber,
+            'vehicle' => $this->appliedVehicle,
             'hatchery_guard' => $this->appliedHatcheryGuard,
             'received_guard' => $this->appliedReceivedGuard,
             'created_from' => $this->appliedCreatedFrom,

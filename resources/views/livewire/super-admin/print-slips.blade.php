@@ -138,11 +138,11 @@
                     <p><strong>Driver:</strong> {{ implode(', ', $driverNames) }}</p>
                 @endif
                 
-                @if (!empty($filters['plate_number']) && is_array($filters['plate_number']))
+                @if (!empty($filters['vehicle']) && is_array($filters['vehicle']))
                     @php
-                        $plateNumbers = \App\Models\Vehicle::whereIn('id', $filters['plate_number'])->pluck('plate_number')->toArray();
+                        $vehicles = \App\Models\Vehicle::whereIn('id', $filters['vehicle'])->pluck('vehicle')->toArray();
                     @endphp
-                    <p><strong>Vehicle:</strong> {{ implode(', ', $plateNumbers) }}</p>
+                    <p><strong>Vehicle:</strong> {{ implode(', ', $vehicles) }}</p>
                 @endif
                 
                 @if (!empty($filters['hatchery_guard']) && is_array($filters['hatchery_guard']))
@@ -206,7 +206,7 @@
             @forelse($data as $slip)
                 <tr>
                     <td>{{ $slip->slip_id ?? ($slip['slip_id'] ?? '') }}</td>
-                    <td>{{ $slip->plate_number ?? ($slip['plate_number'] ?? '') }}</td>
+                    <td>{{ $slip->vehicle ?? ($slip['vehicle'] ?? '') }}</td>
                     <td>{{ $slip->origin ?? ($slip['origin'] ?? '') }}</td>
                     <td>{{ $slip->destination ?? ($slip['destination'] ?? '') }}</td>
                     <td>{{ $slip->driver ?? ($slip['driver'] ?? '') }}</td>

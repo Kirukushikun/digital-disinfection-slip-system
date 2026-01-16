@@ -128,17 +128,17 @@
                 </div>
 
                 {{-- Vehicle Filter --}}
-                <div x-data="{ filterValue: @entangle('filterPlateNumber') }">
+                <div x-data="{ filterValue: @entangle('filterVehicle') }">
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700">Vehicle</label>
-                        <button type="button" wire:click="$set('filterPlateNumber', [])"
+                        <button type="button" wire:click="$set('filterVehicle', [])"
                             x-show="filterValue && filterValue.length > 0"
                             class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                             Clear
                         </button>
                     </div>
-                    <x-forms.searchable-dropdown-paginated wireModel="filterPlateNumber" data-method="getPaginatedTrucks"
-                        search-property="searchFilterPlateNumber" placeholder="Select vehicle..."
+                    <x-forms.searchable-dropdown-paginated wireModel="filterVehicle" data-method="getPaginatedTrucks"
+                        search-property="searchFilterVehicle" placeholder="Select vehicle..."
                         search-placeholder="Search vehicles..." :multiple="true" :per-page="20" />
                 </div>
 

@@ -77,7 +77,7 @@ class Issues extends Component
         // Reload selectedSlip with trashed relations if it exists
         if ($this->selectedSlip && $this->selectedSlip->id) {
             $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
                 'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -140,7 +140,7 @@ class Issues extends Component
         // If a slip is selected, reload it with trashed relations
         if ($this->selectedSlip) {
             $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
                 'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -365,7 +365,7 @@ class Issues extends Component
                 'slip' => function($q) {
                     $q->withTrashed();
                     $q->with([
-                        'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                        'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
                         'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                         'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                         'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -380,7 +380,7 @@ class Issues extends Component
                 'slip' => function($q) {
                     $q->withTrashed();
                     $q->with([
-                        'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                        'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
                         'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                         'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
                         'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -429,7 +429,7 @@ class Issues extends Component
         $this->showDetailsModal = true;
 
         $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-            'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+            'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
             'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
             'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
             'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
@@ -477,13 +477,13 @@ class Issues extends Component
     #[Renderless]
     public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $query = Vehicle::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'plate_number']);
-        if (!empty($search)) $query->where('plate_number', 'like', '%' . $search . '%');
-        if (!empty($includeIds)) return ['data' => Vehicle::whereIn('id', $includeIds)->orderBy('plate_number')->get()->pluck('plate_number', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
-        $query->orderBy('plate_number');
+        $query = Vehicle::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'vehicle']);
+        if (!empty($search)) $query->where('vehicle', 'like', '%' . $search . '%');
+        if (!empty($includeIds)) return ['data' => Vehicle::whereIn('id', $includeIds)->orderBy('vehicle')->get()->pluck('vehicle', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
+        $query->orderBy('vehicle');
         $offset = ($page - 1) * $perPage;
         $total = $query->count();
-        return ['data' => $query->skip($offset)->take($perPage)->get()->pluck('plate_number', 'id')->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
+        return ['data' => $query->skip($offset)->take($perPage)->get()->pluck('vehicle', 'id')->toArray(), 'has_more' => ($offset + $perPage) < $total, 'total' => $total];
     }
 
     #[Renderless]
@@ -849,7 +849,7 @@ class Issues extends Component
         }
 
         $this->validate($rules, [], [
-            'editTruckId' => 'Plate Number',
+            'editTruckId' => 'Vehicle',
             'editLocationId' => 'Origin',
             'editDestinationId' => 'Destination',
             'editDriverId' => 'Driver',
@@ -902,7 +902,7 @@ class Issues extends Component
         // Refresh the slip with relationships (including if slip is deleted)
         $this->selectedSlip->refresh();
         $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-            'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+            'truck' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
             'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
             'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
             'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },

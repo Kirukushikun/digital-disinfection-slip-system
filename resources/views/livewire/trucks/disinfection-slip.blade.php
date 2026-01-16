@@ -74,7 +74,7 @@
                             <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                         @enderror
                     @else
-                        {{ $selectedSlip->truck->plate_number ?? 'N/A' }}
+                        {{ $selectedSlip->truck->vehicle ?? 'N/A' }}
                     @endif
                 </div>
             </div>

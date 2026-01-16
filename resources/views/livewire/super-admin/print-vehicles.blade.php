@@ -156,7 +156,7 @@
         <tbody>
             @forelse($data as $truck)
                 <tr>
-                    <td>{{ $truck->plate_number ?? ($truck['plate_number'] ?? '') }}</td>
+                    <td>{{ $truck->vehicle ?? ($truck['vehicle'] ?? '') }}</td>
                     <td>{{ $truck->disabled ?? ($truck['disabled'] ?? false) ? 'Disabled' : 'Enabled' }}</td>
                     <td>
                         @if (isset($truck->created_at))
