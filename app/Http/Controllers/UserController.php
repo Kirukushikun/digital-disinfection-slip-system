@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Location;
 use Illuminate\Support\Facades\Session;
 
@@ -10,6 +11,14 @@ class UserController extends Controller
 {
     public function dashboard()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
         // Check if current location allows creating slips
         $canCreateSlip = false;
         $currentLocationId = Session::get('location_id');
@@ -24,79 +33,173 @@ class UserController extends Controller
 
     public function incomingSlips()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('user.incoming-slips');
     }
 
     public function outgoingSlips()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('user.outgoing-slips');
     }
 
     public function completedSlips()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('user.completed-slips');
     }
 
     public function issues()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('user.issues');
     }
 
     public function issue()
     {
+        // Authorize: user type must be 0, or superadmin (2) with location in session
+        $user = Auth::user();
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('user.issue');
     }
 
     // Super Guard Data Management Methods (accessible to super guards and super admins)
     public function dataGuards()
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             // Regular guards trying to access super guard routes - redirect to landing
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
+
         return view('user.data.guards');
     }
 
     public function dataDrivers()
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             // Regular guards trying to access super guard routes - redirect to landing
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
+
         return view('user.data.drivers');
     }
 
     public function dataLocations()
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             // Regular guards trying to access super guard routes - redirect to landing
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
+
         return view('user.data.locations');
     }
 
     public function dataVehicles()
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             // Regular guards trying to access super guard routes - redirect to landing
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
+
         return view('user.data.vehicles');
     }
 
     // Print methods for super guards
     public function printGuards(Request $request)
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
@@ -133,8 +236,17 @@ class UserController extends Controller
 
     public function printDrivers(Request $request)
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
@@ -169,8 +281,17 @@ class UserController extends Controller
 
     public function printLocations(Request $request)
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
@@ -205,8 +326,17 @@ class UserController extends Controller
 
     public function printVehicles(Request $request)
     {
-        $user = auth()->user();
-        // Allow super guards OR super admins
+        $user = Auth::user();
+
+        // First check basic user type authorization (user type 0, or superadmin with location)
+        $isAuthorized = $user->user_type == 0 ||
+            ($user->user_type == 2 && Session::has('location_id'));
+
+        if (!$isAuthorized) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        // Then check super guard OR super admin permissions for data access
         if (!($user->super_guard || $user->user_type === 2)) {
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }

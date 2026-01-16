@@ -3,47 +3,88 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class SuperAdminController extends Controller
 {
     public function dashboard()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.dashboard');
     }
 
     public function guards()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.guards');
     }
-    
+
     public function drivers()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.drivers');
     }
-    
+
     public function locations()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.locations');
     }
-    
+
     public function vehicles()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.vehicles');
     }
-    
+
     public function slips()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.slips');
     }
-    
+
     public function admins()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.admins');
     }
-    
+
     public function issues()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.issues');
     }
 
@@ -54,11 +95,21 @@ class SuperAdminController extends Controller
 
     public function settings()
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('superadmin.settings');
     }
 
     public function printGuards(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -89,6 +140,11 @@ class SuperAdminController extends Controller
 
     public function printAdmins(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -119,6 +175,11 @@ class SuperAdminController extends Controller
 
     public function printDrivers(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -149,6 +210,11 @@ class SuperAdminController extends Controller
 
     public function printLocations(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -179,6 +245,11 @@ class SuperAdminController extends Controller
 
     public function printVehicles(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -209,6 +280,11 @@ class SuperAdminController extends Controller
 
     public function printSlips(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -239,6 +315,11 @@ class SuperAdminController extends Controller
 
     public function printSlip(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $slip = null;
         
         if ($request->has('token')) {
@@ -282,6 +363,11 @@ class SuperAdminController extends Controller
 
     public function printAuditTrail(Request $request)
     {
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];

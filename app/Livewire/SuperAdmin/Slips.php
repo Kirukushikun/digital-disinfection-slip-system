@@ -1080,12 +1080,21 @@ class Slips extends Component
         if (!$this->selectedSlip || empty($this->selectedSlip->photo_ids)) {
             return collect([]);
         }
-        
+
         // Optimize Photo loading by only selecting needed fields
         return Photo::whereIn('id', $this->selectedSlip->photo_ids)
             ->select('id', 'file_path', 'user_id', 'created_at', 'updated_at')
             ->with(['user' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'deleted_at')->withTrashed(); }])
             ->get();
+    }
+
+    public function getDisplayReasonProperty()
+    {
+        if (!$this->selectedSlip || !$this->selectedSlip->reason) {
+            return 'N/A';
+        }
+
+        return $this->selectedSlip->reason->reason_text;
     }
 
     public function canEdit()

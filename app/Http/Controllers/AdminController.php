@@ -3,48 +3,94 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class AdminController extends Controller
 {
     public function dashboard()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.dashboard');
     }
 
     public function guards()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.guards');
     }
     public function drivers()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.drivers');
     }
     public function locations()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.locations');
     }
     public function vehicles()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.vehicles');
     }
     public function slips()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.slips');
     }
 
     public function issues()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.issues');
     }
 
     public function auditTrail()
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         return view('admin.audit-trail');
     }
 
     public function printGuards(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -75,6 +121,11 @@ class AdminController extends Controller
 
     public function printDrivers(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -105,6 +156,11 @@ class AdminController extends Controller
 
     public function printLocations(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -135,6 +191,11 @@ class AdminController extends Controller
 
     public function printVehicles(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -165,6 +226,11 @@ class AdminController extends Controller
 
     public function printSlips(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];
@@ -195,6 +261,11 @@ class AdminController extends Controller
 
     public function printSlip(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $slip = null;
         
         if ($request->has('token')) {
@@ -238,6 +309,11 @@ class AdminController extends Controller
 
     public function printAuditTrail(Request $request)
     {
+        // Authorize: user type must be 1 (admin)
+        if (Auth::user()->user_type != 1) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
         $data = collect();
         $filters = [];
         $sorting = [];

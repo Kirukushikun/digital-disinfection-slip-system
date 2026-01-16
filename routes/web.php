@@ -26,7 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/password', [App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
 });
 
-Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group(function () {
+Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     Route::get('/incoming-slips', [UserController::class, 'incomingSlips'])->name('incoming-slips');
     Route::get('/outgoing-slips', [UserController::class, 'outgoingSlips'])->name('outgoing-slips');
@@ -51,7 +51,7 @@ Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group
     });
 });
 
-Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/guards', [AdminController::class, 'guards'])->name('guards');
     Route::get('/drivers', [AdminController::class, 'drivers'])->name('drivers');
@@ -69,7 +69,7 @@ Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->gro
     Route::get('/print/audit-trail', [AdminController::class, 'printAuditTrail'])->name('print.audit-trail');
 });
 
-Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/guards', [SuperAdminController::class, 'guards'])->name('guards');
     Route::get('/admins', [SuperAdminController::class, 'admins'])->name('admins');
