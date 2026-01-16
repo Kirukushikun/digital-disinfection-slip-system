@@ -4,8 +4,8 @@
         <div class="mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Plate Numbers</h1>
-                    <p class="text-gray-600 text-sm mt-1">Manage all plate numbers in the system</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Vehicles</h1>
+                    <p class="text-gray-600 text-sm mt-1">Manage all vehicles in the system</p>
                 </div>
 
                 {{-- Search and Filter Bar --}}
@@ -20,7 +20,7 @@
                         </div>
                         <input type="text" wire:model.live="search"
                             class="block w-full pl-10 {{ $search ? 'pr-20' : 'pr-12' }} py-2.5 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Search by plate number...">
+                            placeholder="Search by vehicle...">
                         
                         {{-- Right Side Buttons Container --}}
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
@@ -128,10 +128,10 @@
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
-                                    <span>Plate Number</span>
+                                    <span>Vehicle</span>
                                     <button wire:click.prevent="applySort('plate_number')" type="button"
                                         class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
-                                        title="Sort by Plate Number">
+                                        title="Sort by Vehicle">
                                         @php
                                             $plateDir = $this->getSortDirection('plate_number');
                                         @endphp
@@ -291,13 +291,13 @@
                                                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4">
                                             </path>
                                         </svg>
-                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No plate numbers found</h3>
+                                        <h3 class="text-sm font-medium text-gray-900 mb-1">No vehicles found</h3>
                                         <p class="text-sm text-gray-500">
                                             @if ($search)
                                                 No results match your search "<span
                                                     class="font-medium text-gray-700">{{ $search }}</span>".
                                             @else
-                                                No plate numbers available in the system.
+                                                No vehicles available in the system.
                                             @endif
                                         </p>
                                         @if ($search)
@@ -339,18 +339,18 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-md">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Edit Plate Number</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Edit Vehicle</h3>
                         </div>
 
                         <div class="px-6 py-4">
                     @csrf
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Plate Number <span
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle <span
                                             class="text-red-500">*</span></label>
                                     <input type="text" wire:model="plate_number" maxlength="20"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-                                        placeholder="Enter plate number">
+                                        placeholder="Enter vehicle">
                                     @error('plate_number')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
@@ -397,7 +397,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Plate Number</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Enable Vehicle</h3>
                                 @else
                                     <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
                                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
@@ -407,7 +407,7 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Plate Number</h3>
+                                    <h3 class="ml-4 text-lg font-semibold text-gray-900">Disable Vehicle</h3>
                                 @endif
                             </div>
                         </div>
@@ -416,10 +416,10 @@
                     @csrf
                             <p class="text-sm text-gray-600">
                                 @if ($selectedTruckDisabled)
-                                    Are you sure you want to enable this plate number? The plate number will be
+                                    Are you sure you want to enable this vehicle? The vehicle will be
                                     available for use again.
                                 @else
-                                    Are you sure you want to disable this plate number? The plate number will not be
+                                    Are you sure you want to disable this vehicle? The vehicle will not be
                                     available for use.
                                 @endif
                             </p>
@@ -433,14 +433,14 @@
                             @if ($selectedTruckDisabled)
                                 <button wire:click="toggleTruckStatus" wire:loading.attr="disabled" wire:target="toggleTruckStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleTruckStatus">Enable Plate Number</span>
+                                    <span wire:loading.remove wire:target="toggleTruckStatus">Enable Vehicle</span>
                                     <span wire:loading.inline-flex wire:target="toggleTruckStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Enabling...
                                     </span>
                                 </button>
                             @else
                                 <button wire:click="toggleTruckStatus" wire:loading.attr="disabled" wire:target="toggleTruckStatus"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                    <span wire:loading.remove wire:target="toggleTruckStatus">Disable Plate Number</span>
+                                    <span wire:loading.remove wire:target="toggleTruckStatus">Disable Vehicle</span>
                                     <span wire:loading.inline-flex wire:target="toggleTruckStatus" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Disabling...
                                     </span>
                                 </button>
@@ -451,7 +451,7 @@
             </div>
         @endif
 
-        {{-- Create Plate Number Modal --}}
+        {{-- Create Vehicle Modal --}}
         @if ($showCreateModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
@@ -463,18 +463,18 @@
                     <div
                         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-md">
                         <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Create Plate Number</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Create Vehicle</h3>
                         </div>
 
                         <div class="px-6 py-4">
                     @csrf
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Plate Number <span
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle <span
                                             class="text-red-500">*</span></label>
                                     <input type="text" wire:model="create_plate_number" maxlength="20"
                                         class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-                                        placeholder="Enter plate number">
+                                        placeholder="Enter vehicle">
                                     @error('create_plate_number')
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror

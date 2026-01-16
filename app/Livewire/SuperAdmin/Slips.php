@@ -1,27 +1,30 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\SuperAdmin;
 
 use Livewire\Component;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Renderless;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
 use App\Models\Attachment;
 use App\Models\Truck;
 use App\Models\Location;
 use App\Models\Driver;
-use App\Models\Reason;
 use App\Models\User;
-use App\Services\Logger;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log as FacadesLog;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Locked;
-use Livewire\Attributes\Renderless;
+use App\Services\Logger;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
-class Trucks extends Component
+use App\Models\Reason;
+
+class Slips extends Component
 {
     use WithPagination;
 
@@ -40,15 +43,15 @@ class Trucks extends Component
     // Ensure filterStatus is properly typed when updated
     public function updatedFilterStatus($value)
     {
-        // Handle null, empty string, or numeric values (0, 1, 2, 3 matching backend)
-        // null/empty = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+        // Handle null, empty string, or numeric values (0, 1, 2, 3, 4 matching backend)
+        // null/empty = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
         // The select will send values as strings, so we convert to int
         if ($value === null || $value === '' || $value === false) {
             $this->filterStatus = null;
         } elseif (is_numeric($value)) {
             $intValue = (int)$value;
-            if ($intValue >= 0 && $intValue <= 3) {
-                // Store as integer (0, 1, 2, or 3)
+            if ($intValue >= 0 && $intValue <= 4) {
+                // Store as integer (0, 1, 2, 3, or 4)
                 $this->filterStatus = $intValue;
             } else {
                 $this->filterStatus = null;
@@ -87,11 +90,12 @@ class Trucks extends Component
     
     public $filtersActive = false;
     public $excludeDeletedItems = true; // Default: exclude slips with deleted related items
-
-    public function updatedExcludeDeletedItems()
-    {
-        $this->resetPage();
-    }
+    
+    // Store previous date filter values when entering restore mode
+    private $previousFilterCreatedFrom = null;
+    private $previousFilterCreatedTo = null;
+    private $previousAppliedCreatedFrom = null;
+    private $previousAppliedCreatedTo = null;
     
     public $availableStatuses = [
         0 => 'Pending',
@@ -106,43 +110,25 @@ class Trucks extends Component
     public $showAttachmentModal = false;
     public $showDeleteConfirmation = false;
     public $showRemoveAttachmentConfirmation = false;
-
-    #[Locked]
-    public $selectedSlip = null;
-
-    public $attachmentFile = null;
-    public $currentAttachmentIndex = 0;
-    public $attachmentToDelete = null;
-
-    public function getSelectedSlipAttachmentsProperty()
-    {
-        if (!$this->selectedSlip || empty($this->selectedSlip->attachment_ids)) {
-            return collect([]);
-        }
-        
-        // Optimize attachment loading by only selecting needed fields
-        return Attachment::whereIn('id', $this->selectedSlip->attachment_ids, 'and', false)
-            ->select('id', 'file_path', 'user_id', 'created_at', 'updated_at')
-            ->with('user:id,first_name,middle_name,last_name,username,deleted_at')
-            ->get();
-    }
-
-    // Protection flags
-    public $isDeleting = false;
-    public $isUpdating = false;
+    public $showRestoreModal = false;
+    public $showDeleted = false; // Toggle to show deleted items
 
     // Reasons Modal
     public $showReasonsModal = false;
     public $showCreateReasonModal = false;
-    public $newReasonText = '';
-    public $editingReasonId = null;
-    public $editingReasonText = '';
-    public $originalReasonText = '';
-    public $showSaveConfirmation = false;
-    public $showUnsavedChangesConfirmation = false;
-    public $savingReason = false;
-    public $showDeleteReasonConfirmation = false;
-    public $reasonToDelete = null;
+
+    #[Locked]
+    public $selectedSlip = null;
+    
+    public $selectedSlipId = null;
+    public $selectedSlipName = null;
+    public $attachmentFile = null;
+    public $currentAttachmentIndex = 0;
+    public $attachmentToDelete = null;
+
+    // Protection flags
+    public $isDeleting = false;
+    public $isRestoring = false;
 
     // Create Modal
     public $showCreateModal = false;
@@ -156,6 +142,14 @@ class Trucks extends Component
     public $reason_id;
     public $remarks_for_disinfection;
     public $isCreating = false;
+    public $isUpdating = false;
+    public $newReasonText = '';
+    public $editingReasonId = null;
+    public $editingReasonText = '';
+    public $originalReasonText = '';
+    public $showSaveConfirmation = false;
+    public $showUnsavedChangesConfirmation = false;
+    public $savingReason = false;
     
     // Search properties for dropdowns (create modal)
     public $searchOrigin = '';
@@ -165,6 +159,11 @@ class Trucks extends Component
     public $searchHatcheryGuard = '';
     public $searchReceivedGuard = '';
     public $searchReason = '';
+    
+    // Search properties for details modal
+    public $searchDetailsTruck = '';
+    public $searchDetailsDestination = '';
+    public $searchDetailsDriver = '';
     public $searchReasonSettings = '';
     public $filterReasonStatus = 'all'; // Filter: 'all', 'enabled', 'disabled'
     public $reasonsPage = 1; // Page for reasons pagination
@@ -178,11 +177,6 @@ class Trucks extends Component
     {
         $this->reasonsPage = 1; // Reset to first page when filter changes
     }
-    
-    // Search properties for details modal
-    public $searchDetailsTruck = '';
-    public $searchDetailsDestination = '';
-    public $searchDetailsDriver = '';
     
     // Edit Modal
     public $showEditModal = false;
@@ -207,6 +201,8 @@ class Trucks extends Component
     public $searchEditReceivedGuard = '';
     public $searchEditReason = '';
     
+    public $showDeleteReasonConfirmation = false;
+    public $reasonToDelete = null;
     private $cachedFilterGuards = null;
     private $cachedFilterGuardsCollection = null;
 
@@ -233,52 +229,83 @@ class Trucks extends Component
         $this->appliedCreatedFrom = $today;
         $this->appliedCreatedTo = $today;
         $this->filtersActive = true;
+    }
+    
+    /**
+     * Prevent polling from running when any modal is open
+     * This prevents the selected slip data from being overwritten
+     */
+    #[On('polling')]
+    public function polling()
+    {
+        // If any modal is open, skip polling
+        if ($this->showFilters || $this->showCreateModal || $this->showDetailsModal || 
+            $this->showDeleteConfirmation || $this->showRemoveAttachmentConfirmation || 
+            $this->showEditModal || $this->showCancelCreateConfirmation || 
+            $this->showCancelEditConfirmation || $this->showAttachmentModal || 
+            $this->showRestoreModal || $this->showReasonsModal) {
+            return;
+        }
         
-        // Options are now computed properties, no initialization needed
+        // If a slip is selected, reload it with trashed relations (including if the slip itself is deleted)
+        // Optimize relationship loading by only selecting needed fields
+        if ($this->selectedSlip) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
     }
     
     // Helper methods to get cached collections
     private function getCachedLocations()
     {
+        // Shorter cache (5 min) since comment says "ensure disabled status is current"
         // Only cache id and location_name to reduce memory usage with large datasets
         return Cache::remember('locations_all', 300, function() {
-            return Location::select(['id', 'location_name', 'disabled', 'deleted_at'])
-                ->orderBy('location_name', 'asc')
+            return Location::withTrashed()
+                ->select('id', 'location_name', 'disabled', 'deleted_at')
+                ->orderBy('location_name')
                 ->get();
         });
     }
-
+    
     private function getCachedDrivers()
     {
         // Only cache id and name fields to reduce memory usage with large datasets
         return Cache::remember('drivers_all', 300, function() {
-            return Driver::select(['id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at'])
-                ->orderBy('first_name', 'asc')
+            return Driver::withTrashed()
+                ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')
+                ->orderBy('first_name')
                 ->get();
         });
     }
-
+    
     private function getCachedTrucks()
     {
         // Only cache id and plate_number to reduce memory usage with large datasets
         return Cache::remember('trucks_all', 300, function() {
-            return Truck::select(['id', 'plate_number', 'disabled', 'deleted_at'])
-                ->orderBy('plate_number', 'asc')
+            return Truck::withTrashed()
+                ->select('id', 'plate_number', 'disabled', 'deleted_at')
+                ->orderBy('plate_number')
                 ->get();
         });
     }
-
-    // Removed getCachedReasons() - now using direct database pagination in getReasonsProperty()
-
+    
     private function getCachedGuards()
     {
         // Only cache id and name fields, return as array to reduce memory usage
         return Cache::remember('guards_all', 300, function() {
-            return User::where('user_type', '=', 0, 'and')
-                ->where('disabled', '=', false, 'and')
+            return User::where('user_type', '=', 0)
+                ->where('disabled', '=', false)
                 ->select('id', 'first_name', 'middle_name', 'last_name', 'username')
-                ->orderBy('first_name', 'asc')
-                ->orderBy('last_name', 'asc')
+                ->orderBy('first_name')
+                ->orderBy('last_name')
                 ->get()
                 ->mapWithKeys(function ($user) {
                     $name = trim("{$user->first_name} {$user->middle_name} {$user->last_name}");
@@ -287,13 +314,17 @@ class Trucks extends Component
         });
     }
     
+    // Removed getCachedReasons() - now using direct database pagination in getReasonsProperty()
+    
     // Get guards for filtering (includes disabled guards) - cached User collection
+    // Only cache id and name fields to reduce memory usage
     private function getFilterGuardsCollection()
     {
         if ($this->cachedFilterGuardsCollection === null) {
-            $this->cachedFilterGuardsCollection = User::where('user_type', '=', 0, 'and')
-                ->orderBy('first_name', 'asc')
-                ->orderBy('last_name', 'asc')
+            $this->cachedFilterGuardsCollection = User::where('user_type', '=', 0)
+                ->select('id', 'first_name', 'middle_name', 'last_name', 'disabled')
+                ->orderBy('first_name')
+                ->orderBy('last_name')
                 ->get();
         }
         return $this->cachedFilterGuardsCollection;
@@ -396,8 +427,9 @@ class Trucks extends Component
     }
     
     // NOTE: Filter options removed - now using paginated dropdowns with getPaginatedX methods
+    // Old getFilterTruckOptionsProperty, getFilterDriverOptionsProperty, etc. removed
 
-    // Computed property for guards (users)
+    // Computed property for guards (users) - lazy load only what's needed
     public function getGuardsProperty()
     {
         // Only load guards that are actually used in applied filters
@@ -421,7 +453,7 @@ class Trucks extends Component
     // Computed property for available origins (excludes selected destination)
     public function getAvailableOriginsProperty()
     {
-        $locations = $this->getCachedLocations();
+        $locations = $this->getCachedLocations()->whereNull('deleted_at');
         
         if ($this->destination_id) {
             return $locations->where('id', '!=', $this->destination_id)
@@ -435,7 +467,7 @@ class Trucks extends Component
     // Computed property for available destinations (excludes selected origin)
     public function getAvailableDestinationsProperty()
     {
-        $locations = $this->getCachedLocations();
+        $locations = $this->getCachedLocations()->whereNull('deleted_at');
         
         if ($this->location_id) {
             return $locations->where('id', '!=', $this->location_id)
@@ -446,7 +478,65 @@ class Trucks extends Component
         return $locations->pluck('location_name', 'id')->toArray();
     }
     
-    // NOTE: Create/Edit modal options removed - now using paginated dropdowns with getPaginatedX methods
+    // Computed properties for create modal filtered options
+    // NOTE: Create modal options removed - now using paginated dropdowns with getPaginatedX methods
+    
+    // Computed properties for details modal filtered options
+    public function getDetailsTruckOptionsProperty()
+    {
+        $trucks = $this->getCachedTrucks()->whereNull('deleted_at');
+        $allOptions = $trucks->pluck('plate_number', 'id');
+        $options = $allOptions;
+        
+        if (!empty($this->searchDetailsTruck)) {
+            $searchTerm = strtolower($this->searchDetailsTruck);
+            $options = $options->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->truck_id, $allOptions);
+        }
+        
+        return $options->toArray();
+    }
+    
+    public function getDetailsLocationOptionsProperty()
+    {
+        $locations = $this->getCachedLocations()->whereNull('deleted_at');
+        $allOptions = $locations->pluck('location_name', 'id');
+        $options = $allOptions;
+        
+        if (!empty($this->searchDetailsDestination)) {
+            $searchTerm = strtolower($this->searchDetailsDestination);
+            $options = $options->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->destination_id, $allOptions);
+        }
+        
+        return $options->toArray();
+    }
+    
+    public function getDetailsDriverOptionsProperty()
+    {
+        $drivers = $this->getCachedDrivers()->whereNull('deleted_at');
+        $allOptions = $drivers->pluck('full_name', 'id');
+        $options = $allOptions;
+        
+        if (!empty($this->searchDetailsDriver)) {
+            $searchTerm = strtolower($this->searchDetailsDriver);
+            $options = $options->filter(function ($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+            // Ensure selected value is always included
+            $options = $this->ensureSelectedInOptions($options, $this->driver_id, $allOptions);
+        }
+        
+        return $options->toArray();
+    }
+    
+    // NOTE: Edit modal options removed - now using paginated dropdowns with getPaginatedX methods
 
     // Paginated data fetching methods for searchable dropdowns
     #[Renderless]
@@ -485,7 +575,7 @@ class Trucks extends Component
         // Convert to array format - database ORDER BY ensures alphabetical order
         $data = $results->pluck('plate_number', 'id')->toArray();
         
-        // Handle includeIds for label loading only
+        // Handle includeIds for label loading only (when explicitly requested with specific IDs)
         if (!empty($includeIds)) {
             $includedItems = Truck::whereIn('id', $includeIds)
                 ->select(['id', 'plate_number'])
@@ -787,8 +877,8 @@ class Trucks extends Component
 
     public function applyFilters()
     {
-        // Use filterStatus directly - it's already an integer (0, 1, 2, 3) or null
-        // null = All Statuses (no filter), 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+        // Use filterStatus directly - it's already an integer (0, 1, 2, 3, 4) or null
+        // null = All Statuses (no filter), 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
         $this->appliedStatus = $this->filterStatus; // Already an int or null
         // Create new array instances to ensure Livewire detects the change
         // Convert string IDs to integers for proper filtering
@@ -959,6 +1049,9 @@ class Trucks extends Component
         $this->appliedCreatedFrom = null;
         $this->appliedCreatedTo = null;
         
+        // Clear exclude deleted items filter (set to false so pill disappears)
+        $this->excludeDeletedItems = false;
+        
         $this->filtersActive = false;
         $this->resetPage();
     }
@@ -969,30 +1062,30 @@ class Trucks extends Component
     {
         // Optimize relationship loading by only selecting needed fields
         // This significantly reduces memory usage with large datasets
-        $this->selectedSlip = DisinfectionSlipModel::with([
-            'truck:id,plate_number,disabled,deleted_at',
-            'location:id,location_name,disabled,deleted_at',
-            'destination:id,location_name,disabled,deleted_at',
-            'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
+        $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+            'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+            'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+            'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+            'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
             'reason:id,reason_text,is_disabled',
-            'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
-            'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+            'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+            'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
         ])->find($id);
 
         $this->showDetailsModal = true;
     }
     
-    /**
-     * Get the display text for the reason on the selected slip
-     */
-    public function getDisplayReasonProperty()
+    public function getSelectedSlipAttachmentsProperty()
     {
-        if (!$this->selectedSlip || !$this->selectedSlip->reason_id) {
-            return 'N/A';
+        if (!$this->selectedSlip || empty($this->selectedSlip->attachment_ids)) {
+            return collect([]);
         }
         
-        $reason = $this->selectedSlip->reason;
-        return ($reason && !$reason->is_disabled) ? $reason->reason_text : 'N/A';
+        // Optimize attachment loading by only selecting needed fields
+        return Attachment::whereIn('id', $this->selectedSlip->attachment_ids)
+            ->select('id', 'file_path', 'user_id', 'created_at', 'updated_at')
+            ->with(['user' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'deleted_at')->withTrashed(); }])
+            ->get();
     }
 
     public function canEdit()
@@ -1001,9 +1094,13 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin cannot edit completed (status 3) or incomplete (status 4) slips
-        // Only SuperAdmins can edit completed/incomplete slips
-        return $this->selectedSlip->status != 3 && $this->selectedSlip->status != 4 && $this->selectedSlip->completed_at === null;
+        // Cannot edit if truck is soft-deleted
+        if ($this->selectedSlip->truck && $this->selectedSlip->truck->trashed()) {
+            return false;
+        }
+
+        // SuperAdmin can edit any slip, including completed ones (unless truck is soft-deleted)
+        return true;
     }
 
     public function canDelete()
@@ -1012,12 +1109,12 @@ class Trucks extends Component
             return false;
         }
 
-        // Admin cannot delete completed (status 3) or incomplete (status 4) slips
-        if ($this->selectedSlip->status == 3 || $this->selectedSlip->status == 4) {
+        // Cannot delete if truck is soft-deleted
+        if ($this->selectedSlip->truck && $this->selectedSlip->truck->trashed()) {
             return false;
         }
 
-        // Admin can delete slips with status 0, 1, or 2
+        // SuperAdmin can delete any slip, including completed ones (unless truck is soft-deleted)
         return true;
     }
 
@@ -1027,6 +1124,7 @@ class Trucks extends Component
             return false;
         }
 
+        // SuperAdmin can remove attachment from any slip, including completed ones
         $attachmentIds = $this->selectedSlip->attachment_ids ?? [];
         return !empty($attachmentIds);
     }
@@ -1035,23 +1133,30 @@ class Trucks extends Component
     {
         // Load the slip if ID is provided (when called from table row)
         if ($id) {
-            $this->selectedSlip = DisinfectionSlipModel::with([
-                'truck:id,plate_number,disabled,deleted_at',
-                'location:id,location_name,disabled,deleted_at',
-                'destination:id,location_name,disabled,deleted_at',
-                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
                 'reason:id,reason_text,is_disabled',
-                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
-                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
             ])->find($id);
         }
-        
-        // Check if admin can edit this slip
-        if (!$this->canEdit()) {
-            $this->dispatch('toast', message: 'You are not authorized to edit completed or incomplete slips.', type: 'error');
-            return;
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
+        // Optimize relationship loading by only selecting needed fields
+        elseif ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($this->selectedSlip->id);
         }
-        
+
         // Load slip data into edit fields
         $this->editTruckId = $this->selectedSlip->truck_id;
         $this->editLocationId = $this->selectedSlip->location_id;
@@ -1062,7 +1167,6 @@ class Trucks extends Component
         // Only set editReasonId if the reason exists and is not disabled
         $reasonId = $this->selectedSlip->reason_id;
         if ($reasonId) {
-            /** @phpstan-ignore-next-line */
             $reason = Reason::find($reasonId);
             $this->editReasonId = ($reason && !$reason->is_disabled) ? $reasonId : null;
         } else {
@@ -1070,7 +1174,7 @@ class Trucks extends Component
         }
         $this->editRemarksForDisinfection = $this->selectedSlip->remarks_for_disinfection;
         $this->editStatus = $this->selectedSlip->status;
-        
+
         // Reset search properties
         $this->searchEditTruck = '';
         $this->searchEditOrigin = '';
@@ -1079,7 +1183,7 @@ class Trucks extends Component
         $this->searchEditHatcheryGuard = '';
         $this->searchEditReceivedGuard = '';
         $this->searchEditReason = '';
-        
+
         $this->showEditModal = true;
     }
     
@@ -1099,6 +1203,20 @@ class Trucks extends Component
 
     public function closeEditModal()
     {
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations
+        // Optimize relationship loading by only selecting needed fields
+        if ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
+        
         // Check if form has unsaved changes
         if ($this->hasEditUnsavedChanges()) {
             $this->showCancelEditConfirmation = true;
@@ -1110,6 +1228,19 @@ class Trucks extends Component
 
     public function cancelEdit()
     {
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations after cancel (including if slip is deleted)
+        // Optimize relationship loading by only selecting needed fields
+        if ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
         $this->resetEditForm();
         $this->showCancelEditConfirmation = false;
         $this->showEditModal = false;
@@ -1158,23 +1289,9 @@ class Trucks extends Component
         return $this->hasEditUnsavedChanges();
     }
 
-    public function checkBeforeSave()
+    public function confirmDeleteSlip()
     {
-        // Check if the status is being set to Completed (3) or Incomplete (4)
-        // AND the admin doesn't have permission to edit completed/incomplete slips
-        if (($this->editStatus == 3 || $this->editStatus == 4) && !$this->canEdit()) {
-            // This shouldn't happen normally, but just in case
-            $this->dispatch('toast', message: 'You cannot save slips as completed or incomplete.', type: 'error');
-            return;
-        }
-        
-        // If setting to Completed or Incomplete, show warning modal
-        if ($this->editStatus == 3 || $this->editStatus == 4) {
-            $this->showFinalStatusConfirmation = true;
-        } else {
-            // For other statuses, save directly
-            $this->saveEdit();
-        }
+        $this->showDeleteConfirmation = true;
     }
 
     public function saveEdit()
@@ -1187,9 +1304,8 @@ class Trucks extends Component
         $this->isUpdating = true;
 
         try {
-        // Authorization check - Admins cannot edit completed or incomplete slips
         if (!$this->canEdit()) {
-            $this->dispatch('toast', message: 'You are not authorized to edit completed or incomplete slips.', type: 'error');
+            $this->dispatch('toast', message: 'Cannot edit a completed slip.', type: 'error');
             return;
         }
 
@@ -1221,7 +1337,6 @@ class Trucks extends Component
                 'exists:reasons,id',
                 function ($attribute, $value, $fail) {
                     if ($value) {
-                        /** @phpstan-ignore-next-line */
                         $reason = Reason::find($value);
                         if (!$reason || $reason->is_disabled) {
                             $fail('The selected reason is not available.');
@@ -1247,7 +1362,6 @@ class Trucks extends Component
                 'required',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
-                    /** @phpstan-ignore-next-line */
                     $guard = User::find($value);
                     if (!$guard) {
                         $fail('The selected hatchery guard does not exist.');
@@ -1271,7 +1385,6 @@ class Trucks extends Component
                         return;
                     }
                     if ($value) {
-                        /** @phpstan-ignore-next-line */
                         $guard = User::find($value);
                         if (!$guard) {
                             $fail('The selected receiving guard does not exist.');
@@ -1304,7 +1417,6 @@ class Trucks extends Component
                 'required',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
-                    /** @phpstan-ignore-next-line */
                     $guard = User::find($value);
                     if (!$guard) {
                         $fail('The selected hatchery guard does not exist.');
@@ -1327,7 +1439,6 @@ class Trucks extends Component
                         $fail('The receiving guard cannot be the same as the hatchery guard.');
                         return;
                     }
-                    /** @phpstan-ignore-next-line */
                     $guard = User::find($value);
                     if (!$guard) {
                         $fail('The selected receiving guard does not exist.');
@@ -1367,8 +1478,15 @@ class Trucks extends Component
 
         // Capture old values for logging
         $oldValues = $this->selectedSlip->only([
-            'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_id', 'remarks_for_disinfection', 'status'
+            'truck_id',
+            'location_id',
+            'destination_id',
+            'driver_id',
+            'hatchery_guard_id',
+            'received_guard_id',
+            'reason_id',
+            'remarks_for_disinfection',
+            'status'
         ]);
 
         // Build update data based on status
@@ -1414,50 +1532,35 @@ class Trucks extends Component
 
         $this->selectedSlip->update($updateData);
 
-        // Refresh the slip with relationships
+        // Refresh the slip with relationships (including trashed relations)
         $this->selectedSlip->refresh();
         $this->selectedSlip->load([
-            'truck',
-            'location',
-            'destination',
-            'driver',
-            'hatcheryGuard',
-            'receivedGuard'
+            'truck' => function($q) { $q->withTrashed(); },
+            'location' => function($q) { $q->withTrashed(); },
+            'destination' => function($q) { $q->withTrashed(); },
+            'driver' => function($q) { $q->withTrashed(); },
+            'reason',
+            'hatcheryGuard' => function($q) { $q->withTrashed(); },
+            'receivedGuard' => function($q) { $q->withTrashed(); }
         ]);
 
         $slipId = $this->selectedSlip->slip_id;
         
-        // Log the update
-        $newValues = $this->selectedSlip->only([
-            'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_id', 'remarks_for_disinfection', 'status'
-        ]);
+        // Log the update action
         Logger::update(
             DisinfectionSlipModel::class,
             $this->selectedSlip->id,
             "Updated slip {$slipId}",
             $oldValues,
-            $newValues
+            $updateData
         );
         
         $this->resetEditForm();
         $this->showEditModal = false;
-        $this->showFinalStatusConfirmation = false;
         $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
         } finally {
             $this->isUpdating = false;
         }
-    }
-
-    public function confirmDeleteSlip()
-    {
-        // Check if admin can delete this slip
-        if (!$this->canDelete()) {
-            $this->dispatch('toast', message: 'Cannot delete a completed or incomplete slip.', type: 'error');
-            return;
-        }
-        
-        $this->showDeleteConfirmation = true;
     }
 
     public function deleteSlip()
@@ -1471,7 +1574,7 @@ class Trucks extends Component
 
         try {
         if (!$this->canDelete()) {
-            $this->dispatch('toast', message: 'Cannot delete a completed or incomplete slip.', type: 'error');
+            $this->dispatch('toast', message: 'Cannot delete a completed slip.', type: 'error');
             return;
         }
 
@@ -1480,15 +1583,22 @@ class Trucks extends Component
         
         // Capture old values for logging
         $oldValues = $this->selectedSlip->only([
-            'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
+            'slip_id',
+            'truck_id',
+            'location_id',
+            'destination_id',
+            'driver_id',
+            'hatchery_guard_id',
+            'received_guard_id',
+            'remarks_for_disinfection',
+            'status'
         ]);
         
         // Clean up attachments before soft deleting the slip
         $this->selectedSlip->deleteAttachments();
         
         // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id, 'and')
+        $deleted = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id)
             ->whereNull('deleted_at') // Only delete if not already deleted
             ->update(['deleted_at' => now()]);
         
@@ -1499,7 +1609,7 @@ class Trucks extends Component
             return;
         }
         
-        // Log the delete
+        // Log the delete action
         Logger::delete(
             DisinfectionSlipModel::class,
             $slipIdForLog,
@@ -1524,12 +1634,110 @@ class Trucks extends Component
         }
     }
 
+    public function toggleDeletedView()
+    {
+        $this->showDeleted = !$this->showDeleted;
+        
+        if ($this->showDeleted) {
+            // Entering restore mode: Store current values only if not already stored, then clear date filters
+            if ($this->previousAppliedCreatedFrom === null && $this->previousAppliedCreatedTo === null) {
+                $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
+                $this->previousFilterCreatedTo = $this->filterCreatedTo;
+                $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
+                $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
+            }
+            
+            $this->filterCreatedFrom = '';
+            $this->filterCreatedTo = '';
+            $this->appliedCreatedFrom = null;
+            $this->appliedCreatedTo = null;
+        } else {
+            // Exiting restore mode: Always restore previous values, then reset stored values
+            $this->filterCreatedFrom = $this->previousFilterCreatedFrom ?? '';
+            $this->filterCreatedTo = $this->previousFilterCreatedTo ?? '';
+            $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom;
+            $this->appliedCreatedTo = $this->previousAppliedCreatedTo;
+            $this->filtersActive = ($this->appliedCreatedFrom || $this->appliedCreatedTo);
+            
+            // Reset stored values for next time
+            $this->previousFilterCreatedFrom = null;
+            $this->previousFilterCreatedTo = null;
+            $this->previousAppliedCreatedFrom = null;
+            $this->previousAppliedCreatedTo = null;
+        }
+        
+        $this->resetPage();
+    }
+
+    public function openRestoreModal($slipId)
+    {
+        $slip = DisinfectionSlipModel::onlyTrashed()->findOrFail($slipId);
+        $this->selectedSlipId = $slipId;
+        $this->selectedSlipName = $slip->slip_id;
+        $this->showRestoreModal = true;
+    }
+
+    public function restoreSlip()
+    {
+        // Prevent multiple submissions
+        if ($this->isRestoring) {
+            return;
+        }
+
+        $this->isRestoring = true;
+
+        try {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$this->selectedSlipId) {
+            return;
+        }
+
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        // Do the atomic update first, then load the model only if successful
+        $restored = DisinfectionSlipModel::onlyTrashed()
+            ->where('id', $this->selectedSlipId)
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // Slip was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedSlipId', 'selectedSlipName']);
+            $this->dispatch('toast', message: 'This slip was already restored or does not exist. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Now load the restored slip
+        $slip = DisinfectionSlipModel::findOrFail($this->selectedSlipId);
+        
+        // Log the restore action
+        Logger::restore(
+            DisinfectionSlipModel::class,
+            $slip->id,
+            "Restored disinfection slip {$slip->slip_id}"
+        );
+        
+        $this->showRestoreModal = false;
+        $this->reset(['selectedSlipId', 'selectedSlipName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: "Disinfection slip {$slip->slip_id} has been restored.", type: 'success');
+        } finally {
+            $this->isRestoring = false;
+        }
+    }
+
     public function closeDetailsModal()
     {
         $this->showDeleteConfirmation = false;
         $this->showRemoveAttachmentConfirmation = false;
+        $this->showRestoreModal = false;
         $this->showDetailsModal = false;
         $this->js('setTimeout(() => $wire.clearSelectedSlip(), 300)');
+        $this->reset(['selectedSlipId', 'selectedSlipName']);
     }
 
     public function clearSelectedSlip()
@@ -1571,6 +1779,7 @@ class Trucks extends Component
         $this->driver_id = null;
         $this->hatchery_guard_id = null;
         $this->received_guard_id = null;
+        $this->reason_id = null;
         $this->remarks_for_disinfection = null;
         $this->searchOrigin = '';
         $this->searchDestination = '';
@@ -1578,6 +1787,7 @@ class Trucks extends Component
         $this->searchDriver = '';
         $this->searchHatcheryGuard = '';
         $this->searchReceivedGuard = '';
+        $this->searchReason = '';
         $this->resetErrorBag();
     }
 
@@ -1589,6 +1799,7 @@ class Trucks extends Component
                !empty($this->driver_id) || 
                !empty($this->hatchery_guard_id) || 
                !empty($this->received_guard_id) || 
+               !empty($this->reason_id) ||
                !empty($this->remarks_for_disinfection);
     }
 
@@ -1627,7 +1838,6 @@ class Trucks extends Component
                 'required',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
-                    /** @phpstan-ignore-next-line */
                     $guard = User::find($value);
                     if (!$guard) {
                         $fail('The selected hatchery guard does not exist.');
@@ -1651,7 +1861,6 @@ class Trucks extends Component
                         return;
                     }
                     if ($value) {
-                        /** @phpstan-ignore-next-line */
                         $guard = User::find($value);
                         if (!$guard) {
                             $fail('The selected receiving guard does not exist.');
@@ -1672,7 +1881,6 @@ class Trucks extends Component
                 'exists:reasons,id',
                 function ($attribute, $value, $fail) {
                     if ($value) {
-                        /** @phpstan-ignore-next-line */
                         $reason = Reason::find($value);
                         if (!$reason || $reason->is_disabled) {
                             $fail('The selected reason is not available.');
@@ -1700,25 +1908,31 @@ class Trucks extends Component
             'location_id' => $this->location_id,
             'destination_id' => $this->destination_id,
             'driver_id' => $this->driver_id,
-            'reason_id' => $this->reason_id,
             'hatchery_guard_id' => $this->hatchery_guard_id,
             'received_guard_id' => $this->received_guard_id,
+            'reason_id' => $this->reason_id,
             'remarks_for_disinfection' => $sanitizedRemarks,
             'status' => 0, // Pending
         ]);
 
         $slipId = $slip->slip_id;
         
-        // Log the creation
-        $newValues = $slip->only([
-            'truck_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'reason_id', 'remarks_for_disinfection', 'status'
-        ]);
+        // Log the create action
         Logger::create(
             DisinfectionSlipModel::class,
             $slip->id,
             "Created slip {$slipId}",
-            $newValues
+            $slip->only([
+                'truck_id',
+                'location_id',
+                'destination_id',
+                'driver_id',
+                'hatchery_guard_id',
+                'received_guard_id',
+                'reason_id',
+                'remarks_for_disinfection',
+                'status'
+            ])
         );
         
         $this->dispatch('toast', message: "{$slipId} has been created.", type: 'success');
@@ -1816,15 +2030,17 @@ class Trucks extends Component
         $this->showAttachmentModal = false;
         $this->currentAttachmentIndex = 0;
 
+        // Livewire re-hydrates models without trashed relations; reload for details modal
+        // Optimize relationship loading by only selecting needed fields
         if ($this->selectedSlip) {
-            // Optimize relationship loading by only selecting needed fields
             $this->selectedSlip = DisinfectionSlipModel::with([
-                'truck:id,plate_number,disabled,deleted_at',
-                'location:id,location_name,disabled,deleted_at',
-                'destination:id,location_name,disabled,deleted_at',
-                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
-                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
-                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+                'truck' => function($q) { $q->select('id', 'plate_number', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
             ])->find($this->selectedSlip->id);
         }
     }
@@ -1872,7 +2088,6 @@ class Trucks extends Component
             }
 
             // Get the attachment record
-            /** @phpstan-ignore-next-line */
             $attachment = Attachment::find($this->attachmentToDelete);
 
             if ($attachment) {
@@ -1926,7 +2141,7 @@ class Trucks extends Component
             $this->dispatch('toast', message: "Attachment has been removed from {$slipId}.", type: 'success');
 
         } catch (\Exception $e) {
-            FacadesLog::error('Attachment removal error: ' . $e->getMessage());
+            Log::error('Attachment removal error: ' . $e->getMessage());
             $this->dispatch('toast', message: 'Failed to remove attachment. Please try again.', type: 'error');
         }
     }
@@ -1973,14 +2188,25 @@ class Trucks extends Component
     {
         // Optimize relationship loading by only selecting needed fields
         // This significantly reduces memory usage with large datasets (5,000+ records)
-        $slips = DisinfectionSlipModel::with([
-            'truck:id,plate_number,disabled,deleted_at',
-            'location:id,location_name,disabled,deleted_at',
-            'destination:id,location_name,disabled,deleted_at',
-            'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
-            'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
-            'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
-        ])
+        $query = $this->showDeleted
+            ? DisinfectionSlipModel::onlyTrashed()->with([
+                'truck:id,plate_number,disabled,deleted_at',
+                'location:id,location_name,disabled,deleted_at',
+                'destination:id,location_name,disabled,deleted_at',
+                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
+                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
+                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+            ])
+            : DisinfectionSlipModel::with([
+                'truck:id,plate_number,disabled,deleted_at',
+                'location:id,location_name,disabled,deleted_at',
+                'destination:id,location_name,disabled,deleted_at',
+                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
+                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
+                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
+            ])->whereNull('deleted_at');
+        
+        $slips = $query
             // Search
             ->when($this->search, function($query) {
                 // Sanitize search term to prevent SQL injection
@@ -1997,40 +2223,46 @@ class Trucks extends Component
                 $query->where(function($q) use ($escapedSearchTerm) {
                     $q->where('slip_id', 'like', '%' . $escapedSearchTerm . '%')
                         ->orWhereHas('truck', function($truckQuery) use ($escapedSearchTerm) {
-                            $truckQuery->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                            $truckQuery->withTrashed()->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
-                            $driverQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                            $driverQuery->withTrashed()->where(function($dq) use ($escapedSearchTerm) {
+                                $dq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
                                 ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                            });
                         })
                         ->orWhereHas('location', function($locationQuery) use ($escapedSearchTerm) {
-                            $locationQuery->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
+                            $locationQuery->withTrashed()->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('destination', function($destinationQuery) use ($escapedSearchTerm) {
-                            $destinationQuery->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
+                            $destinationQuery->withTrashed()->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('hatcheryGuard', function($guardQuery) use ($escapedSearchTerm) {
-                            $guardQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                            $guardQuery->withTrashed()->where(function($gq) use ($escapedSearchTerm) {
+                                $gq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
                                 ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                            });
                         })
                         ->orWhereHas('receivedGuard', function($guardQuery) use ($escapedSearchTerm) {
-                            $guardQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                            $guardQuery->withTrashed()->where(function($gq) use ($escapedSearchTerm) {
+                                $gq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
                                 ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                            });
                         });
                 });
             })
             // Status filter
             // Important: Check for null explicitly, as 0 is a valid status (Pending)
             ->when($this->filtersActive && $this->appliedStatus !== null, function($query) {
-                // appliedStatus is already an integer (0, 1, 2, or 3)
+                // appliedStatus is already an integer (0, 1, 2, 3, or 4)
                 $query->where('status', $this->appliedStatus);
             })
             // Origin filter
@@ -2100,23 +2332,26 @@ class Trucks extends Component
                     });
             })
             // Apply sorting (works with all filters)
-            ->when($this->sortBy === 'slip_id', function($query) {
+            ->when($this->sortBy === 'slip_id' && !$this->showDeleted, function($query) {
                 // For slip_id format "YY-00001", extract the numeric part (starts at position 4, after "YY-")
                 // Sort by year first, then by number within that year
                 $direction = strtoupper($this->sortDirection);
                 $query->orderByRaw("SUBSTRING(slip_id, 1, 2) " . $direction) // Year part
-                      ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction); // Number part
+                    ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction); // Number part
             })
-            ->when($this->sortBy !== 'slip_id', function($query) {
+            ->when($this->sortBy !== 'slip_id' && !$this->showDeleted, function($query) {
                 $query->orderBy($this->sortBy, $this->sortDirection);
                 // Add secondary sort by slip_id for consistent ordering when primary sort values are equal
                 $direction = strtoupper($this->sortDirection);
                 $query->orderByRaw("SUBSTRING(slip_id, 1, 2) " . $direction) // Year part
-                      ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction); // Number part
+                    ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction); // Number part
+            })
+            ->when($this->showDeleted, function ($query) {
+                $query->orderBy('deleted_at', 'desc');
             })
             ->paginate(10);
 
-        return view('livewire.admin.trucks', [
+        return view('livewire.super-admin.trucks', [
             'slips' => $slips,
             'locations' => $this->locations,
             'drivers' => $this->drivers,
@@ -2130,8 +2365,11 @@ class Trucks extends Component
 
     public function getExportData()
     {
-        return DisinfectionSlipModel::with(['truck', 'location', 'destination', 'driver', 'reason', 'hatcheryGuard', 'receivedGuard'])
-            ->when($this->search, function ($query) {
+        $query = $this->showDeleted 
+            ? DisinfectionSlipModel::onlyTrashed()->with(['truck' => function($q) { $q->withTrashed(); }, 'location' => function($q) { $q->withTrashed(); }, 'destination' => function($q) { $q->withTrashed(); }, 'driver' => function($q) { $q->withTrashed(); }, 'reason', 'hatcheryGuard' => function($q) { $q->withTrashed(); }, 'receivedGuard' => function($q) { $q->withTrashed(); }])
+            : DisinfectionSlipModel::with(['truck' => function($q) { $q->withTrashed(); }, 'location' => function($q) { $q->withTrashed(); }, 'destination' => function($q) { $q->withTrashed(); }, 'driver' => function($q) { $q->withTrashed(); }, 'reason', 'hatcheryGuard' => function($q) { $q->withTrashed(); }, 'receivedGuard' => function($q) { $q->withTrashed(); }])->whereNull('deleted_at');
+        
+        return $query->when($this->search, function ($query) {
                 $searchTerm = trim($this->search);
                 $searchTerm = preg_replace('/[%_]/', '', $searchTerm);
                 if (empty($searchTerm)) {
@@ -2141,20 +2379,22 @@ class Trucks extends Component
                 $query->where(function($q) use ($escapedSearchTerm) {
                     $q->where('slip_id', 'like', '%' . $escapedSearchTerm . '%')
                         ->orWhereHas('truck', function($truckQuery) use ($escapedSearchTerm) {
-                            $truckQuery->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                            $truckQuery->withTrashed()->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('driver', function($driverQuery) use ($escapedSearchTerm) {
-                            $driverQuery->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
+                            $driverQuery->withTrashed()->where(function($dq) use ($escapedSearchTerm) {
+                                $dq->where('first_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('middle_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $escapedSearchTerm . '%')
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%'])
                                 ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) LIKE ?", ['%' . $escapedSearchTerm . '%']);
+                            });
                         })
                         ->orWhereHas('location', function($locationQuery) use ($escapedSearchTerm) {
-                            $locationQuery->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
+                            $locationQuery->withTrashed()->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
                         })
                         ->orWhereHas('destination', function($destinationQuery) use ($escapedSearchTerm) {
-                            $destinationQuery->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
+                            $destinationQuery->withTrashed()->where('location_name', 'like', '%' . $escapedSearchTerm . '%');
                         });
                 });
             })
@@ -2185,7 +2425,18 @@ class Trucks extends Component
             ->when($this->appliedCreatedTo, function($query) {
                 $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
             })
-            // Exclude slips with deleted items (default: on for admin)
+            ->when($this->sortBy === 'slip_id' && !$this->showDeleted, function($query) {
+                $direction = strtoupper($this->sortDirection);
+                $query->orderByRaw("SUBSTRING(slip_id, 1, 2) " . $direction)
+                      ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction);
+            })
+            ->when($this->sortBy !== 'slip_id' && !$this->showDeleted, function($query) {
+                $query->orderBy($this->sortBy, $this->sortDirection);
+            })
+            ->when($this->showDeleted, function ($query) {
+                $query->orderBy('deleted_at', 'desc');
+            })
+            // Exclude slips with deleted items (default: on)
             ->when($this->excludeDeletedItems, function($query) {
                 $query->whereHas('truck', function($q) {
                     $q->whereNull('deleted_at');
@@ -2211,14 +2462,6 @@ class Trucks extends Component
                     })
                     ->orWhereNull('received_guard_id');
                 });
-            })
-            ->when($this->sortBy === 'slip_id', function($query) {
-                $direction = strtoupper($this->sortDirection);
-                $query->orderByRaw("SUBSTRING(slip_id, 1, 2) " . $direction)
-                      ->orderByRaw("CAST(SUBSTRING(slip_id, 4) AS UNSIGNED) " . $direction);
-            })
-            ->when($this->sortBy !== 'slip_id', function($query) {
-                $query->orderBy($this->sortBy, $this->sortDirection);
             })
             ->get();
     }
@@ -2246,9 +2489,18 @@ class Trucks extends Component
                 $receivedGuard = $slip->receivedGuard ? trim(implode(' ', array_filter([$slip->receivedGuard->first_name, $slip->receivedGuard->middle_name, $slip->receivedGuard->last_name]))) : 'N/A';
                 $driver = $slip->driver ? trim(implode(' ', array_filter([$slip->driver->first_name, $slip->driver->middle_name, $slip->driver->last_name]))) : 'N/A';
                 
+                // Format plate number with (Deleted) tag if truck is soft-deleted
+                $plateNumber = 'N/A';
+                if ($slip->truck) {
+                    $plateNumber = $slip->truck->plate_number;
+                    if ($slip->truck->trashed()) {
+                        $plateNumber .= ' (Deleted)';
+                    }
+                }
+                
                 fputcsv($file, [
                     $slip->slip_id,
-                    $slip->truck->plate_number ?? 'N/A',
+                    $plateNumber,
                     $slip->location->location_name ?? 'N/A',
                     $slip->destination->location_name ?? 'N/A',
                     $driver,
@@ -2268,22 +2520,27 @@ class Trucks extends Component
 
     public function openPrintView()
     {
+        if ($this->showDeleted) {
+            return;
+        }
+        
         $data = $this->getExportData();
         $exportData = $data->map(function($slip) {
             // Helper function to format names
             $formatName = function($user) {
                 if (!$user) return 'N/A';
                 $name = trim(implode(' ', array_filter([$user->first_name, $user->middle_name, $user->last_name])));
-                return $name;
+                return $user->trashed() ? $name . ' (Deleted)' : $name;
             };
-    
+            
             return [
                 'slip_id' => $slip->slip_id,
-                'plate_number' => $slip->truck ? $slip->truck->plate_number : 'N/A',
-                'origin' => $slip->location ? $slip->location->location_name : 'N/A',
-                'destination' => $slip->destination ? $slip->destination->location_name : 'N/A',
-                'driver' => $slip->driver ? 
-                    trim(implode(' ', array_filter([$slip->driver->first_name, $slip->driver->middle_name, $slip->driver->last_name]))) : 'N/A',
+                'plate_number' => $slip->truck ? ($slip->truck->trashed() ? $slip->truck->plate_number . ' (Deleted)' : $slip->truck->plate_number) : 'N/A',
+                'origin' => $slip->location ? ($slip->location->trashed() ? $slip->location->location_name . ' (Deleted)' : $slip->location->location_name) : 'N/A',
+                'destination' => $slip->destination ? ($slip->destination->trashed() ? $slip->destination->location_name . ' (Deleted)' : $slip->destination->location_name) : 'N/A',
+                'driver' => $slip->driver ? ($slip->driver->trashed() ?
+                    trim(implode(' ', array_filter([$slip->driver->first_name, $slip->driver->middle_name, $slip->driver->last_name]))) . ' (Deleted)' :
+                    trim(implode(' ', array_filter([$slip->driver->first_name, $slip->driver->middle_name, $slip->driver->last_name])))) : 'N/A',
                 'reason' => $slip->reason ? $slip->reason->reason_text : 'N/A',
                 'status' => $slip->status,
                 'hatchery_guard' => $formatName($slip->hatcheryGuard),
@@ -2317,7 +2574,7 @@ class Trucks extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('admin.print.trucks', ['token' => $token]);
+        $printUrl = route('superadmin.print.trucks', ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }
@@ -2328,7 +2585,7 @@ class Trucks extends Component
         Session::put("print_slip_{$token}", $slipId);
         Session::put("print_slip_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('admin.print.slip', ['token' => $token]);
+        $printUrl = route('superadmin.print.slip', ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }
@@ -2360,7 +2617,7 @@ class Trucks extends Component
     // Separate pagination methods for reasons (don't override default pagination)
     public function gotoReasonsPage($page)
     {
-            $this->reasonsPage = $page;
+        $this->reasonsPage = $page;
     }
     
     public function previousReasonsPage()
@@ -2372,7 +2629,12 @@ class Trucks extends Component
     
     public function nextReasonsPage()
     {
-            $this->reasonsPage++;
+        $this->reasonsPage++;
+    }
+    
+    public function getPage()
+    {
+        return request()->get('page', 1);
     }
 
     public function openCreateReasonModal()
@@ -2399,7 +2661,7 @@ class Trucks extends Component
                 'min:1',
                 function ($attribute, $value, $fail) {
                     $trimmedValue = trim($value);
-                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
                         ->exists();
                     if ($exists) {
                         $fail('This reason already exists.');
@@ -2433,7 +2695,6 @@ class Trucks extends Component
 
     public function startEditingReason($reasonId)
     {
-        /** @phpstan-ignore-next-line */
         $reason = Reason::find($reasonId);
         
         if ($reason) {
@@ -2455,8 +2716,8 @@ class Trucks extends Component
                     'min:1',
                     function ($attribute, $value, $fail) {
                         $trimmedValue = trim($value);
-                        $exists = Reason::where('id', '!=', $this->editingReasonId, 'and')
-                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
+                        $exists = Reason::where('id', '!=', $this->editingReasonId)
+                            ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
                             ->exists();
                         if ($exists) {
                             $fail('This reason already exists.');
@@ -2490,7 +2751,6 @@ class Trucks extends Component
     {
         $this->savingReason = true;
 
-        /** @phpstan-ignore-next-line */
         $reason = Reason::find($this->editingReasonId);
 
         if ($reason) {
@@ -2531,7 +2791,6 @@ class Trucks extends Component
 
     public function toggleReasonDisabled($reasonId)
     {
-        /** @phpstan-ignore-next-line */
         $reason = Reason::find($reasonId);
         
         if ($reason) {
@@ -2556,6 +2815,43 @@ class Trucks extends Component
             // Refresh the page to show updated state
             $this->resetPage();
         }
+    }
+
+    public function confirmDeleteReason($reasonId)
+    {
+        $this->reasonToDelete = $reasonId;
+        $this->showDeleteReasonConfirmation = true;
+    }
+
+    public function deleteReason()
+    {
+        if (!$this->reasonToDelete) {
+            return;
+        }
+        
+        $reason = Reason::find($this->reasonToDelete);
+        
+        if ($reason) {
+            // Capture old values for logging
+            $oldValues = $reason->only(['reason_text', 'is_disabled']);
+            $reasonText = $reason->reason_text;
+            $reasonId = $reason->id;
+            
+            $reason->delete();
+            
+            // Log the delete action
+            Logger::delete(
+                Reason::class,
+                $reasonId,
+                "Deleted reason: {$reasonText}",
+                $oldValues
+            );
+            
+            $this->dispatch('toast', message: 'Reason deleted successfully.', type: 'success');
+        }
+        
+        $this->showDeleteReasonConfirmation = false;
+        $this->reasonToDelete = null;
     }
 
     public function attemptCloseReasonsModal()

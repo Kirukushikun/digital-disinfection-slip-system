@@ -61,15 +61,15 @@
                 $rowIndex = 0;
             @endphp
             <div class="space-y-0 -mx-6">
-                {{-- Plate No --}}
+                {{-- Vehicle --}}
                 @php $bgClass = ($rowIndex % 2 === 0) ? 'bg-white' : 'bg-gray-100'; $rowIndex++; @endphp
                 <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs {{ $bgClass }}">
-                    <div class="font-semibold text-gray-500">Plate No:</div>
+                    <div class="font-semibold text-gray-500">Vehicle:</div>
                     <div class="text-gray-900">
                     @if ($isEditing)
                         <x-forms.searchable-dropdown-paginated wire-model="truck_id" data-method="getPaginatedTrucks"
-                            search-property="searchTruck" placeholder="Select plate number..."
-                            search-placeholder="Search plates..." :per-page="20" />
+                            search-property="searchTruck" placeholder="Select vehicle..."
+                            search-placeholder="Search vehicles..." :per-page="20" />
                         @error('truck_id')
                             <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
                         @enderror

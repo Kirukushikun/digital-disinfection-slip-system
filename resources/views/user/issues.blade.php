@@ -4,5 +4,5 @@
     <!-- Truck Arrival Monitor -->
     <livewire:truck-arrival-monitor />
 
-    <livewire:user.reports />
+    <livewire:user.issues />
 </x-layout>

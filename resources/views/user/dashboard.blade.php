@@ -11,7 +11,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 {{ ($canCreateSlip ?? false) ? 'lg:grid-cols-3' : '' }} gap-6 mb-8">
 
                 <!-- Incoming Slips Card -->
-                <a href="{{ route('user.incoming-trucks') }}"
+                <a href="{{ route('user.incoming-slips') }}"
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-gray-200 hover:border-green-400"
                     wire:poll>
                     <div class="p-6">
@@ -47,7 +47,7 @@
                 </a>
 
                 <!-- Outgoing Slips Card -->
-                <a href="{{ route('user.outgoing-trucks') }}"
+                <a href="{{ route('user.outgoing-slips') }}"
                     class="group relative overflow-hidden bg-white rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-gray-200 hover:border-red-400"
                     wire:poll>
                     <div class="p-6">
@@ -84,7 +84,7 @@
 
                 <!-- Create Slip Action Card (Only if location allows creating slips) -->
                 @if ($canCreateSlip ?? false)
-                    <a href="{{ route('user.outgoing-trucks', ['openCreate' => true]) }}"
+                    <a href="{{ route('user.outgoing-slips', ['openCreate' => true]) }}"
                         class="group relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl hover:cursor-pointer transition-all duration-300 border border-blue-400 hover:scale-105">
                         <div class="p-6 h-full flex flex-col justify-between">
                             <div class="flex items-start justify-between mb-4">

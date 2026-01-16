@@ -179,7 +179,7 @@
         </div>
 
         <div class="form-field">
-            <div class="form-label">Plate no:</div>
+            <div class="form-label">Vehicle:</div>
             <div class="form-value">
                 @if ($slip->truck)
                     {{ $slip->truck->plate_number }}

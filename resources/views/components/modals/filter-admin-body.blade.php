@@ -84,10 +84,10 @@
         </div>
     </div>
 
-    {{-- Plate Number Filter --}}
+    {{-- Vehicle Filter --}}
     <div x-data="{ filterValue: @entangle('filterPlateNumber') }">
         <div class="flex items-center justify-between mb-1">
-            <label class="block text-sm font-medium text-gray-700">Plate Number</label>
+            <label class="block text-sm font-medium text-gray-700">Vehicle</label>
             <button type="button" wire:click="$set('filterPlateNumber', [])"
                 x-show="filterValue && filterValue.length > 0"
                 class="text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -96,7 +96,7 @@
         </div>
         <x-forms.searchable-dropdown-paginated wireModel="filterPlateNumber"
             data-method="getPaginatedTrucks" search-property="searchFilterPlateNumber" 
-            placeholder="Select plate no..." search-placeholder="Search plate numbers..." 
+            placeholder="Select vehicle..." search-placeholder="Search vehicles..." 
             :multiple="true" :per-page="20" />
     </div>
 

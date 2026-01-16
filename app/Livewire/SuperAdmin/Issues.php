@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Cache;
-class Reports extends Component
+class Issues extends Component
 {
     use WithPagination;
 

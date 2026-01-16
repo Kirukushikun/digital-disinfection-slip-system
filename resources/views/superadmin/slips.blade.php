@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Trips">
     </x-navigation.navbar>
 
-    <livewire:super-admin.trucks />
+    <livewire:super-admin.slips />
 </x-layout>

@@ -9,17 +9,17 @@
     $isSuperGuard = ($user->user_type === 0 && $user->super_guard) || ($user->user_type === 2 && $user->isGuardView());
     
     // Determine active states
-    $trucksRoutes = ['user.incoming-trucks', 'user.outgoing-trucks', 'user.completed-trucks'];
+    $slipsRoutes = ['user.incoming-slips', 'user.outgoing-slips', 'user.completed-slips'];
     $isDashboardActive = $currentRoute === 'user.dashboard' || 
                          $currentRoute === 'admin.dashboard' || 
                          $currentRoute === 'superadmin.dashboard';
-    $isTrucksActive = in_array($currentRoute, $trucksRoutes);
-    $isReportsActive = $currentRoute === 'user.reports' || 
-                       $currentRoute === 'admin.reports' || 
-                       $currentRoute === 'superadmin.reports';
+    $isSlipsActive = in_array($currentRoute, $slipsRoutes);
+    $isIssuesActive = $currentRoute === 'user.issues' || 
+                       $currentRoute === 'admin.issues' || 
+                       $currentRoute === 'superadmin.issues';
     
     // Data Management routes for Admin
-    $adminDataManagementRoutes = ['admin.guards', 'admin.drivers', 'admin.plate-numbers', 'admin.locations'];
+    $adminDataManagementRoutes = ['admin.guards', 'admin.drivers', 'admin.vehicles', 'admin.locations'];
     $adminDataManagementActive = in_array($currentRoute, $adminDataManagementRoutes);
     
     // Data Management routes for Superadmin
@@ -27,13 +27,13 @@
         'superadmin.guards',
         'superadmin.admins',
         'superadmin.drivers',
-        'superadmin.plate-numbers',
+        'superadmin.vehicles',
         'superadmin.locations',
     ];
     $superadminDataManagementActive = in_array($currentRoute, $superadminDataManagementRoutes);
     
     // Data Management routes for Super Guard
-    $superGuardDataManagementRoutes = ['user.data.guards', 'user.data.drivers', 'user.data.locations', 'user.data.plate-numbers'];
+    $superGuardDataManagementRoutes = ['user.data.guards', 'user.data.drivers', 'user.data.locations', 'user.data.vehicles'];
     $superGuardDataManagementActive = in_array($currentRoute, $superGuardDataManagementRoutes);
 @endphp
 
@@ -85,36 +85,36 @@
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('user.data.plate-numbers') }}" 
-                    :active="$currentRoute === 'user.data.plate-numbers'"
+                    href="{{ route('user.data.vehicles') }}"
+                    :active="$currentRoute === 'user.data.vehicles'"
                     icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>'>
-                    Plate Numbers
+                    Vehicles
                 </x-navigation.mobile-dropup-item>
             </x-navigation.mobile-dropup>
 
             <x-navigation.mobile-dropup 
                 label="Slips" 
-                :active="$isTrucksActive"
+                :active="$isSlipsActive"
                 icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('user.incoming-trucks') }}" 
-                    :active="$currentRoute === 'user.incoming-trucks'"
+                    href="{{ route('user.incoming-slips') }}" 
+                    :active="$currentRoute === 'user.incoming-slips'"
                     icon='<img src="https://cdn-icons-png.flaticon.com/512/8591/8591505.png" alt="Incoming" class="w-5 h-5 object-contain" />'>
                     Incoming
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('user.outgoing-trucks') }}" 
-                    :active="$currentRoute === 'user.outgoing-trucks'"
+                    href="{{ route('user.outgoing-slips') }}" 
+                    :active="$currentRoute === 'user.outgoing-slips'"
                     icon='<img src="https://cdn-icons-png.flaticon.com/512/7468/7468319.png" alt="Outgoing" class="w-5 h-5 object-contain" />'>
                     Outgoing
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('user.completed-trucks') }}" 
-                    :active="$currentRoute === 'user.completed-trucks'"
+                    href="{{ route('user.completed-slips') }}" 
+                    :active="$currentRoute === 'user.completed-slips'"
                     icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>'>
@@ -123,8 +123,8 @@
             </x-navigation.mobile-dropup>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('user.reports') }}" 
-                :active="$isReportsActive"
+                href="{{ route('user.issues') }}" 
+                :active="$isIssuesActive"
                 icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                     </svg>'>
@@ -146,22 +146,22 @@
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('user.incoming-trucks') }}" 
-                :active="$currentRoute === 'user.incoming-trucks'"
+                href="{{ route('user.incoming-slips') }}" 
+                :active="$currentRoute === 'user.incoming-slips'"
                 icon='<img src="https://cdn-icons-png.flaticon.com/512/8591/8591505.png" alt="Incoming" class="w-6 h-6 object-contain" />'>
                 Incoming
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('user.outgoing-trucks') }}" 
-                :active="$currentRoute === 'user.outgoing-trucks'"
+                href="{{ route('user.outgoing-slips') }}" 
+                :active="$currentRoute === 'user.outgoing-slips'"
                 icon='<img src="https://cdn-icons-png.flaticon.com/512/7468/7468319.png" alt="Outgoing" class="w-6 h-6 object-contain" />'>
                 Outgoing
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('user.completed-trucks') }}" 
-                :active="$currentRoute === 'user.completed-trucks'"
+                href="{{ route('user.completed-slips') }}" 
+                :active="$currentRoute === 'user.completed-slips'"
                 icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>'>
@@ -169,8 +169,8 @@
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('user.reports') }}" 
-                :active="$isReportsActive"
+                href="{{ route('user.issues') }}" 
+                :active="$isIssuesActive"
                 icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                     </svg>'>
@@ -216,12 +216,12 @@
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('admin.plate-numbers') }}" 
-                    :active="$currentRoute === 'admin.plate-numbers'"
+                    href="{{ route('admin.vehicles') }}"
+                    :active="$currentRoute === 'admin.vehicles'"
                     icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                         </svg>'>
-                    Plate Numbers
+                    Vehicles
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
@@ -236,15 +236,15 @@
             </x-navigation.mobile-dropup>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('admin.trucks') }}" 
-                :active="$currentRoute === 'admin.trucks'"
+                href="{{ route('admin.slips') }}" 
+                :active="$currentRoute === 'admin.slips'"
                 icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
                 Slips
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('admin.reports') }}" 
-                :active="$isReportsActive"
+                href="{{ route('admin.issues') }}" 
+                :active="$isIssuesActive"
                 icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                     </svg>'>
@@ -308,12 +308,12 @@
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
-                    href="{{ route('superadmin.plate-numbers') }}" 
-                    :active="$currentRoute === 'superadmin.plate-numbers'"
+                    href="{{ route('superadmin.vehicles') }}"
+                    :active="$currentRoute === 'superadmin.vehicles'"
                     icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                         </svg>'>
-                    Plate Numbers
+                    Vehicles
                 </x-navigation.mobile-dropup-item>
 
                 <x-navigation.mobile-dropup-item 
@@ -328,15 +328,15 @@
             </x-navigation.mobile-dropup>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('superadmin.trucks') }}" 
-                :active="$currentRoute === 'superadmin.trucks'"
+                href="{{ route('superadmin.slips') }}" 
+                :active="$currentRoute === 'superadmin.slips'"
                 icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
                 Slips
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 
-                href="{{ route('superadmin.reports') }}" 
-                :active="$isReportsActive"
+                href="{{ route('superadmin.issues') }}" 
+                :active="$isIssuesActive"
                 icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                     </svg>'>

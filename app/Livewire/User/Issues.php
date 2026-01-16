@@ -7,7 +7,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
 
-class Reports extends Component
+class Issues extends Component
 {
     use WithPagination;
 

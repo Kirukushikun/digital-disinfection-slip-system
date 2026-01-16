@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plate Numbers Report - {{ date('Y-m-d') }}</title>
+    <title>Vehicles Report - {{ date('Y-m-d') }}</title>
     <style>
         @media print {
             .no-print {
@@ -113,7 +113,7 @@
     @endphp
     <div class="header">
         <img src="{{ asset('storage/' . $defaultLogo) }}" alt="Farm Logo" class="header-logo">
-        <h1>Plate Numbers Report</h1>
+        <h1>Vehicles Report</h1>
         <p>Generated on: {{ date('F d, Y h:i A') }}</p>
         
         @if (!empty($filters) || !empty($sorting))
@@ -148,7 +148,7 @@
     <table>
         <thead>
             <tr>
-                <th>Plate Number</th>
+                <th>Vehicle</th>
                 <th>Status</th>
                 <th>Created Date</th>
             </tr>
@@ -170,7 +170,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" style="text-align: center;">No plate numbers found</td>
+                    <td colspan="3" style="text-align: center;">No vehicles found</td>
                 </tr>
             @endforelse
         </tbody>

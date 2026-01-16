@@ -24,18 +24,18 @@ class AdminController extends Controller
     {
         return view('admin.locations');
     }
-    public function plateNumbers()
+    public function vehicles()
     {
-        return view('admin.plate-numbers');
+        return view('admin.vehicles');
     }
-    public function trucks()
+    public function slips()
     {
-        return view('admin.trucks');
+        return view('admin.slips');
     }
 
-    public function reports()
+    public function issues()
     {
-        return view('admin.reports');
+        return view('admin.issues');
     }
 
     public function auditTrail()
@@ -133,7 +133,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function printPlateNumbers(Request $request)
+    public function printVehicles(Request $request)
     {
         $data = collect();
         $filters = [];
@@ -156,14 +156,14 @@ class AdminController extends Controller
             }
         }
         
-        return view('livewire.admin.print-plate-numbers', [
+        return view('livewire.admin.print-vehicles', [
             'data' => $data,
             'filters' => $filters,
             'sorting' => $sorting
         ]);
     }
 
-    public function printTrucks(Request $request)
+    public function printSlips(Request $request)
     {
         $data = collect();
         $filters = [];
@@ -186,7 +186,7 @@ class AdminController extends Controller
             }
         }
         
-        return view('livewire.admin.print-trucks', [
+        return view('livewire.admin.print-slips', [
             'data' => $data,
             'filters' => $filters,
             'sorting' => $sorting

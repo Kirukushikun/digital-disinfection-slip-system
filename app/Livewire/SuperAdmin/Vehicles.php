@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\SuperAdmin;
 
 use App\Models\Truck;
-use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use App\Services\Logger;
 
-class PlateNumbers extends Component
+class Vehicles extends Component
 {
     use WithPagination;
 
@@ -31,6 +31,12 @@ class PlateNumbers extends Component
     public $appliedStatus = null; // null = All Plate Numbers, 0 = Enabled, 1 = Disabled
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
+    
+    // Store previous date filter values when entering restore mode
+    private $previousFilterCreatedFrom = null;
+    private $previousFilterCreatedTo = null;
+    private $previousAppliedCreatedFrom = null;
+    private $previousAppliedCreatedTo = null;
     
     public $availableStatuses = [
         0 => 'Enabled',
@@ -60,12 +66,18 @@ class PlateNumbers extends Component
     
     public $selectedTruckId;
     public $selectedTruckDisabled = false;
+    public $selectedTruckName = '';
     public $showEditModal = false;
     public $showDisableModal = false;
+    public $showCreateModal = false;
+    public $showDeleteModal = false;
+    public $showRestoreModal = false;
     
     // Protection flags
     public $isTogglingStatus = false;
-    public $showCreateModal = false;
+    public $isDeleting = false;
+    public $isRestoring = false;
+    public $showDeleted = false; // Toggle to show deleted items
 
     // Edit form fields
     public $plate_number;
@@ -177,7 +189,7 @@ class PlateNumbers extends Component
     public function updateTruck()
     {
         // Authorization check
-        if (Auth::user()->user_type < 1) {
+        if (Auth::user()->user_type < 2) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -218,9 +230,21 @@ class PlateNumbers extends Component
             return;
         }
         
+        // Capture old values for logging
+        $oldValues = $truck->only(['plate_number', 'disabled']);
+        
         $truck->update([
             'plate_number' => $plateNumber,
         ]);
+        
+        // Log the update action
+        Logger::update(
+            Truck::class,
+            $truck->id,
+            "Updated to \"{$plateNumber}\"",
+            $oldValues,
+            ['plate_number' => $plateNumber]
+        );
 
         Cache::forget('trucks_all');
 
@@ -248,7 +272,7 @@ class PlateNumbers extends Component
 
         try {
         // Authorization check
-        if (Auth::user()->user_type < 1) {
+        if (Auth::user()->user_type < 2) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -279,7 +303,7 @@ class PlateNumbers extends Component
         
         $plateNumber = $truck->plate_number;
         $message = !$wasDisabled ? "Plate number {$plateNumber} has been disabled." : "Plate number {$plateNumber} has been enabled.";
-        
+
         // Log the status change
         Logger::update(
             Truck::class,
@@ -299,12 +323,69 @@ class PlateNumbers extends Component
         }
     }
 
+    public function openDeleteModal($truckId)
+    {
+        $truck = Truck::findOrFail($truckId);
+        $this->selectedTruckId = $truckId;
+        $this->selectedTruckName = $truck->plate_number;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteTruck()
+    {
+        // Prevent multiple submissions
+        if ($this->isDeleting) {
+            return;
+        }
+
+        $this->isDeleting = true;
+
+        try {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $truck = Truck::findOrFail($this->selectedTruckId);
+        $truckIdForLog = $truck->id;
+        $plateNumber = $truck->plate_number;
+        
+        // Capture old values for logging
+        $oldValues = $truck->only([
+            'plate_number',
+            'disabled'
+        ]);
+        
+        // Soft delete the truck
+        $truck->delete();
+        
+        // Log the delete action
+        Logger::delete(
+            Truck::class,
+            $truckIdForLog,
+            "Deleted \"{$plateNumber}\"",
+            $oldValues
+        );
+
+        Cache::forget('trucks_all');
+
+        $this->showDeleteModal = false;
+        $this->reset(['selectedTruckId', 'selectedTruckName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: "Plate number {$plateNumber} has been deleted.", type: 'success');
+        } finally {
+            $this->isDeleting = false;
+        }
+    }
+
     public function closeModal()
     {
         $this->showEditModal = false;
         $this->showDisableModal = false;
+        $this->showDeleteModal = false;
         $this->showCreateModal = false;
-        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'plate_number', 'original_plate_number', 'create_plate_number']);
+        $this->showRestoreModal = false;
+        $this->reset(['selectedTruckId', 'selectedTruckDisabled', 'selectedTruckName', 'plate_number', 'original_plate_number', 'create_plate_number']);
         $this->resetValidation();
     }
 
@@ -353,7 +434,7 @@ class PlateNumbers extends Component
     public function createTruck()
     {
         // Authorization check
-        if (Auth::user()->user_type < 1) {
+        if (Auth::user()->user_type < 2) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -385,17 +466,16 @@ class PlateNumbers extends Component
             'plate_number' => $plateNumber,
             'disabled' => false,
         ]);
-        
-        // Log the creation
-        $newValues = $truck->only(['plate_number', 'disabled']);
+
+        Cache::forget('trucks_all');
+
+        // Log the create action
         Logger::create(
             Truck::class,
             $truck->id,
             "Created \"{$plateNumber}\"",
-            $newValues
+            $truck->only(['plate_number', 'disabled'])
         );
-
-        Cache::forget('trucks_all');
 
         $this->showCreateModal = false;
         $this->reset(['create_plate_number']);
@@ -405,7 +485,11 @@ class PlateNumbers extends Component
 
     public function render()
     {
-        $trucks = Truck::when($this->search, function ($query) {
+        $query = $this->showDeleted 
+            ? Truck::onlyTrashed()
+            : Truck::whereNull('deleted_at');
+        
+        $trucks = $query->when($this->search, function ($query) {
                 $searchTerm = $this->search;
                 
                 // Sanitize search term to prevent SQL injection
@@ -428,7 +512,7 @@ class PlateNumbers extends Component
             ->when($this->appliedCreatedTo, function ($query) {
                 $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
             })
-            ->when($this->appliedStatus !== null, function ($query) {
+            ->when($this->appliedStatus !== null && !$this->showDeleted, function ($query) {
                 if ($this->appliedStatus === 0) {
                     // Enabled (disabled = false)
                     $query->where('disabled', false);
@@ -438,7 +522,7 @@ class PlateNumbers extends Component
                 }
             })
             // Apply multi-column sorting
-            ->when(!empty($this->sortColumns), function($query) {
+            ->when(!empty($this->sortColumns) && !$this->showDeleted, function($query) {
                 // Initialize sortColumns if it's not an array
                 if (!is_array($this->sortColumns)) {
                     $this->sortColumns = ['plate_number' => 'asc'];
@@ -459,15 +543,18 @@ class PlateNumbers extends Component
                     $firstSort = false;
                 }
             })
-            ->when(empty($this->sortColumns), function($query) {
+            ->when(empty($this->sortColumns) && !$this->showDeleted, function($query) {
                 // Default sort if no sorts are set
                 $query->orderBy('plate_number', 'asc');
+            })
+            ->when($this->showDeleted, function ($query) {
+                $query->orderBy('deleted_at', 'desc');
             })
             ->paginate(10);
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.admin.plate-numbers', [
+        return view('livewire.super-admin.plate-numbers', [
             'trucks' => $trucks,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
@@ -476,14 +563,19 @@ class PlateNumbers extends Component
 
     public function getExportData()
     {
-        return Truck::when($this->search, function ($query) {
+        $query = $this->showDeleted 
+            ? Truck::onlyTrashed()
+            : Truck::whereNull('deleted_at');
+        
+        return $query->when($this->search, function ($query) {
                 $searchTerm = trim($this->search);
                 $searchTerm = preg_replace('/[%_]/', '', $searchTerm);
                 if (empty($searchTerm)) {
-                    return;
+                    return $query;
                 }
                 $escapedSearchTerm = str_replace(['%', '_'], ['\%', '\_'], $searchTerm);
                 $query->where('plate_number', 'like', '%' . $escapedSearchTerm . '%');
+                return $query;
             })
             ->when($this->appliedCreatedFrom, function ($query) {
                 $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
@@ -491,19 +583,28 @@ class PlateNumbers extends Component
             ->when($this->appliedCreatedTo, function ($query) {
                 $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
             })
-            ->when($this->appliedStatus !== null, function ($query) {
+            ->when($this->appliedStatus !== null && !$this->showDeleted, function ($query) {
                 if ($this->appliedStatus === 0) {
                     $query->where('disabled', false);
                 } elseif ($this->appliedStatus === 1) {
                     $query->where('disabled', true);
                 }
             })
-            ->orderBy('plate_number', 'asc')
+            ->when(!$this->showDeleted, function ($query) {
+                $query->orderBy('plate_number', 'asc');
+            })
+            ->when($this->showDeleted, function ($query) {
+                $query->orderBy('deleted_at', 'desc');
+            })
             ->get();
     }
 
     public function exportCSV()
     {
+        if ($this->showDeleted) {
+            return;
+        }
+        
         $data = $this->getExportData();
         $filename = 'plate_numbers_' . date('Y-m-d_His') . '.csv';
         
@@ -533,8 +634,109 @@ class PlateNumbers extends Component
         return Response::stream($callback, 200, $headers);
     }
 
+    public function toggleDeletedView()
+    {
+        $this->showDeleted = !$this->showDeleted;
+        
+        if ($this->showDeleted) {
+            // Entering restore mode: Store current values only if not already stored, then clear date filters
+            if ($this->previousAppliedCreatedFrom === null && $this->previousAppliedCreatedTo === null) {
+                $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
+                $this->previousFilterCreatedTo = $this->filterCreatedTo;
+                $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
+                $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
+            }
+            
+            $this->filterCreatedFrom = '';
+            $this->filterCreatedTo = '';
+            $this->appliedCreatedFrom = '';
+            $this->appliedCreatedTo = '';
+        } else {
+            // Exiting restore mode: Always restore previous values, then reset stored values
+            $this->filterCreatedFrom = $this->previousFilterCreatedFrom ?? '';
+            $this->filterCreatedTo = $this->previousFilterCreatedTo ?? '';
+            $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom ?? '';
+            $this->appliedCreatedTo = $this->previousAppliedCreatedTo ?? '';
+            
+            // Reset stored values for next time
+            $this->previousFilterCreatedFrom = null;
+            $this->previousFilterCreatedTo = null;
+            $this->previousAppliedCreatedFrom = null;
+            $this->previousAppliedCreatedTo = null;
+        }
+        
+        $this->resetPage();
+    }
+
+    public function openRestoreModal($truckId)
+    {
+        $truck = Truck::onlyTrashed()->findOrFail($truckId);
+        $this->selectedTruckId = $truckId;
+        $this->selectedTruckName = $truck->plate_number;
+        $this->showRestoreModal = true;
+    }
+
+    public function restorePlateNumber()
+    {
+        // Prevent multiple submissions
+        if ($this->isRestoring) {
+            return;
+        }
+
+        $this->isRestoring = true;
+
+        try {
+        // Authorization check
+        if (Auth::user()->user_type < 2) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$this->selectedTruckId) {
+            return;
+        }
+
+        // Atomic restore: Only restore if currently deleted to prevent race conditions
+        // Do the atomic update first, then load the model only if successful
+        $restored = Truck::onlyTrashed()
+            ->where('id', $this->selectedTruckId)
+            ->update(['deleted_at' => null]);
+        
+        if ($restored === 0) {
+            // Truck was already restored or doesn't exist
+            $this->showRestoreModal = false;
+            $this->reset(['selectedTruckId', 'selectedTruckName']);
+            $this->dispatch('toast', message: 'This plate number was already restored or does not exist. Please refresh the page.', type: 'error');
+            $this->resetPage();
+            return;
+        }
+        
+        // Now load the restored truck
+        $truck = Truck::findOrFail($this->selectedTruckId);
+        
+        // Log the restore action
+        Logger::restore(
+            Truck::class,
+            $truck->id,
+            "Restored plate number {$truck->plate_number}"
+        );
+        
+        Cache::forget('trucks_all');
+
+        $this->showRestoreModal = false;
+        $this->reset(['selectedTruckId', 'selectedTruckName']);
+        $this->resetPage();
+        $this->dispatch('toast', message: "{$truck->plate_number} has been restored.", type: 'success');
+        } finally {
+            $this->isRestoring = false;
+        }
+    }
+
     public function openPrintView()
     {
+        if ($this->showDeleted) {
+            return;
+        }
+        
         $data = $this->getExportData();
         $exportData = $data->map(function($truck) {
             return [
@@ -559,7 +761,7 @@ class PlateNumbers extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('admin.print.plate-numbers', ['token' => $token]);
+        $printUrl = route('superadmin.print.plate-numbers', ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }

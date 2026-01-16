@@ -144,7 +144,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Total Created Slips Today -->
-                            <a href="{{ route('superadmin.trucks') }}" wire:poll class="group">
+                            <a href="{{ route('superadmin.slips') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-emerald-50 to-emerald-100/50 rounded-2xl border-2 border-emerald-200 hover:border-emerald-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -168,7 +168,7 @@
                             </a>
 
                             <!-- In Progress Slips Today -->
-                            <a href="{{ route('superadmin.trucks') }}" wire:poll class="group">
+                            <a href="{{ route('superadmin.slips') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-rose-50 to-rose-100/50 rounded-2xl border-2 border-rose-200 hover:border-rose-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -284,8 +284,8 @@
                                 </div>
                             </a>
 
-                            <!-- Plate Numbers -->
-                            <a href="{{ route('superadmin.plate-numbers') }}" wire:poll class="group">
+                            <!-- Vehicles -->
+                            <a href="{{ route('superadmin.vehicles') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-amber-50 to-amber-100/50 rounded-2xl border-2 border-amber-200 hover:border-amber-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -300,7 +300,7 @@
                                         <div class="flex-1">
                                             <p
                                                 class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-0.5">
-                                                Plate Numbers</p>
+                                                Vehicles</p>
                                             <p class="text-3xl font-bold text-gray-900">
                                                 {{ number_format($this->stats['total_plate_numbers']) }}</p>
                                         </div>
@@ -335,7 +335,7 @@
                             </a>
 
                             <!-- Issues -->
-                            <a href="{{ route('superadmin.reports') }}" wire:poll class="group">
+                            <a href="{{ route('superadmin.issues') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-red-50 to-red-100/50 rounded-2xl border-2 border-red-200 hover:border-red-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -431,7 +431,7 @@
                                 </div>
                             </a>
 
-                            <a href="{{ route('superadmin.plate-numbers') }}"
+                            <a href="{{ route('superadmin.vehicles') }}"
                                 class="group block p-4 bg-linear-to-br from-amber-50 to-amber-100/50 rounded-2xl border-2 border-amber-200 hover:border-amber-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -444,7 +444,7 @@
                                     </div>
                                     <span
                                         class="font-semibold text-gray-800 group-hover:text-amber-700 transition-colors">Manage
-                                        Plate Numbers</span>
+                                        Vehicles</span>
                                 </div>
                             </a>
 

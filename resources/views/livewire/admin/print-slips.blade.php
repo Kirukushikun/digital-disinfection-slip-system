@@ -142,7 +142,7 @@
                     @php
                         $plateNumbers = \App\Models\Truck::whereIn('id', $filters['plate_number'])->pluck('plate_number')->toArray();
                     @endphp
-                    <p><strong>Plate Number:</strong> {{ implode(', ', $plateNumbers) }}</p>
+                    <p><strong>Vehicle:</strong> {{ implode(', ', $plateNumbers) }}</p>
                 @endif
                 
                 @if (!empty($filters['hatchery_guard']) && is_array($filters['hatchery_guard']))
@@ -190,7 +190,7 @@
         <thead>
             <tr>
                 <th>Slip ID</th>
-                <th>Plate Number</th>
+                <th>Vehicle</th>
                 <th>Origin</th>
                 <th>Destination</th>
                 <th>Driver</th>

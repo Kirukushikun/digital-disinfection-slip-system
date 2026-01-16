@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\User\Data;
+namespace App\Livewire\Admin;
 
 use App\Models\Truck;
 use App\Services\Logger;
@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-class PlateNumbers extends Component
+class Vehicles extends Component
 {
     use WithPagination;
 
@@ -176,11 +176,9 @@ class PlateNumbers extends Component
 
     public function updateTruck()
     {
-        // Authorization check - allow super guards OR super admins
-        $currentUser = Auth::user();
-        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
-            // Regular guards trying to access super guard features - redirect to landing
-            return $this->redirect('/', navigate: true);
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
         }
 
         // Ensure selectedTruckId is set
@@ -249,11 +247,9 @@ class PlateNumbers extends Component
         $this->isTogglingStatus = true;
 
         try {
-        // Authorization check - allow super guards OR super admins
-        $currentUser = Auth::user();
-        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
-            // Regular guards trying to access super guard features - redirect to landing
-            return $this->redirect('/', navigate: true);
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
         }
 
         // Atomic update: Get current status and update atomically to prevent race conditions
@@ -356,11 +352,9 @@ class PlateNumbers extends Component
 
     public function createTruck()
     {
-        // Authorization check - allow super guards OR super admins
-        $currentUser = Auth::user();
-        if (!(($currentUser->user_type === 0 && $currentUser->super_guard) || $currentUser->user_type === 2)) {
-            // Regular guards trying to access super guard features - redirect to landing
-            return $this->redirect('/', navigate: true);
+        // Authorization check
+        if (Auth::user()->user_type < 1) {
+            abort(403, 'Unauthorized action.');
         }
 
         // Sanitize and uppercase input BEFORE validation
@@ -473,7 +467,7 @@ class PlateNumbers extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.user.data.plate-numbers', [
+        return view('livewire.admin.plate-numbers', [
             'trucks' => $trucks,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
@@ -565,7 +559,7 @@ class PlateNumbers extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('user.print.plate-numbers', ['token' => $token]);
+        $printUrl = route('admin.print.plate-numbers', ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }

@@ -22,29 +22,29 @@ class UserController extends Controller
         return view('user.dashboard', compact('canCreateSlip'));
     }
 
-    public function incomingTrucks()
+    public function incomingSlips()
     {
-        return view('user.incoming-trucks');
+        return view('user.incoming-slips');
     }
 
-    public function outgoingTrucks()
+    public function outgoingSlips()
     {
-        return view('user.outgoing-trucks');
+        return view('user.outgoing-slips');
     }
 
-    public function completedTrucks()
+    public function completedSlips()
     {
-        return view('user.completed-trucks');
+        return view('user.completed-slips');
     }
 
-    public function reports()
+    public function issues()
     {
-        return view('user.reports');
+        return view('user.issues');
     }
 
-    public function report()
+    public function issue()
     {
-        return view('user.report');
+        return view('user.issue');
     }
 
     // Super Guard Data Management Methods (accessible to super guards and super admins)
@@ -81,7 +81,7 @@ class UserController extends Controller
         return view('user.data.locations');
     }
 
-    public function dataPlateNumbers()
+    public function dataVehicles()
     {
         $user = auth()->user();
         // Allow super guards OR super admins
@@ -89,7 +89,7 @@ class UserController extends Controller
             // Regular guards trying to access super guard routes - redirect to landing
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
-        return view('user.data.plate-numbers');
+        return view('user.data.vehicles');
     }
 
     // Print methods for super guards
@@ -203,7 +203,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function printPlateNumbers(Request $request)
+    public function printVehicles(Request $request)
     {
         $user = auth()->user();
         // Allow super guards OR super admins
@@ -232,7 +232,7 @@ class UserController extends Controller
             }
         }
         
-        return view('livewire.admin.print-plate-numbers', [
+        return view('livewire.admin.print-vehicles', [
             'data' => $data,
             'filters' => $filters,
             'sorting' => $sorting

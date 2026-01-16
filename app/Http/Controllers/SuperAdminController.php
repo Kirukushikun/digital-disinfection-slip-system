@@ -27,14 +27,14 @@ class SuperAdminController extends Controller
         return view('superadmin.locations');
     }
     
-    public function plateNumbers()
+    public function vehicles()
     {
-        return view('superadmin.plate-numbers');
+        return view('superadmin.vehicles');
     }
     
-    public function trucks()
+    public function slips()
     {
-        return view('superadmin.trucks');
+        return view('superadmin.slips');
     }
     
     public function admins()
@@ -42,9 +42,9 @@ class SuperAdminController extends Controller
         return view('superadmin.admins');
     }
     
-    public function reports()
+    public function issues()
     {
-        return view('superadmin.reports');
+        return view('superadmin.issues');
     }
 
     public function auditTrail()
@@ -177,7 +177,7 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    public function printPlateNumbers(Request $request)
+    public function printVehicles(Request $request)
     {
         $data = collect();
         $filters = [];
@@ -200,14 +200,14 @@ class SuperAdminController extends Controller
             }
         }
         
-        return view('livewire.super-admin.print-plate-numbers', [
+        return view('livewire.super-admin.print-vehicles', [
             'data' => $data,
             'filters' => $filters,
             'sorting' => $sorting
         ]);
     }
 
-    public function printTrucks(Request $request)
+    public function printSlips(Request $request)
     {
         $data = collect();
         $filters = [];
@@ -230,7 +230,7 @@ class SuperAdminController extends Controller
             }
         }
         
-        return view('livewire.super-admin.print-trucks', [
+        return view('livewire.super-admin.print-slips', [
             'data' => $data,
             'filters' => $filters,
             'sorting' => $sorting

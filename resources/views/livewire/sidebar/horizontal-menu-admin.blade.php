@@ -4,7 +4,7 @@
 
 @php
     // Determine if the "Data Management" dropdown should be active
-    $dataManagementRoutes = ['admin.guards', 'admin.drivers', 'admin.plate-numbers', 'admin.locations'];
+    $dataManagementRoutes = ['admin.guards', 'admin.drivers', 'admin.vehicles', 'admin.locations'];
     $isDataManagementActive = in_array($currentRoute, $dataManagementRoutes);
 @endphp
 
@@ -38,12 +38,12 @@
             Drivers
         </x-navigation.sidebar-menu-item>
 
-        <x-navigation.sidebar-menu-item href="{{ route('admin.plate-numbers') }}" :active="$currentRoute === 'admin.plate-numbers'"
+        <x-navigation.sidebar-menu-item href="{{ route('admin.vehicles') }}" :active="$currentRoute === 'admin.vehicles'"
             icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>'
             :indent="true">
-            Plate Numbers
+            Vehicles
         </x-navigation.sidebar-menu-item>
 
         <x-navigation.sidebar-menu-item href="{{ route('admin.locations') }}" :active="$currentRoute === 'admin.locations'"
@@ -57,13 +57,13 @@
     </x-navigation.horizontal-menu-dropdown>
 
     {{-- Slips --}}
-    <x-navigation.horizontal-menu-item href="{{ route('admin.trucks') }}" :active="$currentRoute === 'admin.trucks'"
+    <x-navigation.horizontal-menu-item href="{{ route('admin.slips') }}" :active="$currentRoute === 'admin.slips'"
         icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-5 h-5 object-contain" />'>
         Slips
     </x-navigation.horizontal-menu-item>
 
     {{-- Issues --}}
-    <x-navigation.horizontal-menu-item href="{{ route('admin.reports') }}" :active="$currentRoute === 'admin.reports'"
+    <x-navigation.horizontal-menu-item href="{{ route('admin.issues') }}" :active="$currentRoute === 'admin.issues'"
         icon='<svg xmlns="https://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
             </svg>'>

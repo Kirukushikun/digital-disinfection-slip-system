@@ -1,4 +1,4 @@
-<a href="{{ route('user.incoming-trucks') }}"
+<a href="{{ route('user.incoming-slips') }}"
     class="flex-1 flex flex-wrap items-center border border-orange-300 rounded-lg p-6 shadow-sm hover:shadow-md transition"
     wire:poll>
     <div class="flex items-center space-x-3 min-w-[150px] text-gray-700 shrink-0">

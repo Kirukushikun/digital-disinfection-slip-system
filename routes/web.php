@@ -28,18 +28,18 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
-    Route::get('/incoming-slips', [UserController::class, 'incomingTrucks'])->name('incoming-trucks');
-    Route::get('/outgoing-slips', [UserController::class, 'outgoingTrucks'])->name('outgoing-trucks');
-    Route::get('/completed-slips', [UserController::class, 'completedTrucks'])->name('completed-trucks');
-    Route::get('/issues', [UserController::class, 'reports'])->name('reports');
-    Route::get('/issue', [UserController::class, 'report'])->name('report');
+    Route::get('/incoming-slips', [UserController::class, 'incomingSlips'])->name('incoming-slips');
+    Route::get('/outgoing-slips', [UserController::class, 'outgoingSlips'])->name('outgoing-slips');
+    Route::get('/completed-slips', [UserController::class, 'completedSlips'])->name('completed-slips');
+    Route::get('/issues', [UserController::class, 'issues'])->name('issues');
+    Route::get('/issue', [UserController::class, 'issue'])->name('issue');
     
     // Super Guard Data Management Routes (accessible to super guards and super admins)
     Route::middleware('super.guard')->group(function () {
         Route::get('/data/guards', [UserController::class, 'dataGuards'])->name('data.guards');
         Route::get('/data/drivers', [UserController::class, 'dataDrivers'])->name('data.drivers');
         Route::get('/data/locations', [UserController::class, 'dataLocations'])->name('data.locations');
-        Route::get('/data/plate-numbers', [UserController::class, 'dataPlateNumbers'])->name('data.plate-numbers');
+        Route::get('/data/vehicles', [UserController::class, 'dataVehicles'])->name('data.vehicles');
     });
     
     // Print routes for super guards (outside nested group to inherit name prefix correctly)
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'user.type:0'])->prefix('user')->name('user.')->group
         Route::get('/print/guards', [UserController::class, 'printGuards'])->name('print.guards');
         Route::get('/print/drivers', [UserController::class, 'printDrivers'])->name('print.drivers');
         Route::get('/print/locations', [UserController::class, 'printLocations'])->name('print.locations');
-        Route::get('/print/plate-numbers', [UserController::class, 'printPlateNumbers'])->name('print.plate-numbers');
+        Route::get('/print/vehicles', [UserController::class, 'printVehicles'])->name('print.vehicles');
     });
 });
 
@@ -56,15 +56,15 @@ Route::middleware(['auth', 'user.type:1'])->prefix('admin')->name('admin.')->gro
     Route::get('/guards', [AdminController::class, 'guards'])->name('guards');
     Route::get('/drivers', [AdminController::class, 'drivers'])->name('drivers');
     Route::get('/locations', [AdminController::class, 'locations'])->name('locations');
-    Route::get('/plate-numbers', [AdminController::class, 'plateNumbers'])->name('plate-numbers');
-    Route::get('/slips', [AdminController::class, 'trucks'])->name('trucks');
-    Route::get('/issues', [AdminController::class, 'reports'])->name('reports');
+    Route::get('/vehicles', [AdminController::class, 'vehicles'])->name('vehicles');
+    Route::get('/slips', [AdminController::class, 'slips'])->name('slips');
+    Route::get('/issues', [AdminController::class, 'issues'])->name('issues');
     Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit-trail');
     Route::get('/print/guards', [AdminController::class, 'printGuards'])->name('print.guards');
     Route::get('/print/drivers', [AdminController::class, 'printDrivers'])->name('print.drivers');
     Route::get('/print/locations', [AdminController::class, 'printLocations'])->name('print.locations');
-    Route::get('/print/plate-numbers', [AdminController::class, 'printPlateNumbers'])->name('print.plate-numbers');
-    Route::get('/print/slips', [AdminController::class, 'printTrucks'])->name('print.trucks');
+    Route::get('/print/vehicles', [AdminController::class, 'printVehicles'])->name('print.vehicles');
+    Route::get('/print/slips', [AdminController::class, 'printSlips'])->name('print.slips');
     Route::get('/print/slip', [AdminController::class, 'printSlip'])->name('print.slip');
     Route::get('/print/audit-trail', [AdminController::class, 'printAuditTrail'])->name('print.audit-trail');
 });
@@ -75,17 +75,17 @@ Route::middleware(['auth', 'user.type:2'])->prefix('superadmin')->name('superadm
     Route::get('/admins', [SuperAdminController::class, 'admins'])->name('admins');
     Route::get('/drivers', [SuperAdminController::class, 'drivers'])->name('drivers');
     Route::get('/locations', [SuperAdminController::class, 'locations'])->name('locations');
-    Route::get('/plate-numbers', [SuperAdminController::class, 'plateNumbers'])->name('plate-numbers');
-    Route::get('/slips', [SuperAdminController::class, 'trucks'])->name('trucks');
-    Route::get('/issues', [SuperAdminController::class, 'reports'])->name('reports');
+    Route::get('/vehicles', [SuperAdminController::class, 'vehicles'])->name('vehicles');
+    Route::get('/slips', [SuperAdminController::class, 'slips'])->name('slips');
+    Route::get('/issues', [SuperAdminController::class, 'issues'])->name('issues');
     Route::get('/audit-trail', [SuperAdminController::class, 'auditTrail'])->name('audit-trail');
     Route::get('/settings', [SuperAdminController::class, 'settings'])->name('settings');
     Route::get('/print/guards', [SuperAdminController::class, 'printGuards'])->name('print.guards');
     Route::get('/print/admins', [SuperAdminController::class, 'printAdmins'])->name('print.admins');
     Route::get('/print/drivers', [SuperAdminController::class, 'printDrivers'])->name('print.drivers');
     Route::get('/print/locations', [SuperAdminController::class, 'printLocations'])->name('print.locations');
-    Route::get('/print/plate-numbers', [SuperAdminController::class, 'printPlateNumbers'])->name('print.plate-numbers');
-    Route::get('/print/slips', [SuperAdminController::class, 'printTrucks'])->name('print.trucks');
+    Route::get('/print/vehicles', [SuperAdminController::class, 'printVehicles'])->name('print.vehicles');
+    Route::get('/print/slips', [SuperAdminController::class, 'printSlips'])->name('print.slips');
     Route::get('/print/slip', [SuperAdminController::class, 'printSlip'])->name('print.slip');
     Route::get('/print/audit-trail', [SuperAdminController::class, 'printAuditTrail'])->name('print.audit-trail');
 });
