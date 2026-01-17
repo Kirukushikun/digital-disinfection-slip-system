@@ -319,32 +319,32 @@
 
             {{-- CONFIRMATION MODALS --}}
             {{-- Photo Cleanup Modal --}}
-            <x-modals.delete-confirmation show="showAttachmentCleanupModal" title="Clean Up photos"
+            <x-modals.confirmation-modal show="showAttachmentCleanupModal" title="Clean Up photos"
                 message="Are you sure you want to run Photo cleanup?"
                 :details="'This will permanently delete photos older than <strong>' . $attachment_retention_days . ' days</strong>.'"
                 onConfirm="runAttachmentCleanup"
-                confirmText="Run Cleanup" cancelText="Cancel" />
+                confirmText="Run Cleanup" cancelText="Cancel" confirmColor="orange" />
 
             {{-- Issues Cleanup Modal --}}
-            <x-modals.delete-confirmation show="showIssuesCleanupModal" title="Clean Up Resolved Issues"
+            <x-modals.confirmation-modal show="showIssuesCleanupModal" title="Clean Up Resolved Issues"
                 message="Are you sure you want to run issues cleanup?"
                 :details="'This will permanently delete resolved issues older than <strong>' . $resolved_issues_retention_months . ' months</strong>.'"
                 onConfirm="runIssuesCleanup"
-                confirmText="Run Cleanup" cancelText="Cancel" />
+                confirmText="Run Cleanup" cancelText="Cancel" confirmColor="orange" />
 
             {{-- Soft-Delete Cleanup Modal --}}
-            <x-modals.delete-confirmation show="showSoftDeleteCleanupModal" title="Clean Up Soft-Deleted Records"
+            <x-modals.confirmation-modal show="showSoftDeleteCleanupModal" title="Clean Up Soft-Deleted Records"
                 message="Are you sure you want to run soft-deleted records cleanup?"
                 :details="'This will permanently delete soft-deleted records (users, vehicles, drivers, locations, slips, issues) older than <strong>' . $soft_deleted_retention_months . ' months</strong>.'"
                 onConfirm="runSoftDeleteCleanup"
-                confirmText="Run Cleanup" cancelText="Cancel" />
+                confirmText="Run Cleanup" cancelText="Cancel" confirmColor="orange" />
 
             {{-- Logs Cleanup Modal --}}
-            <x-modals.delete-confirmation show="showLogsCleanupModal" title="Clean Up Audit Logs"
+            <x-modals.confirmation-modal show="showLogsCleanupModal" title="Clean Up Audit Logs"
                 message="Are you sure you want to run audit logs cleanup?"
                 :details="'This will permanently delete audit trail logs older than <strong>' . $log_retention_months . ' months</strong>.'"
                 onConfirm="runLogsCleanup"
-                confirmText="Run Cleanup" cancelText="Cancel" />
+                confirmText="Run Cleanup" cancelText="Cancel" confirmColor="orange" />
         </div>
     </div>
 </div>

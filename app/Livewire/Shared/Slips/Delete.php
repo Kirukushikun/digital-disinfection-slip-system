@@ -17,11 +17,15 @@ class Delete extends Component
     // Configuration - minimum user_type required (1 = admin, 2 = superadmin)
     public $minUserType = 2;
 
-    protected $listeners = ['openDeleteModal' => 'openModal'];
+    protected $listeners = [
+        'openDeleteModal' => 'openModal',
+        'openSlipDeleteModal' => 'openModal'
+    ];
 
     public function mount($config = [])
     {
         $this->minUserType = $config['minUserType'] ?? 2;
+        $this->showModal = false; // Ensure modal is closed on mount
     }
 
     public function openModal($slipId)
@@ -52,7 +56,12 @@ class Delete extends Component
             return false;
         }
 
-        // SuperAdmin can delete any slip, including completed ones (unless vehicle is soft-deleted)
+        // Admin (minUserType = 1) cannot delete completed (status 3) or incomplete (status 4) slips
+        if ($this->minUserType == 1 && ($slip->status == 3 || $slip->status == 4)) {
+            return false;
+        }
+
+        // SuperAdmin (minUserType = 2) can delete any slip, including completed ones (unless vehicle is soft-deleted)
         return true;
     }
 

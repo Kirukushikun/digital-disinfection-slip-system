@@ -608,7 +608,7 @@
     confirmText="Discard" cancelText="Back" />
 
 {{-- Remove Pending Photo Confirmation Modal --}}
-<x-modals.delete-confirmation show="showRemovePendingAttachmentConfirmation" title="DELETE PHOTO?"
+<x-modals.confirmation-modal show="showRemovePendingAttachmentConfirmation" title="DELETE PHOTO?"
     message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
     onConfirm="removePendingAttachment" confirmText="Delete" cancelText="Cancel" />
 

@@ -17,6 +17,11 @@ class Delete extends Component
 
     protected $listeners = ['openDeleteModal' => 'openModal'];
 
+    public function mount()
+    {
+        $this->showModal = false; // Ensure modal is closed on mount
+    }
+
     public function openModal($userId)
     {
         $user = User::findOrFail($userId);

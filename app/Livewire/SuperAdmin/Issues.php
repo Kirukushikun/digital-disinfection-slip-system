@@ -556,68 +556,23 @@ class Issues extends Component
         return false;
     }
     
-    public function deleteSlip()
+    public function openSlipDeleteModal()
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
+        if (!$this->selectedSlip) {
             return;
         }
+        
+        // Dispatch event to the Slips Delete component
+        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
+    }
 
-        $this->isDeleting = true;
-
-        try {
-            if (!$this->canDelete()) {
-                $this->dispatch('toast', message: 'You are not authorized to delete this slip.', type: 'error');
-                return;
-            }
-
-            $slipId = $this->selectedSlip->slip_id;
-            $slipIdForLog = $this->selectedSlip->id;
-            
-            // Capture old values for logging
-            $oldValues = $this->selectedSlip->only([
-                'slip_id',
-                'vehicle_id',
-                'location_id',
-                'destination_id',
-                'driver_id',
-                'hatchery_guard_id',
-                'received_guard_id',
-                'remarks_for_disinfection',
-                'status'
-            ]);
-            
-            // Clean up photos before soft deleting the slip
-            $this->selectedSlip->deleteAttachments();
-            
-            // Atomic delete: Only delete if not already deleted to prevent race conditions
-            $deleted = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
-                ->whereNull('deleted_at') // Only delete if not already deleted
-                ->update(['deleted_at' => now()]);
-            
-            if ($deleted === 0) {
-                // Slip was already deleted by another process
-                $this->showSlipDeleteConfirmation = false;
-                $this->dispatch('toast', message: 'This slip was already deleted by another administrator. Please refresh the page.', type: 'error');
-                $this->selectedSlip->refresh();
-                return;
-            }
-            
-            // Log the delete action
-            Logger::delete(
-                DisinfectionSlipModel::class,
-                $slipIdForLog,
-                "Deleted slip {$slipId}",
-                $oldValues
-            );
-            
-            $this->showSlipDeleteConfirmation = false;
-            $this->closeDetailsModal();
-            $this->dispatch('toast', message: "Slip {$slipId} has been deleted.", type: 'success');
-            $this->dispatch('slip-updated');
-        } finally {
-            $this->isDeleting = false;
-        }
+    #[On('slip-deleted')]
+    public function handleSlipDeleted()
+    {
+        Cache::forget('issues_all');
+        $this->resetPage();
+        $this->closeDetailsModal();
+        $this->selectedSlip = null;
     }
     
     public function openEditModal()
@@ -1243,62 +1198,41 @@ class Issues extends Component
         $this->showDeleteConfirmation = true;
     }
     
-    public function deleteIssue()
+    public function openIssueDeleteModal($issueId)
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
+        // Dispatch event to the Issues Delete component
+        $this->dispatch('openDeleteModal', $issueId);
+    }
 
-        $this->isDeleting = true;
-
-        try {
-            $issue = Issue::findOrFail($this->selectedIssueId);
-        $issueType = $issue->slip_id ? "for slip " . ($issue->slip->slip_id ?? 'N/A') : "for misc";
-        $oldValues = $issue->only(['user_id', 'slip_id', 'description', 'resolved_at']);
-        
-        // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = Issue::where('id', $this->selectedIssueId)
-            ->whereNull('deleted_at') // Only delete if not already deleted
-            ->update(['deleted_at' => now()]);
-        
-        if ($deleted === 0) {
-            // Issue was already deleted by another process
-            $this->showDeleteConfirmation = false;
-            $this->reset(['selectedIssueId']);
-            $this->dispatch('toast', message: 'This issue was already deleted by another administrator. Please refresh the page.', type: 'error');
-            $this->resetPage();
-            return;
-        }
-        
-        Logger::delete(
-            Issue::class,
-            $issue->id,
-            "Deleted issue {$issueType}",
-            $oldValues
-        );
-        
+    #[On('issue-deleted')]
+    public function handleIssueDeleted()
+    {
         Cache::forget('issues_all');
-        $this->showDeleteConfirmation = false;
-        $this->selectedIssueId = null;
-        $this->dispatch('toast', message: 'Issue has been deleted.', type: 'success');
         $this->resetPage();
-        } finally {
-            $this->isDeleting = false;
-        }
+        $this->selectedIssueId = null;
     }
 
     public function openDeleteConfirmation($issueId)
     {
-        $this->selectedIssueId = $issueId;
-        $this->showDeleteConfirmation = true;
+        // Check if issue has a slip - if yes, delete the slip instead
+        $issue = Issue::with(['slip'])->find($issueId);
+        
+        if ($issue && $issue->slip_id && $issue->slip) {
+            // Issue is linked to a slip - delete the slip instead
+            // Use specific event name to avoid triggering issue delete modal
+            $this->dispatch('openSlipDeleteModal', $issue->slip->id);
+        } else {
+            // Issue is miscellaneous (no slip) - delete the issue
+            // Use specific event name to avoid triggering slip delete modal
+            $this->dispatch('openIssueDeleteModal', $issueId);
+        }
     }
 
     public function openRestoreModal($issueId)
     {
         $issue = Issue::onlyTrashed()->with(['slip'])->findOrFail($issueId);
         $this->selectedIssueId = $issueId;
-        $this->selectedIssueName = $issue->slip_id ? "for slip " . ($issue->slip->slip_id ?? 'N/A') : "for misc";
+        $this->selectedIssueName = $issue->slip_id ? "this slip " . ($issue->slip->slip_id ?? 'N/A') : "this miscellaneous issue";
         $this->showRestoreModal = true;
     }
 

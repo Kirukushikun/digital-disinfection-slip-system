@@ -871,8 +871,9 @@
         @endif
 
         {{-- Delete Confirmation Modal --}}
-        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Location" :name="$selectedLocationName" onConfirm="deleteLocation"
-            confirmText="Delete Location" />
+        <x-modals.confirmation-modal :show="$showDeleteModal" title="Delete Location" message="Are you sure you want to delete" :name="$selectedLocationName" 
+            warning="This action cannot be undone. The item will be permanently removed from the system." onConfirm="deleteLocation"
+            confirmText="Delete Location" useAlpine="false" />
 
         {{-- Restore Confirmation Modal --}}
         @if (($config['showRestore'] ?? false) && $showRestoreModal)

@@ -21,6 +21,7 @@ class Delete extends Component
     public function mount($config = [])
     {
         $this->config = array_merge(['minUserType' => 2], $config);
+        $this->showModal = false; // Ensure modal is closed on mount
     }
 
     public $isDeleting = false;

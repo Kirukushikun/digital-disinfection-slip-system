@@ -397,10 +397,6 @@ class Issues extends Component
         ])->find($slipId);
     }
 
-    public function confirmDeleteIssue()
-    {
-        $this->showDeleteConfirmation = true;
-    }
     
     public function resolveIssue()
     {
@@ -538,49 +534,17 @@ class Issues extends Component
         $this->showDeleteConfirmation = true;
     }
 
-    public function deleteIssue()
+    public function openIssueDeleteModal($issueId)
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
+        // Dispatch event to the Issues Delete component
+        $this->dispatch('openDeleteModal', $issueId);
+    }
 
-        $this->isDeleting = true;
-
-        try {
-            $issue = Issue::findOrFail($this->selectedIssueId);
-            $issueType = $issue->slip_id ? "for slip " . ($issue->slip->slip_id ?? 'N/A') : "for misc";
-            $oldValues = $issue->only(['user_id', 'slip_id', 'description', 'resolved_at']);
-
-            // Atomic delete: Only delete if not already deleted to prevent race conditions
-            $deleted = Issue::where('id', $this->selectedIssueId)
-                ->whereNull('deleted_at') // Only delete if not already deleted
-                ->update(['deleted_at' => now()]);
-
-            if ($deleted === 0) {
-                // Issue was already deleted by another process
-                $issue->refresh();
-                $this->showDeleteConfirmation = false;
-                $this->selectedIssueId = null;
-                $this->dispatch('toast', message: 'This issue was already deleted by another administrator. Please refresh the page.', type: 'error');
-                return;
-            }
-
-            // Log the delete action
-            Logger::delete(
-                Issue::class,
-                $issue->id,
-                "Deleted issue {$issueType}",
-                $oldValues
-            );
-
-            $this->showDeleteConfirmation = false;
-            $this->selectedIssueId = null;
-            $this->dispatch('toast', message: "Issue #{$issue->id} has been deleted.", type: 'success');
-            $this->resetPage();
-        } finally {
-            $this->isDeleting = false;
-        }
+    #[On('issue-deleted')]
+    public function handleIssueDeleted()
+    {
+        $this->resetPage();
+        $this->selectedIssueId = null;
     }
 
     private function getFilteredIssuesQuery()
@@ -706,80 +670,23 @@ class Issues extends Component
         return $this->selectedSlip->status != 2 && $this->selectedSlip->completed_at === null;
     }
     
-    public function canDelete()
+    public function openSlipDeleteModal()
     {
         if (!$this->selectedSlip) {
-            return false;
-        }
-
-        // Admin can delete any slip, including completed ones
-        return true;
-    }
-    
-    public function deleteSlip()
-    {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
             return;
         }
+        
+        // Dispatch event to the Slips Delete component
+        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
+    }
 
-        $this->isDeleting = true;
-
-        try {
-            if (!$this->canDelete()) {
-                $this->dispatch('toast', message: 'You are not authorized to delete this slip.', type: 'error');
-                return;
-            }
-
-            $slipId = $this->selectedSlip->slip_id;
-            $slipIdForLog = $this->selectedSlip->id;
-            
-            // Capture old values for logging
-            $oldValues = $this->selectedSlip->only([
-                'slip_id',
-                'vehicle_id',
-                'location_id',
-                'destination_id',
-                'driver_id',
-                'hatchery_guard_id',
-                'received_guard_id',
-                'remarks_for_disinfection',
-                'status'
-            ]);
-            
-            // Clean up photos before soft deleting the slip
-            $this->selectedSlip->deleteAttachments();
-            
-            // Atomic delete: Only delete if not already deleted to prevent race conditions
-            $deleted = DisinfectionSlipModel::where('id', $this->selectedSlip->id)
-                ->whereNull('deleted_at') // Only delete if not already deleted
-                ->update(['deleted_at' => now()]);
-            
-            if ($deleted === 0) {
-                // Slip was already deleted by another process
-                $this->showSlipDeleteConfirmation = false;
-                $this->dispatch('toast', message: 'This slip was already deleted by another administrator. Please refresh the page.', type: 'error');
-                $this->selectedSlip->refresh();
-                return;
-            }
-
-            Cache::forget('issues_all');
-
-            // Log the delete action
-            Logger::delete(
-                DisinfectionSlipModel::class,
-                $slipIdForLog,
-                "Deleted slip {$slipId}",
-                $oldValues
-            );
-            
-            $this->showSlipDeleteConfirmation = false;
-            $this->closeDetailsModal();
-            $this->dispatch('toast', message: "Slip {$slipId} has been deleted.", type: 'success');
-            $this->dispatch('slip-updated');
-        } finally {
-            $this->isDeleting = false;
-        }
+    #[On('slip-deleted')]
+    public function handleSlipDeleted()
+    {
+        Cache::forget('issues_all');
+        $this->resetPage();
+        $this->closeDetailsModal();
+        $this->selectedSlip = null;
     }
     
     public function openEditModal()

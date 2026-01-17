@@ -1195,62 +1195,6 @@ class Slips extends Component
             ])->find($this->selectedSlip->id);
         }
     }
-    {
-        // Load the slip if ID is provided (when called from table row)
-        if ($id) {
-            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($id);
-        }
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
-        // Optimize relationship loading by only selecting needed fields
-        elseif ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($this->selectedSlip->id);
-        }
-
-        // Load slip data into edit fields
-        $this->editVehicleId = $this->selectedSlip->vehicle_id;
-        $this->editLocationId = $this->selectedSlip->location_id;
-        $this->editDestinationId = $this->selectedSlip->destination_id;
-        $this->editDriverId = $this->selectedSlip->driver_id;
-        $this->editHatcheryGuardId = $this->selectedSlip->hatchery_guard_id;
-        $this->editReceivedGuardId = $this->selectedSlip->received_guard_id;
-        // Only set editReasonId if the reason exists and is not disabled
-        $reasonId = $this->selectedSlip->reason_id;
-        if ($reasonId) {
-            $reason = Reason::find($reasonId);
-            $this->editReasonId = ($reason && !$reason->is_disabled) ? $reasonId : null;
-        } else {
-            $this->editReasonId = null;
-        }
-        $this->editRemarksForDisinfection = $this->selectedSlip->remarks_for_disinfection;
-        $this->editStatus = $this->selectedSlip->status;
-
-        // Reset search properties
-        $this->searchEditVehicle = '';
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
-        $this->searchEditDriver = '';
-        $this->searchEditHatcheryGuard = '';
-        $this->searchEditReceivedGuard = '';
-        $this->searchEditReason = '';
-
-        $this->showEditModal = true;
-    }
     
     public function updatedEditStatus($value)
     {
@@ -1628,75 +1572,22 @@ class Slips extends Component
         }
     }
 
-    public function deleteSlip()
+    public function openDeleteModal()
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
-
-        $this->isDeleting = true;
-
-        try {
-        if (!$this->canDelete()) {
-            $this->dispatch('toast', message: 'Cannot delete a completed slip.', type: 'error');
-            return;
-        }
-
-        $slipId = $this->selectedSlip->slip_id;
-        $slipIdForLog = $this->selectedSlip->id;
-        
-        // Capture old values for logging
-        $oldValues = $this->selectedSlip->only([
-            'slip_id',
-            'vehicle_id',
-            'location_id',
-            'destination_id',
-            'driver_id',
-            'hatchery_guard_id',
-            'received_guard_id',
-            'remarks_for_disinfection',
-            'status'
-        ]);
-        
-        // Clean up photos before soft deleting the slip
-        $this->selectedSlip->deleteAttachments();
-        
-        // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id)
-            ->whereNull('deleted_at') // Only delete if not already deleted
-            ->update(['deleted_at' => now()]);
-        
-        if ($deleted === 0) {
-            // Slip was already deleted by another process
-            $this->showDeleteConfirmation = false;
-            $this->dispatch('toast', message: 'This slip was already deleted by another administrator. Please refresh the page.', type: 'error');
+        if (!$this->selectedSlip) {
             return;
         }
         
-        // Log the delete action
-        Logger::delete(
-            DisinfectionSlipModel::class,
-            $slipIdForLog,
-            "Deleted slip {$slipId}",
-            $oldValues
-        );
-        
-        // Close all modals
-        $this->showDeleteConfirmation = false;
-        $this->showDetailsModal = false;
-        
-        // Clear selected slip
-        $this->selectedSlip = null;
-        
-        // Show success message
-        $this->dispatch('toast', message: "{$slipId} has been deleted.", type: 'success');
-        
-        // Reset page to refresh the list
+        // Dispatch event to the Slips Delete component
+        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
+    }
+
+    #[On('slip-deleted')]
+    public function handleSlipDeleted()
+    {
         $this->resetPage();
-        } finally {
-            $this->isDeleting = false;
-        }
+        $this->showDetailsModal = false;
+        $this->selectedSlip = null;
     }
 
     public function toggleDeletedView()

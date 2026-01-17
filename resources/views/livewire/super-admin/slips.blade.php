@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showDetailsModal && !$showDeleteConfirmation && !$showRemoveAttachmentConfirmation && !$showCancelEditConfirmation && !$showAttachmentModal && !$showRestoreModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showDetailsModal && !$showRemoveAttachmentConfirmation && !$showCancelEditConfirmation && !$showAttachmentModal && !$showRestoreModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
 
         {{-- Simple Header --}}
@@ -742,9 +742,7 @@
         {{-- Admin Edit Modal --}}
         @if ($selectedSlip)
             {{-- Delete Confirmation Modal --}}
-            <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE SLIP?"
-                message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
-                onConfirm="deleteSlip" />
+            <livewire:shared.slips.delete :config="['minUserType' => 2]" />
 
             <livewire:shared.slips.edit :config="['minUserType' => 2]" />
         @endif

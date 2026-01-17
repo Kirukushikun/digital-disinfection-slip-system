@@ -1,23 +1,22 @@
-@php
-    $status = $selectedSlip?->status ?? null;
-    // Status: 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
-    
-    // Header class based on status
-    $headerClass = '';
-    if ($status == 0) {
-        $headerClass = 'border-t-4 border-t-gray-500 bg-gray-50';      // Pending - Neutral
-    } elseif ($status == 1) {
-        $headerClass = 'border-t-4 border-t-blue-500 bg-blue-50';     // Disinfecting - In Progress
-    } elseif ($status == 2) {
-        $headerClass = 'border-t-4 border-t-yellow-500 bg-yellow-50';  // In-Transit - Transit State
-    } elseif ($status == 3) {
-        $headerClass = 'border-t-4 border-t-green-500 bg-green-50';    // Completed - Success
-    } elseif ($status == 4) {
-        $headerClass = 'border-t-4 border-t-red-500 bg-red-50';        // Incomplete - Issue State
-    }
-@endphp
-
 @if ($selectedSlip)
+    @php
+        $status = $selectedSlip?->status ?? null;
+        // Status: 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
+        
+        // Header class based on status
+        $headerClass = '';
+        if ($status == 0) {
+            $headerClass = 'border-t-4 border-t-gray-500 bg-gray-50';      // Pending - Neutral
+        } elseif ($status == 1) {
+            $headerClass = 'border-t-4 border-t-blue-500 bg-blue-50';     // Disinfecting - In Progress
+        } elseif ($status == 2) {
+            $headerClass = 'border-t-4 border-t-yellow-500 bg-yellow-50';  // In-Transit - Transit State
+        } elseif ($status == 3) {
+            $headerClass = 'border-t-4 border-t-green-500 bg-green-50';    // Completed - Success
+        } elseif ($status == 4) {
+            $headerClass = 'border-t-4 border-t-red-500 bg-red-50';        // Incomplete - Issue State
+        }
+    @endphp
     {{-- MAIN DETAILS MODAL --}}
     <x-modals.modal-template show="showDetailsModal"
         max-width="max-w-3xl"
@@ -437,7 +436,7 @@
     @endif
 
     {{-- Remove Photo Confirmation Modal --}}
-    <x-modals.delete-confirmation show="showRemoveAttachmentConfirmation" title="DELETE PHOTO?"
+    <x-modals.confirmation-modal show="showRemoveAttachmentConfirmation" title="DELETE PHOTO?"
         message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
         onConfirm="removeAttachment" confirmText="Yes, Delete Photo" cancelText="Cancel" />
 @endif

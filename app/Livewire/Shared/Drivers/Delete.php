@@ -23,6 +23,7 @@ class Delete extends Component
     public function mount($config = [])
     {
         $this->minUserType = $config['minUserType'] ?? 2;
+        $this->showModal = false; // Ensure modal is closed on mount
     }
 
     public function openModal($driverId)

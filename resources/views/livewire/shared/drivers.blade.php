@@ -548,8 +548,8 @@
             </div>
         @endif
 
-        {{-- Disable/Enable Confirmation Modal --}}
-        @if ($showDisableModal)
+        {{-- Old disable modal removed - using shared component above --}}
+        @if (false)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}
@@ -624,8 +624,8 @@
             </div>
         @endif
 
-        {{-- Create Driver Modal --}}
-        @if ($showCreateModal)
+        {{-- Old Create modal removed - using shared component above --}}
+        @if (false)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}
@@ -692,9 +692,6 @@
                 </div>
             </div>
         @endif
-
-        {{-- Delete Confirmation Modal --}}
-        <livewire:shared.drivers.delete :config="['minUserType' => 2]" />
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)

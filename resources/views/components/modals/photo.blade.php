@@ -137,6 +137,6 @@
 </x-modals.modal-template>
 
 {{-- Remove Photo Confirmation Modal --}}
-<x-modals.delete-confirmation show="showRemoveAttachmentConfirmation" title="DELETE PHOTO?"
+<x-modals.confirmation-modal show="showRemoveAttachmentConfirmation" title="DELETE PHOTO?"
     message="Are you sure you want to delete this photo?" warning="This action cannot be undone."
     onConfirm="removeAttachment" confirmText="Yes, Delete Photo" cancelText="Cancel" />

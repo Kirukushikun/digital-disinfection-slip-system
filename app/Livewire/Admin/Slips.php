@@ -1449,68 +1449,22 @@ class Slips extends Component
         $this->showDeleteConfirmation = true;
     }
 
-    public function deleteSlip()
+    public function openDeleteModal()
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
-
-        $this->isDeleting = true;
-
-        try {
-        if (!$this->canDelete()) {
-            $this->dispatch('toast', message: 'Cannot delete a completed or incomplete slip.', type: 'error');
-            return;
-        }
-
-        $slipId = $this->selectedSlip->slip_id;
-        $slipIdForLog = $this->selectedSlip->id;
-        
-        // Capture old values for logging
-        $oldValues = $this->selectedSlip->only([
-            'vehicle_id', 'location_id', 'destination_id', 'driver_id',
-            'hatchery_guard_id', 'received_guard_id', 'remarks_for_disinfection', 'status'
-        ]);
-        
-        // Clean up photos before soft deleting the slip
-        $this->selectedSlip->deleteAttachments();
-        
-        // Atomic delete: Only delete if not already deleted to prevent race conditions
-        $deleted = DisinfectionSlipModel::where('id', '=', $this->selectedSlip->id, 'and')
-            ->whereNull('deleted_at') // Only delete if not already deleted
-            ->update(['deleted_at' => now()]);
-        
-        if ($deleted === 0) {
-            // Slip was already deleted by another process
-            $this->showDeleteConfirmation = false;
-            $this->dispatch('toast', message: 'This slip was already deleted by another administrator. Please refresh the page.', type: 'error');
+        if (!$this->selectedSlip) {
             return;
         }
         
-        // Log the delete
-        Logger::delete(
-            DisinfectionSlipModel::class,
-            $slipIdForLog,
-            "Deleted slip {$slipId}",
-            $oldValues
-        );
-        
-        // Close all modals
-        $this->showDeleteConfirmation = false;
-        $this->showDetailsModal = false;
-        
-        // Clear selected slip
-        $this->selectedSlip = null;
-        
-        // Show success message
-        $this->dispatch('toast', message: "{$slipId} has been deleted.", type: 'success');
-        
-        // Reset page to refresh the list
+        // Dispatch event to the Slips Delete component
+        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
+    }
+
+    #[On('slip-deleted')]
+    public function handleSlipDeleted()
+    {
         $this->resetPage();
-        } finally {
-            $this->isDeleting = false;
-        }
+        $this->showDetailsModal = false;
+        $this->selectedSlip = null;
     }
 
     public function closeDetailsModal()

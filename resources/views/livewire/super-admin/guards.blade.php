@@ -830,8 +830,9 @@
         @endif
 
         {{-- Delete Confirmation Modal --}}
-        <x-modals.delete-modal :show="$showDeleteModal" title="Delete Guard" :name="$selectedUserName" onConfirm="deleteUser"
-            confirmText="Delete Guard" />
+        <x-modals.confirmation-modal :show="$showDeleteModal" title="Delete Guard" message="Are you sure you want to delete" :name="$selectedUserName" 
+            warning="This action cannot be undone. The item will be permanently removed from the system." onConfirm="deleteUser"
+            confirmText="Delete Guard" useAlpine="false" />
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)

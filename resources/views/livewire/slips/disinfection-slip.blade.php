@@ -819,7 +819,7 @@
         confirmText="Discard" cancelText="Back" />
 
     {{-- Delete Confirmation Modal --}}
-    <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE SLIP?"
+    <x-modals.confirmation-modal show="showDeleteConfirmation" title="DELETE SLIP?"
         message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
         onConfirm="deleteSlip" />
 

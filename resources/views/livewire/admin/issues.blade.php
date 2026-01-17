@@ -488,18 +488,10 @@
         {{-- Admin Edit Modal --}}
         <livewire:shared.issues.edit :config="['minUserType' => 1]" />
 
-        {{-- Slip Delete Confirmation Modal --}}
-        @if ($selectedSlip)
-            <x-modals.delete-confirmation show="showSlipDeleteConfirmation" title="DELETE SLIP?"
-                message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
-                onConfirm="deleteSlip" />
-        @endif
+        {{-- Slip Delete Modal --}}
+        <livewire:shared.slips.delete :config="['minUserType' => 1]" />
 
-        {{-- Issue Delete Confirmation Modal --}}
-        @if ($showDeleteConfirmation && $selectedIssueId)
-            <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE ISSUE?"
-                message="Delete this issue?" :details="'Issue ID: <span class=\'font-semibold\'>' . $selectedIssueId . '</span>'" warning="This action cannot be undone!"
-                onConfirm="deleteIssue" />
-        @endif
+        {{-- Issue Delete Modal --}}
+        <livewire:shared.issues.delete :config="['minUserType' => 1]" />
     </div>
 </div>

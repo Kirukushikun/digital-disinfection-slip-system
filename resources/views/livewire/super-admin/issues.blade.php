@@ -405,78 +405,43 @@
             </div>
         </div>
 
-        {{-- Filter Modal --}}
-        @if ($showDeleted)
-            {{-- Restore Mode Filter Modal - Only Date Filters --}}
-            <x-modals.filter-modal>
-                <x-slot name="filters">
-                    <x-filter-restore-body />
-                </x-slot>
-            </x-modals.filter-modal>
-        @else
-            {{-- Normal Filter Modal - All Filters --}}
-            <x-modals.filter-modal>
-                <x-slot name="filters">
-                    <x-modals.filter-issues-body :availableStatuses="$availableStatuses" />
-                </x-slot>
-            </x-modals.filter-modal>
-        @endif
-
         {{-- Delete/Restore actions removed to make Issues view-only --}}
 
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
-            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-                aria-modal="true">
-                {{-- Backdrop --}}
-                <div class="fixed inset-0 transition-opacity bg-black/80" wire:click="closeRestoreModal"></div>
-
-                {{-- Modal Panel --}}
-                <div class="flex min-h-full items-center justify-center p-4">
-                    <div
-                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-lg">
-                        <div class="px-6 py-4 bg-white border-b border-gray-200">
-                            <div class="flex items-center">
-                                <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
-                                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                        </path>
-                                    </svg>
-                                </div>
-                                <h3 class="ml-4 text-lg font-semibold text-gray-900">Restore Issue</h3>
-                            </div>
-                        </div>
-
-                        <div class="px-6 py-4">
-                    @csrf
-                            <p class="text-sm text-gray-600">
-                                Are you sure you want to restore this issue <span
-                                    class="font-medium text-gray-900">{{ $selectedIssueName }}</span>?
-                                The issue will be available again.
-                            </p>
-                        </div>
-
-                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button wire:click="closeRestoreModal" wire:loading.attr="disabled" wire:target="restoreIssue"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                Cancel
-                            </button>
-                            <button wire:click.prevent="restoreIssue" wire:loading.attr="disabled" wire:target="restoreIssue"
-                                x-bind:disabled="$wire.isRestoring"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
-                                <span wire:loading.remove wire:target="restoreIssue">Restore Issue</span>
-                                <span wire:loading.inline-flex wire:target="restoreIssue" class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Restoring...
-                                </span>
-                            </button>
-                        </div>
+            <x-modals.modal-template show="showRestoreModal" title="Restore Issue" max-width="max-w-lg" header-class="border-t-4 border-t-orange-500 bg-orange-50">
+                <x-slot name="header">
+                    <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
                     </div>
+                </x-slot>
+                <p class="text-sm text-gray-600">
+                    Are you sure you want to restore <span class="font-medium text-gray-900">{{ $selectedIssueName }}</span>?
+                    The issue will be available again.
+                </p>
+            <x-slot name="footer">
+                <div class="flex justify-end gap-3">
+                    <x-buttons.submit-button wire:click="closeRestoreModal" color="white" wire:loading.attr="disabled" wire:target="restoreIssue">
+                        Cancel
+                    </x-buttons.submit-button>
+                    <x-buttons.submit-button wire:click.prevent="restoreIssue" color="green" wire:loading.attr="disabled" wire:target="restoreIssue" x-bind:disabled="$wire.isRestoring">
+                        <span wire:loading.remove wire:target="restoreIssue">Restore Issue</span>
+                        <span wire:loading.inline-flex wire:target="restoreIssue" class="inline-flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Restoring...
+                        </span>
+                    </x-buttons.submit-button>
                 </div>
-            </div>
+            </x-slot>
+        </x-modals.modal-template>
         @endif
 
-        {{-- View Details Modal --}}
+        {{-- View Details Modal (Issue) or Slip Details Modal --}}
         @if ($showDetailsModal && $selectedIssue && !$selectedSlip)
             @php
                 $isResolved = $selectedIssue->resolved_at !== null;
@@ -484,7 +449,6 @@
             @endphp
             <x-modals.modal-template show="showDetailsModal" title="ISSUE DETAILS" max-width="max-w-3xl" header-class="{{ $headerClass }}">
                 @if ($selectedIssue)
-                    {{-- Sub Header --}}
                     <div class="border-b border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mt-6 mb-2">
                         <div class="grid grid-cols-[1fr_1fr] gap-4 items-start text-xs">
                             <div>
@@ -509,10 +473,7 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Body Fields --}}
                     <div class="space-y-0 -mx-6">
-                        {{-- Name --}}
                         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                             <div class="font-semibold text-gray-500">Name:</div>
                             <div class="text-gray-900">
@@ -530,8 +491,6 @@
                                 @endif
                             </div>
                         </div>
-
-                        {{-- Type --}}
                         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-gray-100">
                             <div class="font-semibold text-gray-500">Type:</div>
                             <div class="text-gray-900">
@@ -548,8 +507,6 @@
                                 @endif
                             </div>
                         </div>
-
-                        {{-- Description --}}
                         <div class="grid grid-cols-[1fr_2fr] gap-4 px-6 py-2 text-xs bg-white">
                             <div class="font-semibold text-gray-500">Description:</div>
                             <div class="text-gray-900 wrap-break-words min-w-0" style="word-break: break-word; overflow-wrap: break-word;">
@@ -557,8 +514,6 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Sub Footer --}}
                     @if ($selectedIssue->resolved_at)
                         <div class="border-t border-gray-200 px-6 py-2 bg-gray-50 -mx-6 -mb-6 mt-2">
                             <div class="grid grid-cols-2 gap-4 text-xs">
@@ -587,14 +542,11 @@
                 @else
                     <p class="text-gray-500 text-center">No details available.</p>
                 @endif
-
-                {{-- Footer --}}
                 <x-slot name="footer">
                     <div class="flex justify-end w-full gap-2">
                         <x-buttons.submit-button wire:click="closeDetailsModal" color="white">
                             Close
                         </x-buttons.submit-button>
-
                         @if (!$selectedIssue->resolved_at)
                             <x-buttons.submit-button wire:click.prevent="resolveIssue" color="green" wire:loading.attr="disabled" wire:target="resolveIssue"
                                 x-bind:disabled="$wire.isResolving">
@@ -623,33 +575,26 @@
                     </div>
                 </x-slot>
             </x-modals.modal-template>
-        @endif
+        @endif --}}
 
         {{-- Filter Modal --}}
         <x-modals.filter-modal>
             <x-slot name="filters">
-                <x-modals.filter-superadmin-issues-body :availableStatuses="$availableStatuses" :filterResolved="$filterResolved" :filterIssueType="$filterIssueType" :excludeDeletedItems="$excludeDeletedItems" />
+                @if ($showDeleted)
+                    <x-filter-restore-body />
+                @else
+                    <x-modals.filter-superadmin-issues-body :availableStatuses="$availableStatuses" :filterResolved="$filterResolved" :filterIssueType="$filterIssueType" :excludeDeletedItems="$excludeDeletedItems" />
+                @endif
             </x-slot>
         </x-modals.filter-modal>
-
-        {{-- Slip Details Modal --}}
-        @include('livewire.admin.slip-details-modal')
 
         {{-- Admin Edit Modal --}}
         <livewire:shared.issues.edit :config="['minUserType' => 2]" />
 
-        {{-- Slip Delete Confirmation Modal --}}
-        @if ($selectedSlip)
-            <x-modals.delete-confirmation show="showSlipDeleteConfirmation" title="DELETE SLIP?"
-                message="Delete this disinfection slip?" :details="'Slip No: <span class=\'font-semibold\'>' . ($selectedSlip?->slip_id ?? '') . '</span>'" warning="This action cannot be undone!"
-                onConfirm="deleteSlip" />
-        @endif
+        {{-- Slip Delete Modal --}}
+        <livewire:shared.slips.delete :config="['minUserType' => 2]" />
 
-        {{-- Issue Delete Confirmation Modal --}}
-        @if ($showDeleteConfirmation && $selectedIssueId)
-            <x-modals.delete-confirmation show="showDeleteConfirmation" title="DELETE ISSUE?"
-                message="Delete this issue?" :details="'Issue ID: <span class=\'font-semibold\'>' . $selectedIssueId . '</span>'" warning="This action cannot be undone!"
-                onConfirm="deleteIssue" />
-        @endif
+        {{-- Issue Delete Modal --}}
+        <livewire:shared.issues.delete :config="['minUserType' => 2]" />
     </div>
 </div>

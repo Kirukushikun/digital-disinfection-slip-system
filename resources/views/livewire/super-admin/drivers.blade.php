@@ -686,9 +686,6 @@
             </div>
         @endif
 
-        {{-- Delete Confirmation Modal --}}
-        <livewire:shared.drivers.delete :config="['minUserType' => 2]" />
-
         {{-- Restore Confirmation Modal --}}
         @if ($showRestoreModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
