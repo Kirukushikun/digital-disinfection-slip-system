@@ -267,7 +267,7 @@
     </x-modals.filter-modal>
 
     {{-- Disinfection Slip Details Modal --}}
-    <livewire:trucks.disinfection-slip />
+    <livewire:slips.disinfection-slip />
 
     {{-- Card List --}}
     <div @if (!$showFilters) wire:poll.keep-alive @endif class="space-y-3 pb-4">

@@ -95,9 +95,9 @@
             </x-navigation.mobile-dropup>
 
             <x-navigation.mobile-dropup 
-                label="Slips" 
+                label="Trips" 
                 :active="$isSlipsActive"
-                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
+                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trips" class="w-6 h-6 object-contain" />'>
                 <x-navigation.mobile-dropup-item 
                     href="{{ route('user.incoming-slips') }}" 
                     :active="$currentRoute === 'user.incoming-slips'"
@@ -330,8 +330,8 @@
             <x-navigation.bottom-nav-item 
                 href="{{ route('superadmin.slips') }}" 
                 :active="$currentRoute === 'superadmin.slips'"
-                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-6 h-6 object-contain" />'>
-                Slips
+                icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trips" class="w-6 h-6 object-contain" />'>
+                Trips
             </x-navigation.bottom-nav-item>
 
             <x-navigation.bottom-nav-item 

@@ -17,9 +17,9 @@
         Dashboard
     </x-navigation.horizontal-menu-item>
 
-    {{-- Slips Dropdown --}}
-    <x-navigation.horizontal-menu-dropdown label="Slips" :active="$isSlipsActive"
-        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Slips" class="w-5 h-5 object-contain" />'>
+    {{-- Trips Dropdown --}}
+    <x-navigation.horizontal-menu-dropdown label="Trips" :active="$isSlipsActive"
+        icon='<img src="https://cdn-icons-png.flaticon.com/512/605/605863.png" alt="Trips" class="w-5 h-5 object-contain" />'>
         <x-navigation.sidebar-menu-item href="{{ route('user.incoming-slips') }}" :active="$currentRoute === 'user.incoming-slips'"
             icon='<img src="https://cdn-icons-png.flaticon.com/512/8591/8591505.png" alt="Incoming" class="w-5 h-5 object-contain" />'
             :indent="true">

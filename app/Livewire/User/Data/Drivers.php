@@ -153,7 +153,6 @@ class Drivers extends SharedDrivers
     {
         $driver = Driver::findOrFail($driverId);
         $this->selectedDriverId = $driverId;
-        $this->selectedDriverDisabled = $driver->disabled;
         $this->showDisableModal = true;
     }
 
