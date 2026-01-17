@@ -1578,10 +1578,10 @@
                         // Update existing notification if it's already shown and persistent, otherwise create new
                         if (this.show && this.persistent) {
                             // Update existing notification with new count
-                            this.message = data.slipCount + ' slip' + (data.vehicleCount > 1 ? 's' : '') + ' expected to arrive';
+                            this.message = data.slipCount + ' slip' + (data.slipCount > 1 ? 's' : '') + ' in transit';
                         } else {
                             // Create new notification
-                            this.message = data.vehicleCount + ' vehicle' + (data.vehicleCount > 1 ? 's' : '') + ' expected to arrive';
+                            this.message = data.slipCount + ' slip' + (data.slipCount > 1 ? 's' : '') + ' in transit';
                             this.type = 'info';
                             this.persistent = true;
                             this.show = true;
