@@ -34,11 +34,6 @@ class Admins extends Component
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
-    // Store previous date filter values when entering restore mode
-    private $previousFilterCreatedFrom = null;
-    private $previousFilterCreatedTo = null;
-    private $previousAppliedCreatedFrom = null;
-    private $previousAppliedCreatedTo = null;
     
     public $availableStatuses = [
         0 => 'Enabled',
@@ -102,32 +97,19 @@ class Admins extends Component
             $this->sortColumns = [];
         }
         
-        // Special handling: first_name and last_name are mutually exclusive
-        if ($column === 'first_name' || $column === 'last_name') {
-            // Remove the other name column if it exists
-            if ($column === 'first_name') {
-                unset($this->sortColumns['last_name']);
-            } else {
-                unset($this->sortColumns['first_name']);
-            }
-        }
-        
-        // If column is already in sort, toggle direction or remove if clicking same direction
+        // Single-column sorting: clear all other sorts and only sort by the clicked column
         if (isset($this->sortColumns[$column])) {
-            if ($this->sortColumns[$column] === 'asc') {
-                $this->sortColumns[$column] = 'desc';
+            $currentDirection = $this->sortColumns[$column];
+            if ($currentDirection === 'asc') {
+                // Toggle to desc
+                $this->sortColumns = [$column => 'desc'];
             } else {
-                // Remove from sort if clicking desc (cycle: asc -> desc -> remove)
-                unset($this->sortColumns[$column]);
+                // Remove from sort (cycle: asc -> desc -> remove -> default to first_name)
+                $this->sortColumns = ['first_name' => 'asc'];
             }
         } else {
-            // Add column with ascending direction
-            $this->sortColumns[$column] = 'asc';
-        }
-        
-        // If no sorts remain, default to first_name ascending
-        if (empty($this->sortColumns)) {
-            $this->sortColumns = ['first_name' => 'asc'];
+            // Add column with ascending direction (clear all others)
+            $this->sortColumns = [$column => 'asc'];
         }
         
         $this->resetPage();
@@ -522,31 +504,12 @@ class Admins extends Component
     {
         $this->showDeleted = !$this->showDeleted;
         
+        // Don't clear filters - keep date filters active, they'll filter by deleted_at or created_at based on mode
+        // Only clear Status filter when entering restore mode (it can't be applied to deleted records)
         if ($this->showDeleted) {
-            // Entering restore mode: Store current values only if not already stored, then clear date filters
-            if ($this->previousAppliedCreatedFrom === null && $this->previousAppliedCreatedTo === null) {
-                $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
-                $this->previousFilterCreatedTo = $this->filterCreatedTo;
-                $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
-                $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
-            }
-            
-            $this->filterCreatedFrom = '';
-            $this->filterCreatedTo = '';
-            $this->appliedCreatedFrom = '';
-            $this->appliedCreatedTo = '';
-        } else {
-            // Exiting restore mode: Always restore previous values, then reset stored values
-            $this->filterCreatedFrom = $this->previousFilterCreatedFrom ?? '';
-            $this->filterCreatedTo = $this->previousFilterCreatedTo ?? '';
-            $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom ?? '';
-            $this->appliedCreatedTo = $this->previousAppliedCreatedTo ?? '';
-            
-            // Reset stored values for next time
-            $this->previousFilterCreatedFrom = null;
-            $this->previousFilterCreatedTo = null;
-            $this->previousAppliedCreatedFrom = null;
-            $this->previousAppliedCreatedTo = null;
+            // Entering restore mode - clear status filter
+            $this->filterStatus = null;
+            $this->appliedStatus = null;
         }
         
         $this->resetPage();
@@ -847,10 +810,14 @@ class Admins extends Component
                 }
             })
             ->when($this->appliedCreatedFrom, function ($query) {
-                $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
+                // Use deleted_at when in restore mode, created_at otherwise
+                $dateColumn = $this->showDeleted ? 'deleted_at' : 'created_at';
+                $query->whereDate($dateColumn, '>=', $this->appliedCreatedFrom);
             })
             ->when($this->appliedCreatedTo, function ($query) {
-                $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
+                // Use deleted_at when in restore mode, created_at otherwise
+                $dateColumn = $this->showDeleted ? 'deleted_at' : 'created_at';
+                $query->whereDate($dateColumn, '<=', $this->appliedCreatedTo);
             })
             ->when($this->appliedStatus !== null && !$this->showDeleted, function ($query) {
                 if ($this->appliedStatus === 0) {
@@ -862,7 +829,7 @@ class Admins extends Component
                 }
             })
             // Apply multi-column sorting
-            ->when(!empty($this->sortColumns) && !$this->showDeleted, function($query) {
+            ->when(!empty($this->sortColumns), function($query) {
                 // Initialize sortColumns if it's not an array
                 if (!is_array($this->sortColumns)) {
                     $this->sortColumns = ['first_name' => 'asc'];
@@ -870,8 +837,8 @@ class Admins extends Component
                 
                 $firstSort = true;
                 foreach ($this->sortColumns as $column => $direction) {
-                    if ($column === 'created_at' && $firstSort) {
-                        // Special handling for created_at when it's the primary sort
+                    if ($column === 'created_at' && $firstSort && !$this->showDeleted) {
+                        // Special handling for created_at when it's the primary sort (only when not in deleted mode)
                         // First: prioritize recent records (within 5 minutes) over older ones
                         $query->orderByRaw("CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN 0 ELSE 1 END")
                             // Second: sort recent records by created_at DESC, older records also by created_at (to avoid NULL sorting issues)
@@ -884,10 +851,11 @@ class Admins extends Component
                 }
             })
             ->when(empty($this->sortColumns) && !$this->showDeleted, function($query) {
-                // Default sort if no sorts are set
+                // Default sort if no sorts are set (only when not in deleted mode)
                 $query->orderBy('first_name', 'asc');
             })
-            ->when($this->showDeleted, function ($query) {
+            ->when(empty($this->sortColumns) && $this->showDeleted, function ($query) {
+                // Default sort when in deleted mode and no user sorting
                 $query->orderBy('deleted_at', 'desc');
             })
             ->paginate(10);

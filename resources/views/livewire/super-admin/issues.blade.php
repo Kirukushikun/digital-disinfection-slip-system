@@ -581,7 +581,7 @@
         <x-modals.filter-modal>
             <x-slot name="filters">
                 @if ($showDeleted)
-                    <x-filter-restore-body />
+                    <x-modals.filter-restore-body />
                 @else
                     <x-modals.filter-superadmin-issues-body :availableStatuses="$availableStatuses" :filterResolved="$filterResolved" :filterIssueType="$filterIssueType" :excludeDeletedItems="$excludeDeletedItems" />
                 @endif

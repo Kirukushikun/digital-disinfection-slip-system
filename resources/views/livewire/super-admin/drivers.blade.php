@@ -447,7 +447,7 @@
             {{-- Restore Mode Filter Modal - Only Date Filters --}}
             <x-modals.filter-modal>
                 <x-slot name="filters">
-                    <x-filter-restore-body />
+                    <x-modals.filter-restore-body />
                 </x-slot>
             </x-modals.filter-modal>
         @else

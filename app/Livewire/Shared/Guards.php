@@ -54,11 +54,6 @@ class Guards extends Component
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
-    // Store previous date filter values when entering restore mode
-    private $previousFilterCreatedFrom = null;
-    private $previousFilterCreatedTo = null;
-    private $previousAppliedCreatedFrom = null;
-    private $previousAppliedCreatedTo = null;
     
     public $availableStatuses = [
         0 => 'Enabled',
@@ -195,31 +190,19 @@ class Guards extends Component
             $this->sortColumns = [];
         }
         
-        // Special handling: first_name and last_name are mutually exclusive
-        if ($column === 'first_name' || $column === 'last_name') {
-            if ($column === 'first_name') {
-                unset($this->sortColumns['last_name']);
-            } else {
-                unset($this->sortColumns['first_name']);
-            }
-        }
-        
+        // Single-column sorting: clear all other sorts and only sort by the clicked column
         if (isset($this->sortColumns[$column])) {
             $currentDirection = $this->sortColumns[$column];
             if ($currentDirection === 'asc') {
-                $this->sortColumns[$column] = 'desc';
+                // Toggle to desc
+                $this->sortColumns = [$column => 'desc'];
             } else {
-                // Remove from sort if clicking desc (cycle: asc -> desc -> remove)
-                unset($this->sortColumns[$column]);
+                // Remove from sort (cycle: asc -> desc -> remove -> default to first_name)
+                $this->sortColumns = ['first_name' => 'asc'];
             }
         } else {
-            // Add column with ascending direction
-            $this->sortColumns[$column] = 'asc';
-        }
-        
-        // If no sorts remain, default to first_name ascending
-        if (empty($this->sortColumns)) {
-            $this->sortColumns = ['first_name' => 'asc'];
+            // Add column with ascending direction (clear all others)
+            $this->sortColumns = [$column => 'asc'];
         }
         
         $this->resetPage();
@@ -836,32 +819,16 @@ class Guards extends Component
             return;
         }
 
-        if ($this->showDeleted) {
-            // Restoring previous filter values
-            if ($this->previousFilterCreatedFrom !== null) {
-                $this->filterCreatedFrom = $this->previousFilterCreatedFrom;
+        // Don't clear filters - keep date filters active, they'll filter by deleted_at or created_at based on mode
+        // Only clear Status and Guard Type filters when entering restore mode (they can't be applied to deleted records)
+        if (!$this->showDeleted) {
+            // Entering restore mode - clear status and guard type filters
+            $this->filterStatus = null;
+            $this->appliedStatus = null;
+            if ($this->config['showGuardTypeFilter']) {
+                $this->filterGuardType = null;
+                $this->appliedGuardType = null;
             }
-            if ($this->previousFilterCreatedTo !== null) {
-                $this->filterCreatedTo = $this->previousFilterCreatedTo;
-            }
-            if ($this->previousAppliedCreatedFrom !== null) {
-                $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom;
-            }
-            if ($this->previousAppliedCreatedTo !== null) {
-                $this->appliedCreatedTo = $this->previousAppliedCreatedTo;
-            }
-        } else {
-            // Storing current filter values
-            $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
-            $this->previousFilterCreatedTo = $this->filterCreatedTo;
-            $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
-            $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
-            
-            // Clearing date filters when entering restore mode
-            $this->filterCreatedFrom = '';
-            $this->filterCreatedTo = '';
-            $this->appliedCreatedFrom = '';
-            $this->appliedCreatedTo = '';
         }
 
         $this->showDeleted = !$this->showDeleted;
@@ -961,16 +928,24 @@ class Guards extends Component
                 $query->where('id', '!=', Auth::id());
             })
             ->when($this->appliedCreatedFrom, function($query) {
-                $query->whereDate('created_at', '>=', $this->appliedCreatedFrom);
+                // Use deleted_at when in restore mode, created_at otherwise
+                $dateColumn = ($this->config['showRestore'] && $this->showDeleted) ? 'deleted_at' : 'created_at';
+                $query->whereDate($dateColumn, '>=', $this->appliedCreatedFrom);
             })
             ->when($this->appliedCreatedTo, function($query) {
-                $query->whereDate('created_at', '<=', $this->appliedCreatedTo);
+                // Use deleted_at when in restore mode, created_at otherwise
+                $dateColumn = ($this->config['showRestore'] && $this->showDeleted) ? 'deleted_at' : 'created_at';
+                $query->whereDate($dateColumn, '<=', $this->appliedCreatedTo);
             })
             // Apply multi-column sorting
             ->when(!empty($this->sortColumns), function($query) {
                 foreach ($this->sortColumns as $column => $direction) {
                     $query->orderBy($column, $direction);
                 }
+            })
+            ->when(empty($this->sortColumns), function($query) {
+                // Default sort if no sorts are set
+                $query->orderBy('first_name', 'asc');
             })
             ->paginate(15);
 

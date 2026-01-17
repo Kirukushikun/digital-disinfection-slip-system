@@ -270,19 +270,15 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Username
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="inline-flex items-center gap-2">
-                                    <span>Created Date</span>
-                                    <button wire:click.prevent="applySort('created_at')" type="button"
+                                    <span>Username</span>
+                                    <button wire:click.prevent="applySort('username')" type="button"
                                         class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
-                                        title="Sort by Created Date">
+                                        title="Sort by Username">
                                         @php
-                                            $dateDir = $this->getSortDirection('created_at');
+                                            $usernameDir = $this->getSortDirection('username');
                                         @endphp
-                                        @if ($dateDir === 'asc')
+                                        @if ($usernameDir === 'asc')
                                             <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -293,7 +289,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7" />
                                             </svg>
-                                        @elseif ($dateDir === 'desc')
+                                        @elseif ($usernameDir === 'desc')
                                             <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -317,6 +313,55 @@
                                             </svg>
                                         @endif
                                     </button>
+                                </div>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="inline-flex items-center gap-2">
+                                    <span>{{ ($showDeleted ?? false) ? 'Deleted Date' : 'Created Date' }}</span>
+                                    @if (!($showDeleted ?? false))
+                                        <button wire:click.prevent="applySort('created_at')" type="button"
+                                            class="inline-flex flex-col items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200 hover:cursor-pointer cursor-pointer"
+                                            title="Sort by Created Date">
+                                            @php
+                                                $dateDir = $this->getSortDirection('created_at');
+                                            @endphp
+                                            @if ($dateDir === 'asc')
+                                                <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @elseif ($dateDir === 'desc')
+                                                <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @else
+                                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    @endif
                                 </div>
                             </th>
                             <th scope="col"
@@ -479,21 +524,81 @@
         </div>
 
         {{-- Filter Modal --}}
-        @if (($showDeleted ?? false))
-            {{-- Restore Mode Filter Modal - Only Date Filters --}}
-            <x-modals.filter-modal>
-                <x-slot name="filters">
-                    <x-filter-restore-body />
-                </x-slot>
-            </x-modals.filter-modal>
-        @else
-            {{-- Normal Filter Modal - All Filters --}}
-            <x-modals.filter-modal>
-                <x-slot name="filters">
-                    <x-modals.filter-admins-body :availableStatuses="$availableStatuses" />
-                </x-slot>
-            </x-modals.filter-modal>
-        @endif
+        <x-modals.filter-modal>
+            <x-slot name="filters">
+                <div class="space-y-4">
+                    {{-- Status Filter -- Disabled when in restore mode --}}
+                    <div class="{{ ($showDeleted ?? false) ? 'opacity-50 pointer-events-none' : '' }}">
+                        <x-filters.status-dropdown 
+                            label="Status"
+                            wireModel="filterStatus"
+                            :options="$availableStatuses"
+                            placeholder="Select status"
+                            :fullWidth="true"
+                        />
+                    </div>
+
+                    {{-- Date Filters -- Always active, filter by created_at or deleted_at based on mode --}}
+                    <div x-data="{
+                        updateToDateMin() {
+                            const toInput = $el.closest('.space-y-4').querySelector('[x-ref=&quot;toDateInput&quot;]');
+                            const fromInput = $el.querySelector('[x-ref=&quot;fromDateInput&quot;]');
+                            if (toInput && fromInput && fromInput.value) {
+                                toInput.min = fromInput.value;
+                                if (toInput.value && toInput.value < fromInput.value) {
+                                    toInput.value = '';
+                                    $wire.set('filterCreatedTo', '');
+                                }
+                            } else {
+                                toInput.min = '';
+                            }
+                        }
+                    }">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ ($showDeleted ?? false) ? 'Deleted From Date' : 'From Date' }}</label>
+                        <input type="date" wire:model.live="filterCreatedFrom"
+                            x-ref="fromDateInput"
+                            @input="
+                                const toInput = $refs.toDateInput;
+                                if (toInput) {
+                                    toInput.min = $el.value || '';
+                                    if (toInput.value && $el.value && toInput.value < $el.value) {
+                                        toInput.value = '';
+                                        $wire.set('filterCreatedTo', '');
+                                    }
+                                    if (toInput.value && $el.value && $el.value > toInput.value) {
+                                        $el.value = '';
+                                        $wire.set('filterCreatedFrom', '');
+                                    }
+                                }
+                            "
+                            :max="$wire.filterCreatedTo || '<?php echo date('Y-m-d'); ?>'"
+                            class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ ($showDeleted ?? false) ? 'Deleted To Date' : 'To Date' }}</label>
+                        <input type="date" wire:model.live="filterCreatedTo"
+                            x-ref="toDateInput"
+                            @input="
+                                const fromInput = $refs.fromDateInput;
+                                if (fromInput) {
+                                    if (fromInput.value && $el.value && fromInput.value > $el.value) {
+                                        fromInput.value = '';
+                                        $wire.set('filterCreatedFrom', '');
+                                    }
+                                    if (fromInput.value && $el.value && $el.value < fromInput.value) {
+                                        $el.value = '';
+                                        $wire.set('filterCreatedTo', '');
+                                    }
+                                }
+                            "
+                            :min="$wire.filterCreatedFrom || ''"
+                            max="<?php echo date('Y-m-d'); ?>"
+                            class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
+                    </div>
+                </div>
+            </x-slot>
+        </x-modals.filter-modal>
 
         {{-- Edit Modal --}}
         @if ($showEditModal)
