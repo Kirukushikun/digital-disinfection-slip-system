@@ -4,5 +4,5 @@
     <!-- Slip Arrival Monitor -->
     <livewire:slip-arrival-monitor />
 
-    <livewire:user.misc-issue />
+    <livewire:user.issues.create />
 </x-layout>

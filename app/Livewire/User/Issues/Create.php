@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\User;
+namespace App\Livewire\User\Issues;
 
 use App\Models\Issue;
 use App\Services\Logger;
@@ -8,12 +8,13 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-class MiscIssue extends Component
+
+class Create extends Component
 {
     public $description = '';
     public $showSuccess = false;
 
-    public function submitIssue()
+    public function submit()
     {
         $this->validate([
             'description' => 'required|string|min:10|max:1000',
@@ -40,6 +41,7 @@ class MiscIssue extends Component
 
             Cache::forget('issues_all');
 
+            $this->dispatch('issue-created');
             $this->dispatch('toast', message: 'Issue submitted successfully. It will be reviewed by administrators.', type: 'success');
             
             $this->description = '';
@@ -52,6 +54,6 @@ class MiscIssue extends Component
 
     public function render()
     {
-        return view('livewire.user.misc-issue');
+        return view('livewire.user.issues.create');
     }
 }

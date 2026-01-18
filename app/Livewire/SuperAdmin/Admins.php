@@ -3,11 +3,8 @@
 namespace App\Livewire\SuperAdmin;
 
 use App\Models\User;
-use App\Models\Setting;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
@@ -61,32 +58,16 @@ class Admins extends Component
         }
     }
     
-    public $selectedUserId;
-    public $selectedUserDisabled = false;
-    public $selectedUserName = '';
-    public $showRestoreModal = false;
-    public $showEditModal = false;
-    public $showDisableModal = false;
-    public $showResetPasswordModal = false;
-    public $showCreateModal = false;
-    public $showDeleteModal = false;
     public $showDeleted = false; // Toggle to show deleted items
 
-    // Protection flags
-    public $isTogglingStatus = false;
-    public $isResettingPassword = false;
-    public $isDeleting = false;
-    public $isRestoring = false;
-
-    // Edit form fields
-    public $first_name;
-    public $middle_name;
-    public $last_name;
-
-    // Create form fields
-    public $create_first_name;
-    public $create_middle_name;
-    public $create_last_name;
+    protected $listeners = [
+        'admin-created' => '$refresh',
+        'admin-updated' => '$refresh',
+        'admin-deleted' => '$refresh',
+        'admin-status-toggled' => '$refresh',
+        'admin-password-reset' => '$refresh',
+        'admin-restored' => '$refresh',
+    ];
 
     protected $queryString = ['search'];
     
@@ -119,14 +100,6 @@ class Admins extends Component
     public function getSortDirection($column)
     {
         return $this->sortColumns[$column] ?? null;
-    }
-
-    /**
-     * Get the default admin password (for display in views)
-     */
-    public function getDefaultPasswordProperty()
-    {
-        return $this->getDefaultAdminPassword();
     }
 
     public function updatingSearch()
@@ -169,336 +142,36 @@ class Admins extends Component
         $this->resetPage();
     }
 
-    public $original_first_name;
-    public $original_middle_name;
-    public $original_last_name;
-
     public function openEditModal($userId)
     {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->first_name = $user->first_name;
-        $this->middle_name = $user->middle_name;
-        $this->last_name = $user->last_name;
-        
-        // Store original values for change detection
-        $this->original_first_name = $user->first_name;
-        $this->original_middle_name = $user->middle_name;
-        $this->original_last_name = $user->last_name;
-        
-        $this->showEditModal = true;
-    }
-
-    public function getHasChangesProperty()
-    {
-        if (!$this->selectedUserId) {
-            return false;
-        }
-
-        $firstName = $this->sanitizeAndCapitalizeName($this->first_name ?? '');
-        $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
-        $lastName = $this->sanitizeAndCapitalizeName($this->last_name ?? '');
-
-        return ($this->original_first_name !== $firstName) ||
-               ($this->original_middle_name !== $middleName) ||
-               ($this->original_last_name !== $lastName);
-    }
-
-    public function updateUser()
-    {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $this->validate([
-            'first_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'middle_name' => ['nullable', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'last_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-        ], [
-            'first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
-            'middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
-            'last_name.regex' => 'Last name can only contain letters, spaces, hyphens, and apostrophes.',
-        ], [
-            'first_name' => 'First Name',
-            'middle_name' => 'Middle Name',
-            'last_name' => 'Last Name',
-        ]);
-
-        // Sanitize and capitalize inputs
-        $firstName = $this->sanitizeAndCapitalizeName($this->first_name);
-        $middleName = !empty($this->middle_name) ? $this->sanitizeAndCapitalizeName($this->middle_name) : null;
-        $lastName = $this->sanitizeAndCapitalizeName($this->last_name);
-
-        $user = User::findOrFail($this->selectedUserId);
-        
-        // Check if there are any changes
-        $hasChanges = ($user->first_name !== $firstName) ||
-                      ($user->middle_name !== $middleName) ||
-                      ($user->last_name !== $lastName);
-        
-        if (!$hasChanges) {
-            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
-            return;
-        }
-        
-        // Capture old values for logging
-        $oldValues = $user->only(['first_name', 'middle_name', 'last_name', 'username']);
-        
-        // Check if first name or last name changed (these affect username)
-        $nameChanged = ($user->first_name !== $firstName) || ($user->last_name !== $lastName);
-        
-        // Prepare update data
-        $updateData = [
-            'first_name' => $firstName,
-            'middle_name' => $middleName,
-            'last_name' => $lastName,
-        ];
-        
-        // Regenerate username if name changed
-        if ($nameChanged) {
-            $newUsername = $this->generateUsername($firstName, $lastName, $this->selectedUserId);
-            $updateData['username'] = $newUsername;
-        }
-        
-        $user->update($updateData);
-        
-        // Refresh user to get updated name
-        $user->refresh();
-        $adminName = $this->getAdminFullName($user);
-        
-        // Check if username changed
-        $usernameChanged = isset($updateData['username']) && $oldValues['username'] !== $updateData['username'];
-        
-        // If username changed, invalidate all sessions for this user (force logout)
-        if ($usernameChanged) {
-            DB::table('sessions')
-                ->where('user_id', $user->id)
-                ->delete();
-        }
-        
-        // Generate description based on what changed
-        $changedFields = [];
-        if ($user->first_name !== $firstName || $user->last_name !== $lastName) {
-            $changedFields[] = "name to \"{$adminName}\"";
-        }
-        if ($usernameChanged) {
-            $changedFields[] = "username";
-        }
-        $description = !empty($changedFields) ? "Updated " . implode(" and ", $changedFields) : "Updated \"{$adminName}\"";
-        
-        // Log the update action
-        Logger::update(
-            User::class,
-            $user->id,
-            $description,
-            $oldValues,
-            $updateData
-        );
-
-        Cache::forget('admins_all');
-
-        $this->showEditModal = false;
-        $this->reset(['selectedUserId', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name']);
-        
-        $message = "{$adminName} has been updated.";
-        if ($usernameChanged) {
-            $message .= " The user has been logged out and must log in again with the new username.";
-        }
-        $this->dispatch('toast', message: $message, type: 'success');
+        $this->dispatch('openEditModal', $userId);
     }
 
     public function openDisableModal($userId)
     {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserDisabled = $user->disabled;
-        $this->showDisableModal = true;
-    }
-
-    public function toggleUserStatus()
-    {
-        // Prevent multiple submissions
-        if ($this->isTogglingStatus) {
-            return;
-        }
-
-        $this->isTogglingStatus = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        // Atomic update: Get current status and update atomically to prevent race conditions
-        $user = User::findOrFail($this->selectedUserId);
-        $wasDisabled = $user->disabled;
-        $newStatus = !$wasDisabled; // true = disabled, false = enabled
-        
-        // Atomic update: Only update if the current disabled status matches what we expect
-        $updated = User::where('id', $this->selectedUserId)
-            ->where('disabled', $wasDisabled) // Only update if status hasn't changed
-            ->update(['disabled' => $newStatus]);
-        
-        if ($updated === 0) {
-            // Status was changed by another process, refresh and show error
-            $user->refresh();
-            $this->showDisableModal = false;
-            $this->reset(['selectedUserId', 'selectedUserDisabled']);
-            $this->dispatch('toast', message: 'The admin status was changed by another administrator. Please refresh the page.', type: 'error');
-            return;
-        }
-        
-        $action = $newStatus ? 'disabled' : 'enabled';
-        $adminName = $this->getAdminFullName($user);
-        
-        // Capture old values for logging
-        $oldValues = ['disabled' => $wasDisabled];
-        
-        // Refresh user to get updated data
-        $user->refresh();
-        
-        // Log the status change
-        Logger::update(
-            User::class,
-            $user->id,
-            ucfirst($action) . " \"{$adminName}\"",
-            $oldValues,
-            ['disabled' => $newStatus]
-        );
-
-        Cache::forget('admins_all');
-
-        // Always reset to first page to avoid pagination issues when user disappears/appears from filtered results
-        $this->resetPage();
-        
-        $message = !$wasDisabled ? "{$adminName} has been disabled." : "{$adminName} has been enabled.";
-
-        $this->showDisableModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled']);
-        $this->dispatch('toast', message: $message, type: 'success');
-        } finally {
-            $this->isTogglingStatus = false;
-        }
+        $this->dispatch('openDisableModal', $userId);
     }
 
     public function openResetPasswordModal($userId)
     {
-        $this->selectedUserId = $userId;
-        $this->showResetPasswordModal = true; 
-    }
-
-    public function resetPassword()
-    {
-        // Prevent multiple submissions
-        if ($this->isResettingPassword) {
-            return;
-        }
-
-        $this->isResettingPassword = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $user = User::findOrFail($this->selectedUserId);
-        $defaultPassword = $this->getDefaultAdminPassword();
-        $user->update([
-            'password' => Hash::make($defaultPassword),
-        ]);
-
-        $adminName = $this->getAdminFullName($user);
-        
-        // Log the password reset as an update
-        Logger::update(
-            User::class,
-            $user->id,
-            "Reset password for admin {$adminName}",
-            ['password' => '[hidden]'],
-            ['password' => '[reset]']
-        );
-
-        $this->showResetPasswordModal = false;
-        $this->reset('selectedUserId');
-        $this->dispatch('toast', message: "{$adminName}'s password has been reset.", type: 'success');
-        } finally {
-            $this->isResettingPassword = false;
-        }
-    }
-
-    public function closeModal()
-    {
-        $this->showEditModal = false;
-        $this->showDisableModal = false;
-        $this->showResetPasswordModal = false;
-        $this->showCreateModal = false;
-        $this->showDeleteModal = false;
-        $this->showRestoreModal = false;
-        $this->reset(['selectedUserId', 'selectedUserDisabled', 'selectedUserName', 'first_name', 'middle_name', 'last_name', 'original_first_name', 'original_middle_name', 'original_last_name', 'create_first_name', 'create_middle_name', 'create_last_name']);
-        $this->resetValidation();
+        $this->dispatch('openResetPasswordModal', $userId);
     }
 
     public function openDeleteModal($userId)
     {
-        $user = User::findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserName = $this->getAdminFullName($user);
-        $this->showDeleteModal = true;
+        $this->dispatch('openDeleteModal', $userId);
     }
 
-    public function deleteUser()
+    public function openRestoreModal($userId)
     {
-        // Prevent multiple submissions
-        if ($this->isDeleting) {
-            return;
-        }
-
-        $this->isDeleting = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $user = User::findOrFail($this->selectedUserId);
-        $userIdForLog = $user->id;
-        $adminName = $this->getAdminFullName($user);
-        
-        // Capture old values for logging
-        $oldValues = $user->only([
-            'first_name',
-            'middle_name',
-            'last_name',
-            'username',
-            'user_type',
-            'disabled'
-        ]);
-        
-        // Soft delete the user
-        $user->delete();
-        
-        // Log the delete action
-        Logger::delete(
-            User::class,
-            $userIdForLog,
-            "Deleted \"{$adminName}\"",
-            $oldValues
-        );
-
-        Cache::forget('admins_all');
-
-        $this->showDeleteModal = false;
-        $this->reset(['selectedUserId', 'selectedUserName']);
-        $this->resetPage();
-        $this->dispatch('toast', message: "{$adminName} has been deleted.", type: 'success');
-        } finally {
-            $this->isDeleting = false;
-        }
+        $this->dispatch('openRestoreModal', $userId);
     }
+
+    public function openCreateModal()
+    {
+        $this->dispatch('openCreateModal');
+    }
+
 
     public function toggleDeletedView()
     {
@@ -515,258 +188,6 @@ class Admins extends Component
         $this->resetPage();
     }
 
-    public function openRestoreModal($userId)
-    {
-        $user = User::onlyTrashed()->findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserName = $this->getAdminFullName($user);
-        $this->showRestoreModal = true;
-    }
-
-    public function restoreUser()
-    {
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        $this->isRestoring = true;
-
-        try {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        if (!$this->selectedUserId) {
-            return;
-        }
-
-        // Atomic restore: Only restore if currently deleted to prevent race conditions
-        // Do the atomic update first, then load the model only if successful
-        $restored = User::onlyTrashed()
-            ->where('id', $this->selectedUserId)
-            ->update(['deleted_at' => null]);
-        
-        if ($restored === 0) {
-            // User was already restored or doesn't exist
-            $this->showRestoreModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->dispatch('toast', message: 'This admin was already restored or does not exist. Please refresh the page.', type: 'error');
-            $this->resetPage();
-            return;
-        }
-        
-        // Now load the restored user
-        $user = User::findOrFail($this->selectedUserId);
-        
-        // Verify the user is an admin (user_type = 1)
-        if ($user->user_type !== 1) {
-            // Rollback the restore by deleting again
-            $user->delete();
-            $this->showRestoreModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->dispatch('toast', message: 'Cannot restore this user.', type: 'error');
-            return;
-        }
-
-        $adminName = $this->getAdminFullName($user);
-        
-        // Log the restore action
-        Logger::restore(
-            User::class,
-            $user->id,
-            "Restored admin {$adminName}",
-        );
-        
-        Cache::forget('admins_all');
-
-        $this->showRestoreModal = false;
-        $this->reset(['selectedUserId', 'selectedUserName']);
-        $this->resetPage();
-        $this->dispatch('toast', message: 'Admin restored successfully.', type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
-    }
-
-    public function openCreateModal()
-    {
-        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
-        $this->resetValidation();
-        $this->showCreateModal = true;
-    }
-
-    /**
-     * Get admin's full name formatted
-     * 
-     * @param \App\Models\User $user
-     * @return string
-     */
-    private function getAdminFullName($user)
-    {
-        $parts = array_filter([$user->first_name, $user->middle_name, $user->last_name]);
-        return implode(' ', $parts);
-    }
-
-    /**
-     * Get default admin password from settings table
-     * Falls back to hardcoded value if setting doesn't exist
-     * 
-     * @return string
-     */
-    private function getDefaultAdminPassword()
-    {
-        $setting = Setting::where('setting_name', 'default_guard_password')->first();
-        
-        if ($setting && !empty($setting->value)) {
-            return $setting->value;
-        }
-        
-        // Fallback to default (shouldn't happen if seeded properly)
-        return 'brookside25';
-    }
-
-    /**
-     * Sanitize and capitalize name (Title Case)
-     * Removes HTML tags, decodes HTML entities, and converts to proper title case
-     * 
-     * @param string $name
-     * @return string
-     */
-    private function sanitizeAndCapitalizeName($name)
-    {
-        if (empty($name)) {
-            return '';
-        }
-
-        // Remove HTML tags and trim whitespace
-        $name = strip_tags(trim($name));
-        
-        // Decode HTML entities (e.g., &amp; becomes &, &#39; becomes ')
-        $name = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        // Remove any null bytes and other control characters (except newlines/spaces)
-        $name = preg_replace('/[\x00-\x08\x0B-\x1F\x7F]/u', '', $name);
-        
-        // Normalize whitespace (replace multiple spaces with single space)
-        $name = preg_replace('/\s+/', ' ', $name);
-        
-        // Trim again after normalization
-        $name = trim($name);
-        
-        // Convert to title case (handles multiple words correctly, including hyphens and apostrophes)
-        return mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
-    }
-
-    /**
-     * Generate unique username based on first name and last name
-     * Format: First letter of first name + First word of last name
-     * If exists, append increment: JDoe, JDoe1, JDoe2, etc.
-     * 
-     * @param string $firstName
-     * @param string $lastName
-     * @param int|null $excludeUserId User ID to exclude from uniqueness check (for updates)
-     * @return string
-     */
-    private function generateUsername($firstName, $lastName, $excludeUserId = null)
-    {
-        // Trim whitespace from names
-        $firstName = trim($firstName);
-        $lastName = trim($lastName);
-
-        // Get first letter of first name (uppercase) and first word of last name
-        if (empty($firstName) || empty($lastName)) {
-            return '';
-        }
-
-        $firstLetter = strtoupper(substr($firstName, 0, 1));
-        // Get first word of last name (handles cases like "De Guzman" or "Apple de apple")
-        $lastNameWords = preg_split('/\s+/', $lastName);
-        $firstWordOfLastName = $lastNameWords[0];
-        $username = $firstLetter . $firstWordOfLastName;
-
-        // Check if username exists (excluding current user if updating)
-        $counter = 0;
-        $baseUsername = $username;
-
-        while (User::whereRaw('LOWER(username) = ?', [strtolower($username)])
-            ->when($excludeUserId, function ($query) use ($excludeUserId) {
-                $query->where('id', '!=', $excludeUserId);
-            })
-            ->exists()) {
-            $counter++;
-            $username = $baseUsername . $counter;
-        }
-
-        return $username;
-    }
-
-    public function createAdmin()
-    {
-        // Authorization check
-        if (Auth::user()->user_type < 2) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $this->validate([
-            'create_first_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'create_middle_name' => ['nullable', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-            'create_last_name' => ['required', 'string', 'max:70', 'regex:/^[\p{L}\s\'-]+$/u'],
-        ], [
-            'create_first_name.regex' => 'First name can only contain letters, spaces, hyphens, and apostrophes.',
-            'create_middle_name.regex' => 'Middle name can only contain letters, spaces, hyphens, and apostrophes.',
-            'create_last_name.regex' => 'Last name can only contain letters, spaces, hyphens, and apostrophes.',
-        ], [
-            'create_first_name' => 'First Name',
-            'create_middle_name' => 'Middle Name',
-            'create_last_name' => 'Last Name',
-        ]);
-
-        // Sanitize and capitalize inputs
-        $firstName = $this->sanitizeAndCapitalizeName($this->create_first_name);
-        $middleName = !empty($this->create_middle_name) ? $this->sanitizeAndCapitalizeName($this->create_middle_name) : null;
-        $lastName = $this->sanitizeAndCapitalizeName($this->create_last_name);
-
-        // Generate unique username
-        $username = $this->generateUsername($firstName, $lastName);
-
-        // Get default password from settings table
-        $defaultPassword = $this->getDefaultAdminPassword();
-
-        // Create admin with default password
-        $user = User::create([
-            'first_name' => $firstName,
-            'middle_name' => $middleName,
-            'last_name' => $lastName,
-            'username' => $username,
-            'user_type' => 1, // Admin
-            'password' => Hash::make($defaultPassword),
-        ]);
-
-        Cache::forget('admins_all');
-
-        $adminName = $this->getAdminFullName($user);
-        
-        // Log the create action
-        Logger::create(
-            User::class,
-            $user->id,
-            "Created \"{$adminName}\"",
-            $user->only([
-                'first_name',
-                'middle_name',
-                'last_name',
-                'username',
-                'user_type'
-            ])
-        );
-
-        $this->showCreateModal = false;
-        $this->reset(['create_first_name', 'create_middle_name', 'create_last_name']);
-        $this->dispatch('toast', message: "{$adminName} has been created.", type: 'success');
-        $this->resetPage();
-    }
 
     public function render()
     {
