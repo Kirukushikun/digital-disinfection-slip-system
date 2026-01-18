@@ -41,7 +41,7 @@ class DashboardController extends Controller
 
     public function admin(): View
     {
-        return view('admin.dashboard');
+        return view('shared.dashboard');
     }
 
     public function superadmin(): View

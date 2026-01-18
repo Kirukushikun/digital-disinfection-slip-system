@@ -88,7 +88,7 @@ class Drivers extends Component
                 'showRestore' => false,
                 'printRoute' => 'user.print.drivers',
                 'minUserType' => 0,
-                'viewPath' => 'livewire.user.data.drivers',
+                'viewPath' => 'livewire.shared.drivers',
             ];
         } else {
             $defaultConfig = [

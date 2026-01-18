@@ -88,7 +88,7 @@ class Vehicles extends Component
                 'showRestore' => false,
                 'printRoute' => 'user.print.vehicles',
                 'minUserType' => 0,
-                'viewPath' => 'livewire.user.data.vehicles',
+                'viewPath' => 'livewire.shared.vehicles',
             ];
         } else {
             $defaultConfig = [

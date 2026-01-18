@@ -120,7 +120,7 @@ class UserController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('user.data.guards');
+        return view('shared.guards');
     }
 
     public function dataDrivers()
@@ -141,7 +141,7 @@ class UserController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('user.data.drivers');
+        return view('shared.drivers');
     }
 
     public function dataLocations()
@@ -162,7 +162,7 @@ class UserController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('user.data.locations');
+        return view('shared.locations');
     }
 
     public function dataVehicles()
@@ -183,7 +183,7 @@ class UserController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('user.data.vehicles');
+        return view('shared.vehicles');
     }
 
     // Print methods for super guards

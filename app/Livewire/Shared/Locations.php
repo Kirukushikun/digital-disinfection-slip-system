@@ -89,7 +89,7 @@ class Locations extends Component
                 'showRestore' => false,
                 'printRoute' => 'user.print.locations',
                 'minUserType' => 0,
-                'viewPath' => 'livewire.user.data.locations',
+                'viewPath' => 'livewire.shared.locations',
             ];
         } else {
             $defaultConfig = [

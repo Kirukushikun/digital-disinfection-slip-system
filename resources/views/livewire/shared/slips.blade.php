@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showDetailsModal && !$showRemoveAttachmentConfirmation) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showDetailsModal && !$showRemoveAttachmentConfirmation && !$showCancelEditConfirmation && !$showAttachmentModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
 
         {{-- Simple Header --}}
@@ -49,31 +49,98 @@
                     </div>
 
                     {{-- Desktop: Create Button (Primary action - Icon + Text) --}}
-                    <div class="hidden md:block">
-                        <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
-                            :fullWidth="false">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                    @if (!($showDeleted ?? false))
+                        <div class="hidden md:block">
+                            <x-buttons.submit-button wire:click="openCreateModal" color="blue" size="lg"
+                                :fullWidth="false">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                                    </path>
+                                </svg>
+                                Create
+                            </x-buttons.submit-button>
+                        </div>
+                    @endif
+
+                    {{-- Desktop: Restore Button (Icon + Text) - Only for super-admin --}}
+                    @if ($showRestore)
+                        <div class="hidden md:block">
+                            <button wire:click="toggleDeletedView" wire:loading.attr="disabled" wire:target="toggleDeletedView"
+                                class="inline-flex items-center px-4 py-2.5 {{ $showDeleted ?? false ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-700' }} text-white rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $showDeleted ?? false ? 'focus:ring-gray-500' : 'focus:ring-orange-500' }} disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                            <svg wire:loading.remove wire:target="toggleDeletedView" class="w-5 h-5 mr-2" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                 </path>
                             </svg>
-                            Create
-                        </x-buttons.submit-button>
-                    </div>
 
-                    {{-- Export Button with Create option (mobile) --}}
-                    <x-buttons.export-button type="slips" :showCreate="true" />
+                            <span wire:loading.remove
+                                wire:target="toggleDeletedView">{{ $showDeleted ?? false ? 'Back to Active' : 'Restore' }}</span>
+                            <span wire:loading.inline-flex wire:target="toggleDeletedView" class="inline-flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading...
+                            </span>
+                        </button>
+                        </div>
+                    @endif
+
+                    {{-- Mobile: Restore/Back to Active Button (only when in restore mode) --}}
+                    @if ($showRestore && ($showDeleted ?? false))
+                        <div class="md:hidden">
+                            <button wire:click="toggleDeletedView" wire:loading.attr="disabled" wire:target="toggleDeletedView"
+                                class="inline-flex items-center px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer cursor-pointer">
+                            <svg wire:loading.remove wire:target="toggleDeletedView" class="w-5 h-5 mr-2" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+
+                            <span wire:loading.remove wire:target="toggleDeletedView">Back to Active</span>
+                            <span wire:loading.inline-flex wire:target="toggleDeletedView" class="inline-flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading...
+                            </span>
+                        </button>
+                        </div>
+                    @endif
+
+                    {{-- Export Button with Create and Restore options (mobile, only when NOT in restore mode) --}}
+                    @if (!($showDeleted ?? false))
+                        <x-buttons.export-button type="slips" :showCreate="true" :showRestore="$showRestore" :showDeleted="false" />
+                    @endif
                 </div>
             </div>
 
             {{-- Active Filters Display --}}
-            @if ($filtersActive)
+            @if (($filtersActive || ($showRestore && $excludeDeletedItems)) && !($showDeleted ?? false))
                 <div class="mt-4 flex flex-wrap gap-2">
                     <span class="text-sm text-gray-600">Active filters:</span>
+
+                    @if ($showRestore && $excludeDeletedItems)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Excluding slips with deleted items
+                            <button wire:click="$set('excludeDeletedItems', false)" class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
 
                     @if ($appliedStatus !== null)
                         <span
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Status: {{ $availableStatuses[$appliedStatus] }}
+                            Status: {{ $availableStatuses[(int) $appliedStatus] }}
                             <button wire:click="removeFilter('status')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
@@ -145,7 +212,7 @@
                             @endphp
                             <span
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Plate: {{ $vehicle->vehicle }}
+                                Plate: @if ($vehicle){{ $vehicle->vehicle }}@if ($showRestore && $vehicle->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif@else@if ($showRestore)<span class="text-red-600 font-semibold">(Deleted)</span>@endif@endif
                                 <button wire:click="removeSpecificFilter('vehicle', {{ $vehicleId }})"
                                     class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -167,7 +234,7 @@
                                 <span
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     <div class="flex flex-col">
-                                        <span>Hatchery Guard: <span class="text-gray-900">{{ trim("{$guard->first_name} {$guard->middle_name} {$guard->last_name}") }}</span></span>
+                                        <span>Hatchery Guard: <span class="text-gray-900">{{ trim("{$guard->first_name} {$guard->middle_name} {$guard->last_name}") }}</span>@if ($showRestore && $guard->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif</span>
                                         <span class="text-[10px] text-blue-600">@{{ $guard->username }}</span>
                                     </div>
                                     <button wire:click="removeSpecificFilter('hatcheryGuard', {{ $guardId }})"
@@ -192,7 +259,7 @@
                                 <span
                                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     <div class="flex flex-col">
-                                        <span>Received Guard: <span class="text-gray-900">{{ trim("{$guard->first_name} {$guard->middle_name} {$guard->last_name}") }}</span></span>
+                                        <span>Received Guard: <span class="text-gray-900">{{ trim("{$guard->first_name} {$guard->middle_name} {$guard->last_name}") }}</span>@if ($showRestore && $guard->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif</span>
                                         <span class="text-[10px] text-blue-600">@{{ $guard->username }}</span>
                                     </div>
                                     <button wire:click="removeSpecificFilter('receivedGuard', {{ $guardId }})"
@@ -236,6 +303,43 @@
                         </span>
                     @endif
 
+                    <button wire:click="clearFilters"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors hover:cursor-pointer cursor-pointer">
+                        Clear all
+                    </button>
+                </div>
+                @elseif ($showRestore && ($appliedCreatedFrom || $appliedCreatedTo) && ($showDeleted ?? false))
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="text-sm text-gray-600">Active filters (Restore Mode):</span>
+            
+                    @if ($appliedCreatedFrom)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            From: {{ \Carbon\Carbon::parse($appliedCreatedFrom)->format('M j, Y') }}
+                            <button wire:click="removeFilter('created_from')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
+            
+                    @if ($appliedCreatedTo)
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            To: {{ \Carbon\Carbon::parse($appliedCreatedTo)->format('M j, Y') }}
+                            <button wire:click="removeFilter('created_to')" class="ml-1.5 inline-flex items-center hover:cursor-pointer">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
+            
                     <button wire:click="clearFilters"
                         class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors hover:cursor-pointer cursor-pointer">
                         Clear all
@@ -349,6 +453,9 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-semibold text-gray-900">
                                         {{ $slip->slip_id }}
+                                        @if ($showRestore && $slip->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     <div class="text-xs text-gray-500 mt-0.5">
                                         {{ \Carbon\Carbon::parse($slip->created_at)->format('M d, Y h:i A') }}
@@ -382,36 +489,72 @@
                                     @if ($showDriverFirst)
                                         <div class="text-sm font-semibold text-gray-900">
                                             {{ $slip->driver->first_name }} {{ $slip->driver->last_name }}
+                                            @if ($showRestore && $slip->driver && $slip->driver->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
-                                            {{ $slip->vehicle->vehicle }}
+                                            @if ($slip->vehicle)
+                                                {{ $slip->vehicle->vehicle }}
+                                                @if ($showRestore && $slip->vehicle->trashed())
+                                                    <span class="text-red-600 font-semibold">(Deleted)</span>
+                                                @endif
+                                            @else
+                                                @if ($showRestore)
+                                                    <span class="text-red-600 font-semibold">(Deleted)</span>
+                                                @endif
+                                            @endif
                                         </div>
                                     @else
                                         <div class="text-sm font-semibold text-gray-900">
-                                            {{ $slip->vehicle->vehicle }}
+                                            @if ($slip->vehicle)
+                                                {{ $slip->vehicle->vehicle }}
+                                                @if ($showRestore && $slip->vehicle->trashed())
+                                                    <span class="text-red-600 font-semibold">(Deleted)</span>
+                                                @endif
+                                            @else
+                                                @if ($showRestore)
+                                                    <span class="text-red-600 font-semibold">(Deleted)</span>
+                                                @endif
+                                            @endif
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ $slip->driver->first_name }} {{ $slip->driver->last_name }}
+                                            @if ($showRestore && $slip->driver && $slip->driver->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-700">
                                         {{ $slip->location->location_name }}
+                                        @if ($showRestore && $slip->location && $slip->location->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     @if ($slip->hatcheryGuard)
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ trim("{$slip->hatcheryGuard->first_name} {$slip->hatcheryGuard->middle_name} {$slip->hatcheryGuard->last_name}") }}
+                                            @if ($showRestore && $slip->hatcheryGuard->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-700">
                                         {{ $slip->destination->location_name }}
+                                        @if ($showRestore && $slip->destination && $slip->destination->trashed())
+                                            <span class="text-red-600 font-semibold">(Deleted)</span>
+                                        @endif
                                     </div>
                                     @if ($slip->receivedGuard)
                                         <div class="text-xs text-gray-500 mt-0.5">
                                             {{ trim("{$slip->receivedGuard->first_name} {$slip->receivedGuard->middle_name} {$slip->receivedGuard->last_name}") }}
+                                            @if ($showRestore && $slip->receivedGuard->trashed())
+                                                <span class="text-red-600 font-semibold">(Deleted)</span>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
@@ -459,6 +602,16 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center gap-2">
+                                        @if ($showRestore && ($showDeleted ?? false))
+                                            <button wire:click="openRestoreModal({{ $slip->id }})" 
+                                                class="hover:cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Restore
+                                            </button>
+                                        @else
                                     <button wire:click="openDetailsModal({{ $slip->id }})"
                                         class="hover:cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                         View Details
@@ -471,6 +624,7 @@
                                             </svg>
                                             Print
                                         </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -515,34 +669,47 @@
         </div>
 
         {{-- Filter Modal --}}
-        <x-modals.filter-modal>
-            <x-slot name="filters">
-                <x-modals.filter-admin-body :availableStatuses="$availableStatuses" :filterStatus="$filterStatus" />
-            </x-slot>
-        </x-modals.filter-modal>
-
-        {{-- Admin Slip Details Modal --}}
-        @include('livewire.admin.slip-details-modal')
-
-        {{-- Admin Create Modal --}}
-        <livewire:shared.slips.create :config="['minUserType' => 1]" />
-
-        {{-- Reasons Settings Modal --}}
-        <x-modals.reason-settings :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
-
-        {{-- Admin Edit Modal --}}
-        @if ($selectedSlip)
-            {{-- Delete Confirmation Modal --}}
-            <livewire:shared.slips.delete :config="['minUserType' => 1]" />
-
-            {{-- Restore Modal (only for superadmin, but included for consistency) --}}
-            @if ($showRestore ?? false)
-                <livewire:shared.slips.restore :config="['minUserType' => 2]" />
-            @endif
-
-            <livewire:shared.slips.edit :config="['minUserType' => 1]" />
+        @if ($showRestore && ($showDeleted ?? false))
+            {{-- Restore Mode Filter Modal - Only Date Filters --}}
+            <x-modals.filter-modal>
+                <x-slot name="filters">
+                    <x-modals.filter-restore-body />
+                </x-slot>
+            </x-modals.filter-modal>
+        @else
+            {{-- Normal Filter Modal - All Filters --}}
+            <x-modals.filter-modal>
+                <x-slot name="filters">
+                    <x-modals.filter-admin-body :availableStatuses="$availableStatuses" :filterStatus="$filterStatus" />
+                </x-slot>
+            </x-modals.filter-modal>
         @endif
 
+        {{-- Slip Details Modal --}}
+        @include('livewire.shared.slip-details-modal')
+
+        {{-- Create Modal --}}
+        <livewire:shared.slips.create :config="['minUserType' => $minUserType]" />
+
+        <x-modals.reason-settings :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
+        
+        {{-- Restore Modal - Only for super-admin --}}
+        @if ($showRestore)
+            <livewire:shared.slips.restore :config="['minUserType' => $minUserType]" />
+        @endif
+
+        {{-- Edit/Delete Modals --}}
+        @if ($selectedSlip)
+            {{-- Delete Confirmation Modal --}}
+            <livewire:shared.slips.delete :config="['minUserType' => $minUserType]" />
+
+            @if ($showRestore)
+                {{-- Restore Modal --}}
+                <livewire:shared.slips.restore :config="['minUserType' => $minUserType]" />
+            @endif
+
+            <livewire:shared.slips.edit :config="['minUserType' => $minUserType]" />
+        @endif
     </div>
 </div>
 

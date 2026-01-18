@@ -564,7 +564,7 @@ class AuditTrail extends Component
         $logs = $this->getFilteredLogsQuery()->paginate(15);
         
         // Use shared view for both admin and superadmin
-        return view('livewire.admin.audit-trail', [
+        return view('livewire.shared.audit-trail', [
             'logs' => $logs,
             'filterActionOptions' => $this->filterActionOptions,
             'filterModelTypeOptions' => $this->filterModelTypeOptions,

@@ -15,7 +15,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.dashboard');
+        return view('shared.dashboard');
     }
 
     public function guards()
@@ -25,7 +25,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.guards');
+        return view('shared.guards');
     }
 
     public function drivers()
@@ -35,7 +35,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.drivers');
+        return view('shared.drivers');
     }
 
     public function locations()
@@ -45,7 +45,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.locations');
+        return view('shared.locations');
     }
 
     public function vehicles()
@@ -55,7 +55,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.vehicles');
+        return view('shared.vehicles');
     }
 
     public function slips()
@@ -65,7 +65,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.slips');
+        return view('shared.slips');
     }
 
     public function admins()
@@ -85,7 +85,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.issues');
+        return view('shared.issues');
     }
 
     public function auditTrail()
@@ -95,7 +95,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.audit-trail');
+        return view('shared.audit-trail');
     }
 
     public function settings()

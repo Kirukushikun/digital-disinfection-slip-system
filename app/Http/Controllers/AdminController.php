@@ -15,7 +15,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.dashboard');
+        return view('shared.dashboard');
     }
 
     public function guards()
@@ -25,7 +25,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.guards');
+        return view('shared.guards');
     }
     public function drivers()
     {
@@ -34,7 +34,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.drivers');
+        return view('shared.drivers');
     }
     public function locations()
     {
@@ -43,7 +43,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.locations');
+        return view('shared.locations');
     }
     public function vehicles()
     {
@@ -52,7 +52,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.vehicles');
+        return view('shared.vehicles');
     }
     public function slips()
     {
@@ -61,7 +61,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.slips');
+        return view('shared.slips');
     }
 
     public function issues()
@@ -71,7 +71,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.issues');
+        return view('shared.issues');
     }
 
     public function auditTrail()
@@ -81,7 +81,7 @@ class AdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('admin.audit-trail');
+        return view('shared.audit-trail');
     }
 
     public function printGuards(Request $request)

@@ -206,7 +206,7 @@ class Slips extends Component
     // Config properties
     public $role = 'superadmin';
     public $showRestore = true;
-    public $viewPath = 'livewire.super-admin.slips';
+    public $viewPath = 'livewire.shared.slips';
     public $printRoutePrefix = 'superadmin';
     public $minUserType = 2;
 
@@ -219,7 +219,7 @@ class Slips extends Component
         // Apply config or use auto-detected values
         $this->role = $config['role'] ?? ($isSuperAdmin ? 'superadmin' : 'admin');
         $this->showRestore = $config['showRestore'] ?? $isSuperAdmin;
-        $this->viewPath = $config['viewPath'] ?? ($isSuperAdmin ? 'livewire.super-admin.slips' : 'livewire.admin.slips');
+        $this->viewPath = $config['viewPath'] ?? 'livewire.shared.slips';
         $this->printRoutePrefix = $config['printRoutePrefix'] ?? ($isSuperAdmin ? 'superadmin' : 'admin');
         $this->minUserType = $config['minUserType'] ?? ($isSuperAdmin ? 2 : 1);
         
