@@ -1,79 +1,44 @@
-<div x-data="{ show: @entangle('showFilters') }" x-show="show" x-transition:enter="transition ease-out duration-200"
-    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title"
-    role="dialog" aria-modal="true" style="display: none;">
+@props([
+    'bodyClass' => '',
+])
 
-    {{-- Background overlay --}}
-    <div class="fixed inset-0 bg-black/70 transition-opacity" @click="show = false"></div>
-
-    {{-- Modal panel --}}
-    <div class="flex min-h-full items-center justify-center p-4 text-center">
-        <div x-show="show" x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            class="relative transform overflow-visible rounded-lg bg-white text-left shadow-xl transition-all my-8 w-full max-w-2xl"
-            @click.stop>
-
-            {{-- Header --}}
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modal-title">
-                        Filter Options
-                    </h3>
-                    <button type="button" @click="show = false"
-                        class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:cursor-pointer cursor-pointer">
-                        <span class="sr-only">Close</span>
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Content --}}
-            <div class="bg-white px-4 py-4 sm:p-5 overflow-visible">
-                {{ $filters }}
-            </div>
-
-            {{-- Footer --}}
-            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-3">
-                <x-buttons.submit-button
-                    @click.prevent="
-                        // Sync all multiselect dropdowns before applying filters
-                        window.dispatchEvent(new CustomEvent('sync-selections'));
-                        
-                        // Use requestAnimationFrame and multiple ticks to ensure all syncs complete
-                        // Livewire processes $wire.set() calls asynchronously, so we need to wait
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                setTimeout(() => {
-                                    $wire.call('applyFilters').then(() => {
-                                        show = false;
-                                    });
-                                }, 100);
-                            });
+<x-modals.modal-template 
+    show="showFilters" 
+    title="Filter Options" 
+    maxWidth="max-w-2xl" 
+    backdropOpacity="70"
+>
+    <x-slot name="footer">
+        <div class="flex justify-end gap-3 w-full sm:w-auto sm:flex-row-reverse">
+            <x-buttons.submit-button
+                @click.prevent="
+                    // Sync all multiselect dropdowns before applying filters
+                    window.dispatchEvent(new CustomEvent('sync-selections'));
+                    // Small delay to ensure all syncs complete before applying filters
+                    setTimeout(() => {
+                        $wire.call('applyFilters').then(() => {
+                            $wire.set('showFilters', false);
                         });
-                    "
-                    class="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white bg-orange-500 
-                           rounded-lg hover:bg-orange-600 transition sm:w-auto">
-                    Apply
-                </x-buttons.submit-button>
-                <x-buttons.submit-button
-                    @click.prevent="
-                        $wire.call('clearFilters').then(() => {
-                            show = false;
-                        });
-                    "
-                    color="white"
-                    class="mt-3 inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 
-                           rounded-lg hover:bg-gray-50 transition sm:mt-0 sm:w-auto">
-                    Clear
-                </x-buttons.submit-button>
-            </div>
+                    }, 50);
+                "
+                class="w-full sm:w-auto">
+                Apply
+            </x-buttons.submit-button>
+            <x-buttons.submit-button
+                @click.prevent="
+                    $wire.call('clearFilters').then(() => {
+                        $wire.set('showFilters', false);
+                    });
+                "
+                color="white"
+                class="w-full sm:w-auto">
+                Clear
+            </x-buttons.submit-button>
         </div>
+    </x-slot>
+
+    {{-- Content with overflow-visible for dropdowns --}}
+    <div class="overflow-visible {{ $bodyClass }}">
+        {{ $filters }}
     </div>
-</div>
+</x-modals.modal-template>
