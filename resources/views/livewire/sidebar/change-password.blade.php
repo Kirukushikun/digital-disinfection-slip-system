@@ -133,9 +133,7 @@
                         class="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 hover:cursor-pointer transition-colors text-center">
                         Cancel
                     </a>
-                    <button type="submit"
-                        class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-[#EC8B18] rounded-lg hover:bg-[#d67a15] hover:cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        wire:loading.attr="disabled">
+                    <x-buttons.submit-button type="submit" color="orange" :fullWidth="true" wire:loading.attr="disabled">
                         <span wire:loading.remove>Change Password</span>
                         <span wire:loading class="inline-flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -144,7 +142,7 @@
                             </svg>
                             Changing...
                         </span>
-                    </button>
+                    </x-buttons.submit-button>
                 </div>
             </form>
         </div>

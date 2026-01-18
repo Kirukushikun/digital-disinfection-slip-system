@@ -52,10 +52,9 @@
 
                 {{-- Mobile Layout --}}
                 <div class="flex flex-col gap-3 md:hidden">
-                    <button type="submit"
-                        class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <x-buttons.submit-button type="submit" color="red" :fullWidth="true">
                         Submit Issue
-                    </button>
+                    </x-buttons.submit-button>
                     <a href="{{ route('user.dashboard') }}"
                         class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-center">
                         Cancel
@@ -68,10 +67,9 @@
                         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         Cancel
                     </a>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <x-buttons.submit-button type="submit" color="red" :fullWidth="false">
                         Submit Issue
-                    </button>
+                    </x-buttons.submit-button>
                 </div>
             </form>
         </div>

@@ -54,8 +54,7 @@
 
                         {{-- Mobile Layout --}}
                         <div class="flex flex-col gap-3 md:hidden">
-                            <button type="submit" wire:loading.attr="disabled" wire:target="submitIssue"
-                                class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <x-buttons.submit-button type="submit" color="red" :fullWidth="true" wire:loading.attr="disabled" wire:target="submitIssue">
                                 <span wire:loading.remove wire:target="submitIssue">Submit Issue</span>
                                 <span wire:loading.inline-flex wire:target="submitIssue" class="inline-flex items-center gap-2">
                                     <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -64,7 +63,7 @@
                                     </svg>
                                     Submitting...
                                 </span>
-                            </button>
+                            </x-buttons.submit-button>
                             <button type="button" wire:click="closeModal"
                                 class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
@@ -77,8 +76,7 @@
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Cancel
                             </button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="submitIssue"
-                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <x-buttons.submit-button type="submit" color="red" :fullWidth="false" wire:loading.attr="disabled" wire:target="submitIssue">
                                 <span wire:loading.remove wire:target="submitIssue">Submit Issue</span>
                                 <span wire:loading.inline-flex wire:target="submitIssue" class="inline-flex items-center gap-2">
                                     <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -87,7 +85,7 @@
                                     </svg>
                                     Submitting...
                                 </span>
-                            </button>
+                            </x-buttons.submit-button>
                         </div>
                     </form>
                 </div>
