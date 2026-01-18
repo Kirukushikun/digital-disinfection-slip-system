@@ -535,6 +535,11 @@
             {{-- Delete Confirmation Modal --}}
             <livewire:shared.slips.delete :config="['minUserType' => 1]" />
 
+            {{-- Restore Modal (only for superadmin, but included for consistency) --}}
+            @if ($showRestore ?? false)
+                <livewire:shared.slips.restore :config="['minUserType' => 2]" />
+            @endif
+
             <livewire:shared.slips.edit :config="['minUserType' => 1]" />
         @endif
 

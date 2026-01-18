@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Issues">
     </x-navigation.navbar>
 
-    <livewire:admin.issues />
+    <livewire:shared.issues />
 </x-layout>

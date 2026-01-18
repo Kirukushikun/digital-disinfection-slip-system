@@ -15,7 +15,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.dashboard');
+        return view('admin.dashboard');
     }
 
     public function guards()
@@ -25,7 +25,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.guards');
+        return view('admin.guards');
     }
 
     public function drivers()
@@ -35,7 +35,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.drivers');
+        return view('admin.drivers');
     }
 
     public function locations()
@@ -45,7 +45,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.locations');
+        return view('admin.locations');
     }
 
     public function vehicles()
@@ -55,7 +55,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.vehicles');
+        return view('admin.vehicles');
     }
 
     public function slips()
@@ -65,7 +65,7 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.slips');
+        return view('admin.slips');
     }
 
     public function admins()
@@ -85,12 +85,17 @@ class SuperAdminController extends Controller
             return redirect('/')->with('status', 'You do not have permission to access this page.');
         }
 
-        return view('superadmin.issues');
+        return view('admin.issues');
     }
 
     public function auditTrail()
     {
-        return view('superadmin.audit-trail');
+        // Authorize: user type must be 2 (superadmin)
+        if (Auth::user()->user_type != 2) {
+            return redirect('/')->with('status', 'You do not have permission to access this page.');
+        }
+
+        return view('admin.audit-trail');
     }
 
     public function settings()

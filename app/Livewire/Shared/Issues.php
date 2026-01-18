@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\SuperAdmin;
+namespace App\Livewire\Shared;
 
 use App\Models\Issue;
 use App\Models\DisinfectionSlip as DisinfectionSlipModel;
@@ -49,7 +49,7 @@ class Issues extends Component
     public $appliedCreatedTo = '';
     
     public $filtersActive = true; // Default to true since we filter by unresolved
-    public $excludeDeletedItems = true; // Default: exclude deleted items (automatically enabled)
+    public $excludeDeletedItems = true; // Default: exclude deleted items (automatically enabled) - controlled by config
     
     // Store previous date filter values when entering restore mode
     private $previousFilterCreatedFrom = null;
@@ -62,8 +62,26 @@ class Issues extends Component
         '1' => 'Resolved',
     ];
     
-    public function mount()
+    // Config properties
+    public $role = 'superadmin';
+    public $showRestore = true;
+    public $viewPath = 'livewire.super-admin.issues';
+    public $printRoutePrefix = 'superadmin';
+    public $minUserType = 2;
+    
+    public function mount($config = [])
     {
+        // Auto-detect user type if config not provided
+        $userType = Auth::user()->user_type ?? 1;
+        $isSuperAdmin = $userType === 2;
+        
+        // Apply config or use auto-detected values
+        $this->role = $config['role'] ?? ($isSuperAdmin ? 'superadmin' : 'admin');
+        $this->showRestore = $config['showRestore'] ?? $isSuperAdmin;
+        $this->viewPath = $config['viewPath'] ?? ($isSuperAdmin ? 'livewire.super-admin.issues' : 'livewire.admin.issues');
+        $this->printRoutePrefix = $config['printRoutePrefix'] ?? ($isSuperAdmin ? 'superadmin' : 'admin');
+        $this->minUserType = $config['minUserType'] ?? ($isSuperAdmin ? 2 : 1);
+        
         // Apply default filter on mount
         $this->applyFilters();
     }
@@ -131,7 +149,7 @@ class Issues extends Component
     public function polling()
     {
         // If any modal is open, skip polling
-        if ($this->showFilters || $this->showDetailsModal || $this->showRestoreModal || 
+        if ($this->showFilters || $this->showDetailsModal || 
             $this->showEditModal || $this->showAttachmentModal || $this->showDeleteConfirmation || 
             $this->showSlipDeleteConfirmation) {
             return;
@@ -192,13 +210,10 @@ class Issues extends Component
     public $showRemoveAttachmentConfirmation = false;
     public $attachmentToDelete = null;
     
-    // Restore confirmation
-    public $showRestoreModal = false;
-    public $selectedIssueName = null;
+    // Restore functionality moved to Shared\Issues\Restore component
     
     // Protection flags
     public $isDeleting = false;
-    public $isRestoring = false;
     public $isResolving = false;
     
     // View Details Modal
@@ -444,12 +459,7 @@ class Issues extends Component
         $this->showDeleteConfirmation = true;
     }
     
-    public function closeRestoreModal()
-    {
-        $this->showRestoreModal = false;
-        $this->selectedIssueId = null;
-        $this->selectedIssueName = null;
-    }
+    // Restore functionality moved to Shared\Issues\Restore component
     
     // Cached collections for edit modal
     private $cachedLocations = null;
@@ -1230,59 +1240,15 @@ class Issues extends Component
 
     public function openRestoreModal($issueId)
     {
-        $issue = Issue::onlyTrashed()->with(['slip'])->findOrFail($issueId);
-        $this->selectedIssueId = $issueId;
-        $this->selectedIssueName = $issue->slip_id ? "this slip " . ($issue->slip->slip_id ?? 'N/A') : "this miscellaneous issue";
-        $this->showRestoreModal = true;
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $issueId);
     }
 
-    public function restoreIssue()
+    #[On('issue-restored')]
+    public function handleIssueRestored()
     {
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        $this->isRestoring = true;
-
-        try {
-        if (!$this->selectedIssueId) {
-            return;
-        }
-
-        // Atomic restore: Only restore if currently deleted to prevent race conditions
-        // Do the atomic update first, then load the model only if successful
-        $restored = Issue::onlyTrashed()
-            ->where('id', $this->selectedIssueId)
-            ->update(['deleted_at' => null]);
-        
-        if ($restored === 0) {
-            // Issue was already restored or doesn't exist
-            $this->showRestoreModal = false;
-            $this->reset(['selectedIssueId', 'selectedIssueName']);
-            $this->dispatch('toast', message: 'This issue was already restored or does not exist. Please refresh the page.', type: 'error');
-            $this->resetPage();
-            return;
-        }
-        
-        // Now load the restored issue
-        $issue = Issue::with(['slip'])->findOrFail($this->selectedIssueId);
-        $issueType = $issue->slip_id ? "for slip " . ($issue->slip->slip_id ?? 'N/A') : "for misc";
-        
-        Logger::restore(
-            Issue::class,
-            $issue->id,
-            "Restored issue {$issueType}"
-        );
-        
         Cache::forget('issues_all');
-        $this->showRestoreModal = false;
-        $this->reset(['selectedIssueId', 'selectedIssueName']);
         $this->resetPage();
-        $this->dispatch('toast', message: 'Issue has been restored.', type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
     }
     
     private function getFilteredIssuesQuery()
@@ -1391,7 +1357,7 @@ class Issues extends Component
     {
         $issues = $this->getFilteredIssuesQuery()->paginate(15);
 
-        return view('livewire.super-admin.issues', [
+        return view($this->viewPath, [
             'issues' => $issues,
             'availableStatuses' => $this->availableStatuses,
             // Edit modal uses paginated dropdowns - no need to pass data collections

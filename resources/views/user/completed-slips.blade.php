@@ -4,5 +4,5 @@
     <!-- Slip Arrival Monitor -->
     <livewire:slip-arrival-monitor />
 
-    <livewire:slips.slip-list-completed />
+    <livewire:slips.slip-list type="incoming" :view-mode="'completed'" />
 </x-layout>

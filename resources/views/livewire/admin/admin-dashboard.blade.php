@@ -136,7 +136,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <h2 class="text-xl font-bold text-gray-800">Today's Slis</h2>
+                                    <h2 class="text-xl font-bold text-gray-800">Today's Slips</h2>
                                     <p class="text-sm text-gray-500">Disinfection slips created and in progress today</p>
                                 </div>
                             </div>
@@ -144,7 +144,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Total Created Slips Today -->
-                            <a href="{{ route('admin.slips') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.slips') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-emerald-50 to-emerald-100/50 rounded-2xl border-2 border-emerald-200 hover:border-emerald-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -168,7 +168,7 @@
                             </a>
 
                             <!-- In Progress Slips Today -->
-                            <a href="{{ route('admin.slips') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.slips') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-rose-50 to-rose-100/50 rounded-2xl border-2 border-rose-200 hover:border-rose-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -213,7 +213,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Guards -->
-                            <a href="{{ route('admin.guards') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.guards') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-cyan-50 to-cyan-100/50 rounded-2xl border-2 border-cyan-200 hover:border-cyan-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -236,8 +236,34 @@
                                 </div>
                             </a>
 
+                            @if ($isSuperAdmin ?? false)
+                            <!-- Admins -->
+                            <a href="{{ route($routePrefix . '.admins') }}" wire:poll class="group">
+                                <div
+                                    class="p-4 bg-linear-to-br from-indigo-50 to-indigo-100/50 rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 transition-all duration-300 hover:shadow-md cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="shrink-0 p-3 bg-indigo-200 rounded-xl group-hover:bg-indigo-300 transition-colors">
+                                            <svg class="h-6 w-6 text-indigo-700" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p
+                                                class="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-0.5">
+                                                Admins</p>
+                                            <p class="text-3xl font-bold text-gray-900">
+                                                {{ number_format($this->stats['total_admins'] ?? 0) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            @endif
+
                             <!-- Drivers -->
-                            <a href="{{ route('admin.drivers') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.drivers') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-pink-50 to-pink-100/50 rounded-2xl border-2 border-pink-200 hover:border-pink-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -261,7 +287,7 @@
                             </a>
 
                             <!-- Vehicles -->
-                            <a href="{{ route('admin.vehicles') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.vehicles') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-amber-50 to-amber-100/50 rounded-2xl border-2 border-amber-200 hover:border-amber-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -285,7 +311,7 @@
                             </a>
 
                             <!-- Locations -->
-                            <a href="{{ route('admin.locations') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.locations') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-teal-50 to-teal-100/50 rounded-2xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -311,7 +337,7 @@
                             </a>
 
                             <!-- Issues -->
-                            <a href="{{ route('admin.issues') }}" wire:poll class="group">
+                            <a href="{{ route($routePrefix . '.issues') }}" wire:poll class="group">
                                 <div
                                     class="p-4 bg-linear-to-br from-red-50 to-red-100/50 rounded-2xl border-2 border-red-200 hover:border-red-400 transition-all duration-300 hover:shadow-md cursor-pointer">
                                     <div class="flex items-center gap-3">
@@ -356,7 +382,7 @@
                         </div>
 
                         <div class="space-y-3">
-                            <a href="{{ route('admin.guards') }}"
+                            <a href="{{ route($routePrefix . '.guards') }}"
                                 class="group block p-4 bg-linear-to-br from-blue-50 to-blue-100/50 rounded-2xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -373,7 +399,26 @@
                                 </div>
                             </a>
 
-                            <a href="{{ route('admin.drivers') }}"
+                            @if ($isSuperAdmin ?? false)
+                            <a href="{{ route($routePrefix . '.admins') }}"
+                                class="group block p-4 bg-linear-to-br from-indigo-50 to-indigo-100/50 rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="p-2.5 bg-indigo-200 rounded-xl group-hover:bg-indigo-300 transition-colors">
+                                        <svg class="h-5 w-5 text-indigo-700" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </div>
+                                    <span
+                                        class="font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">Manage
+                                        Admins</span>
+                                </div>
+                            </a>
+                            @endif
+
+                            <a href="{{ route($routePrefix . '.drivers') }}"
                                 class="group block p-4 bg-linear-to-br from-pink-50 to-pink-100/50 rounded-2xl border-2 border-pink-200 hover:border-pink-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -390,7 +435,7 @@
                                 </div>
                             </a>
 
-                            <a href="{{ route('admin.vehicles') }}"
+                            <a href="{{ route($routePrefix . '.vehicles') }}"
                                 class="group block p-4 bg-linear-to-br from-amber-50 to-amber-100/50 rounded-2xl border-2 border-amber-200 hover:border-amber-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -407,7 +452,7 @@
                                 </div>
                             </a>
 
-                            <a href="{{ route('admin.locations') }}"
+                            <a href="{{ route($routePrefix . '.locations') }}"
                                 class="group block p-4 bg-linear-to-br from-green-50 to-green-100/50 rounded-2xl border-2 border-green-200 hover:border-green-400 hover:shadow-md hover:cursor-pointer transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <div

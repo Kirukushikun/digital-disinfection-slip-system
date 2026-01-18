@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Guards">
     </x-navigation.navbar>
 
-    <livewire:user.data.guards />
+    <livewire:shared.guards />
 </x-layout>

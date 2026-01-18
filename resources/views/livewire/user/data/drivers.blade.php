@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showCreateModal && !$showEditModal && !$showDisableModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
         {{-- Simple Header --}}
         <div class="mb-6">
@@ -339,7 +339,10 @@
         </x-modals.filter-modal>
 
         {{-- Edit Modal --}}
-        @if ($showEditModal)
+        <livewire:shared.drivers.edit :config="['minUserType' => $config['minUserType'] ?? 0]" />
+
+        {{-- OLD INLINE MODAL - TO BE REMOVED --}}
+        @if (false && $showEditModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}
@@ -408,8 +411,11 @@
             </div>
         @endif
 
-        {{-- Disable/Enable Confirmation Modal --}}
-        @if ($showDisableModal)
+        {{-- Disable/Enable Modal --}}
+        <livewire:shared.drivers.disable :config="['minUserType' => $config['minUserType'] ?? 0]" />
+
+        {{-- OLD INLINE MODAL - TO BE REMOVED --}}
+        @if (false && $showDisableModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}
@@ -485,7 +491,10 @@
         @endif
 
         {{-- Create Driver Modal --}}
-        @if ($showCreateModal)
+        <livewire:shared.drivers.create :config="['minUserType' => $config['minUserType'] ?? 0]" />
+
+        {{-- OLD INLINE MODAL - TO BE REMOVED --}}
+        @if (false && $showCreateModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
                 aria-modal="true">
                 {{-- Backdrop --}}

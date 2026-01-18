@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Drivers">
     </x-navigation.navbar>
 
-    <livewire:user.data.drivers />
+    <livewire:shared.drivers />
 </x-layout>

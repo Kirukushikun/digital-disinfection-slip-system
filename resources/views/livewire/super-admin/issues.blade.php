@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showDetailsModal && !$showRestoreModal) wire:poll.keep-alive @endif>
+<div class="min-h-screen bg-gray-50 p-6" @if (!$showFilters && !$showDetailsModal) wire:poll.keep-alive @endif>
     <div class="max-w-7xl mx-auto">
         {{-- Header --}}
         <div class="mb-6">
@@ -407,39 +407,8 @@
 
         {{-- Delete/Restore actions removed to make Issues view-only --}}
 
-        {{-- Restore Confirmation Modal --}}
-        @if ($showRestoreModal)
-            <x-modals.modal-template show="showRestoreModal" title="Restore Issue" max-width="max-w-lg" header-class="border-t-4 border-t-orange-500 bg-orange-50">
-                <x-slot name="header">
-                    <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full">
-                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                    </div>
-                </x-slot>
-                <p class="text-sm text-gray-600">
-                    Are you sure you want to restore <span class="font-medium text-gray-900">{{ $selectedIssueName }}</span>?
-                    The issue will be available again.
-                </p>
-            <x-slot name="footer">
-                <div class="flex justify-end gap-3">
-                    <x-buttons.submit-button wire:click="closeRestoreModal" color="white" wire:loading.attr="disabled" wire:target="restoreIssue">
-                        Cancel
-                    </x-buttons.submit-button>
-                    <x-buttons.submit-button wire:click.prevent="restoreIssue" color="green" wire:loading.attr="disabled" wire:target="restoreIssue" x-bind:disabled="$wire.isRestoring">
-                        <span wire:loading.remove wire:target="restoreIssue">Restore Issue</span>
-                        <span wire:loading.inline-flex wire:target="restoreIssue" class="inline-flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Restoring...
-                        </span>
-                    </x-buttons.submit-button>
-                </div>
-            </x-slot>
-        </x-modals.modal-template>
-        @endif
+        {{-- Restore Modal --}}
+        <livewire:shared.issues.restore :config="['minUserType' => 2]" />
 
         {{-- View Details Modal (Issue) or Slip Details Modal --}}
         @if ($showDetailsModal && $selectedIssue && !$selectedSlip)

@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Trips">
     </x-navigation.navbar>
 
-    <livewire:admin.slips />
+    <livewire:shared.slips />
 </x-layout>

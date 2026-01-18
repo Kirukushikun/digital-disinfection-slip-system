@@ -216,29 +216,7 @@
 <div class="hidden sm:block bg-white shadow-sm border-b border-gray-200">
     <div class="px-4 py-2" style="overflow-x: auto;">
         <div class="flex items-center gap-2 min-w-max">
-                    @php
-                        $user = auth()->user();
-                        // Super guards OR super admins in guard view (with location in session)
-                        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) || ($user->user_type === 2 && $user->isGuardView());
-                    @endphp
-                    
-                    @if ($isSuperGuard)
-                        @include('livewire.sidebar.horizontal-menu-superguard', ['currentRoute' => Route::currentRouteName()])
-                    @else
-                        @switch($user->effectiveUserType())
-                            @case(0)
-                        @include('livewire.sidebar.horizontal-menu-user', ['currentRoute' => Route::currentRouteName()])
-                            @break
-
-                            @case(1)
-                        @include('livewire.sidebar.horizontal-menu-admin', ['currentRoute' => Route::currentRouteName()])
-                            @break
-
-                            @case(2)
-                        @include('livewire.sidebar.horizontal-menu-superadmin', ['currentRoute' => Route::currentRouteName()])
-                            @break
-                        @endswitch
-                    @endif
+                    @include('livewire.sidebar.horizontal-menu', ['currentRoute' => Route::currentRouteName()])
         </div>
     </div>
 </div>

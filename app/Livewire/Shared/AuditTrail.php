@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Livewire\SuperAdmin;
+namespace App\Livewire\Shared;
 
 use App\Models\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class AuditTrail extends Component
@@ -59,12 +60,25 @@ class AuditTrail extends Component
         'App\\Models\\Reason' => 'Reason',
     ];
     
-    public $availableUserTypes = [
-        0 => 'Guard',
-        'super_guard' => 'Super Guard',
-        1 => 'Admin',
-        2 => 'Super Admin',
-    ];
+    public function getAvailableUserTypesProperty()
+    {
+        // Auto-detect user type
+        $userType = Auth::user()->user_type ?? 1;
+        $isSuperAdmin = $userType === 2;
+        
+        $types = [
+            0 => 'Guard',
+            'super_guard' => 'Super Guard',
+            1 => 'Admin',
+        ];
+        
+        // Only superadmins can see super admin in the filter
+        if ($isSuperAdmin) {
+            $types[2] = 'Super Admin';
+        }
+        
+        return $types;
+    }
     
     protected $queryString = ['search'];
     
@@ -97,18 +111,29 @@ class AuditTrail extends Component
     
     public function applyFilters()
     {
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        
         $this->appliedAction = $this->filterAction;
         $this->appliedModelType = $this->filterModelType;
-        $this->appliedUserType = $this->filterUserType;
+        
+        // For admin: convert empty array to null for consistency
+        // For superadmin: use filterUserType directly
+        if ($isSuperAdmin) {
+            $this->appliedUserType = $this->filterUserType;
+        } else {
+            $this->appliedUserType = !empty($this->filterUserType) ? $this->filterUserType : null;
+        }
+        
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
-
-        $this->filtersActive = !empty($this->appliedAction) ||
-                               !empty($this->appliedModelType) ||
-                               !is_null($this->appliedUserType) ||
-                               !empty($this->appliedCreatedFrom) ||
+        
+        $this->filtersActive = !empty($this->appliedAction) || 
+                               !empty($this->appliedModelType) || 
+                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
-
+        
         $this->showFilters = false;
         $this->resetPage();
     }
@@ -125,8 +150,12 @@ class AuditTrail extends Component
                 $this->filterModelType = [];
                 break;
             case 'user_type':
+                $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+                $isSuperAdmin = $userType === 2;
+                
                 $this->appliedUserType = null;
-                $this->filterUserType = null;
+                // For admin: use empty array, for superadmin: use null
+                $this->filterUserType = $isSuperAdmin ? null : [];
                 break;
             case 'created_from':
                 $this->appliedCreatedFrom = '';
@@ -138,15 +167,15 @@ class AuditTrail extends Component
                 break;
         }
         
-        $this->filtersActive = !empty($this->appliedAction) ||
-                               !empty($this->appliedModelType) ||
-                               !is_null($this->appliedUserType) ||
-                               !empty($this->appliedCreatedFrom) ||
+        $this->filtersActive = !empty($this->appliedAction) || 
+                               !empty($this->appliedModelType) || 
+                               !is_null($this->appliedUserType) || 
+                               !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
-
+        
         $this->resetPage();
     }
-
+    
     public function removeSpecificFilter($filterName, $value)
     {
         switch ($filterName) {
@@ -159,20 +188,48 @@ class AuditTrail extends Component
                 $this->filterModelType = array_values(array_filter($this->filterModelType, fn($v) => $v !== $value));
                 break;
             case 'user_type':
-                $this->appliedUserType = array_values(array_filter($this->appliedUserType, fn($v) => $v != $value)); // Use != to handle string/int conversion
-                $this->filterUserType = array_values(array_filter($this->filterUserType, fn($v) => $v != $value));
-                // If array becomes empty, set to null
+                // Handle both string keys (like 'super_guard') and numeric keys
+                // Convert null to empty array for processing
+                if (!is_array($this->appliedUserType)) {
+                    $this->appliedUserType = [];
+                }
+                $this->appliedUserType = array_values(array_filter($this->appliedUserType, function($v) use ($value) {
+                    if ($value === 'super_guard') {
+                        return $v !== 'super_guard';
+                    }
+                    // Handle numeric comparison for numeric values
+                    if (is_numeric($v) && is_numeric($value)) {
+                        return (int)$v !== (int)$value;
+                    }
+                    return $v !== $value;
+                }));
+                if (!is_array($this->filterUserType)) {
+                    $this->filterUserType = [];
+                }
+                $this->filterUserType = array_values(array_filter($this->filterUserType, function($v) use ($value) {
+                    if ($value === 'super_guard') {
+                        return $v !== 'super_guard';
+                    }
+                    // Handle numeric comparison for numeric values
+                    if (is_numeric($v) && is_numeric($value)) {
+                        return (int)$v !== (int)$value;
+                    }
+                    return $v !== $value;
+                }));
+                // Convert empty array to null for consistency
                 if (empty($this->appliedUserType)) {
                     $this->appliedUserType = null;
-                    $this->filterUserType = null;
+                }
+                if (empty($this->filterUserType)) {
+                    $this->filterUserType = [];
                 }
                 break;
         }
         
-        $this->filtersActive = !empty($this->appliedAction) ||
-                               !empty($this->appliedModelType) ||
-                               !is_null($this->appliedUserType) ||
-                               !empty($this->appliedCreatedFrom) ||
+        $this->filtersActive = !empty($this->appliedAction) || 
+                               !empty($this->appliedModelType) || 
+                               !empty($this->appliedUserType) || 
+                               !empty($this->appliedCreatedFrom) || 
                                !empty($this->appliedCreatedTo);
         
         $this->resetPage();
@@ -243,25 +300,6 @@ class AuditTrail extends Component
         return $options;
     }
     
-    // Helper method to ensure selected values are always included in filtered options
-    private function ensureSelectedInOptions($options, $selectedValues, $allOptions)
-    {
-        if (empty($selectedValues)) {
-            return $options;
-        }
-        
-        $optionsArray = is_array($options) ? $options : $options->toArray();
-        
-        // Add selected values if they're not already in the filtered options
-        foreach ($selectedValues as $selectedValue) {
-            if (isset($allOptions[$selectedValue]) && !isset($optionsArray[$selectedValue])) {
-                $optionsArray[$selectedValue] = $allOptions[$selectedValue];
-            }
-        }
-        
-        return $optionsArray;
-    }
-    
     public function exportCSV()
     {
         $logs = $this->getFilteredLogsQuery()->get();
@@ -273,7 +311,8 @@ class AuditTrail extends Component
             'Content-Disposition' => 'Photo; filename="' . $filename . '"',
         ];
         
-        $callback = function () use ($logs) {
+        $availableUserTypes = $this->availableUserTypes; // Get computed property once
+        $callback = function () use ($logs, $availableUserTypes) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
@@ -301,7 +340,7 @@ class AuditTrail extends Component
                     $log->id,
                     $log->created_at->format('Y-m-d H:i:s'),
                     $userName ?: 'N/A',
-                    $this->availableUserTypes[$log->user_type] ?? 'N/A',
+                    ($availableUserTypes[$log->user_type] ?? null) ?: 'N/A',
                     $this->availableActions[$log->action] ?? ucfirst($log->action),
                     $this->availableModelTypes[$log->model_type] ?? $log->model_type,
                     $log->description ?? 'N/A',
@@ -317,8 +356,9 @@ class AuditTrail extends Component
     
     public function openPrintView()
     {
+        $availableUserTypes = $this->availableUserTypes; // Get computed property once
         $logs = $this->getFilteredLogsQuery()->get();
-        $exportData = $logs->map(function($log) {
+        $exportData = $logs->map(function($log) use ($availableUserTypes) {
             $userName = trim(implode(' ', array_filter([
                 $log->user_first_name,
                 $log->user_middle_name,
@@ -344,9 +384,9 @@ class AuditTrail extends Component
                 }
                 
                 if ($log->user_type === 0 && $isSuperGuard) {
-                    $userTypeLabel = $this->availableUserTypes['super_guard'] ?? 'Super Guard';
+                    $userTypeLabel = $availableUserTypes['super_guard'] ?? 'Super Guard';
                 } else {
-                    $userTypeLabel = $this->availableUserTypes[$log->user_type] ?? 'N/A';
+                    $userTypeLabel = ($availableUserTypes[$log->user_type] ?? null) ?: 'N/A';
                 }
             }
             
@@ -381,13 +421,25 @@ class AuditTrail extends Component
         Session::put("export_sorting_{$token}", $sorting);
         Session::put("export_data_{$token}_expires", now()->addMinutes(10));
         
-        $printUrl = route('superadmin.print.audit-trail', ['token' => $token]);
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        $routeName = $isSuperAdmin ? 'superadmin.print.audit-trail' : 'admin.print.audit-trail';
+        $printUrl = route($routeName, ['token' => $token]);
         
         $this->dispatch('open-print-window', ['url' => $printUrl]);
     }
+        
     private function getFilteredLogsQuery()
     {
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        
         $query = Log::query();
+        
+        // Only exclude superadmin actions for regular admins
+        if (!$isSuperAdmin) {
+            $query->where('user_type', '!=', 2);
+        }
         
         // Search
         if (!empty($this->search)) {
@@ -506,9 +558,13 @@ class AuditTrail extends Component
     
     public function render()
     {
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        
         $logs = $this->getFilteredLogsQuery()->paginate(15);
         
-        return view('livewire.super-admin.audit-trail', [
+        // Use shared view for both admin and superadmin
+        return view('livewire.admin.audit-trail', [
             'logs' => $logs,
             'filterActionOptions' => $this->filterActionOptions,
             'filterModelTypeOptions' => $this->filterModelTypeOptions,

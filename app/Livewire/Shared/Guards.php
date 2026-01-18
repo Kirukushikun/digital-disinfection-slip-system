@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -65,13 +66,10 @@ class Guards extends Component
         1 => 'Super Guards',
     ];
     
-    // Restore functionality (only for superadmin)
+    // Restore functionality moved to Shared\Guards\Restore component
     public $showDeleted = false;
     public $selectedUserId;
     public $selectedUserDisabled = false;
-    public $selectedUserName = '';
-    public $showRestoreModal = false;
-    public $isRestoring = false;
 
     // Modal states
     public $showEditModal = false;
@@ -117,8 +115,37 @@ class Guards extends Component
 
     public function mount($config = [])
     {
+        // Auto-detect user type if config not provided
+        $user = Auth::user();
+        $userType = $user->user_type ?? 1;
+        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) ?? false;
+        $isSuperAdmin = $userType === 2;
+        
+        // Default config based on user type
+        if ($isSuperGuard) {
+            $defaultConfig = [
+                'role' => 'superguard',
+                'showGuardTypeFilter' => false,
+                'showSuperGuardEdit' => false,
+                'showRestore' => false,
+                'excludeSuperGuards' => true,
+                'excludeCurrentUser' => true,
+                'printRoute' => 'user.print.guards',
+            ];
+        } else {
+            $defaultConfig = [
+                'role' => $isSuperAdmin ? 'superadmin' : 'admin',
+                'showGuardTypeFilter' => true,
+                'showSuperGuardEdit' => true,
+                'showRestore' => $isSuperAdmin,
+                'excludeSuperGuards' => false,
+                'excludeCurrentUser' => false,
+                'printRoute' => $isSuperAdmin ? 'superadmin.print.guards' : 'admin.print.guards',
+            ];
+        }
+        
         // Merge provided config with defaults
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_merge($defaultConfig, $config);
     }
 
     public function handleGuardCreated()
@@ -433,10 +460,8 @@ class Guards extends Component
     {
         $this->showDisableModal = false;
         $this->showResetPasswordModal = false;
-        if ($this->config['showRestore']) {
-            $this->showRestoreModal = false;
-        }
-        $this->reset(['selectedUserId', 'selectedUserDisabled', 'selectedUserName']);
+        // Restore functionality moved to Shared\Guards\Restore component
+        $this->reset(['selectedUserId', 'selectedUserDisabled']);
     }
 
     public function openDisableModal($userId)
@@ -841,51 +866,15 @@ class Guards extends Component
             return;
         }
 
-        $user = User::onlyTrashed()->findOrFail($userId);
-        $this->selectedUserId = $userId;
-        $this->selectedUserName = $this->getGuardFullName($user);
-        $this->showRestoreModal = true;
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $userId);
     }
 
-    public function restoreUser()
+    #[On('guard-restored')]
+    public function handleGuardRestored()
     {
-        if (!$this->config['showRestore']) {
-            return;
-        }
-
-        if ($this->isRestoring) {
-            return;
-        }
-
-        $this->isRestoring = true;
-
-        try {
-            DB::beginTransaction();
-
-            $user = User::onlyTrashed()->findOrFail($this->selectedUserId);
-            $user->restore();
-
-            Logger::log(
-                'restore',
-                User::class,
-                $user->id,
-                "Restored guard {$user->username}",
-                null,
-                null
-            );
-
-            Cache::forget('guards_all');
-
-            $this->showRestoreModal = false;
-            $this->reset(['selectedUserId', 'selectedUserName']);
-            $this->resetPage();
-            $this->dispatch('toast', message: "{$this->selectedUserName} has been restored.", type: 'success');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $this->dispatch('toast', message: 'Failed to restore guard: ' . $e->getMessage(), type: 'error');
-        } finally {
-            $this->isRestoring = false;
-        }
+        Cache::forget('guards_all');
+        $this->resetPage();
     }
 
     public function render()

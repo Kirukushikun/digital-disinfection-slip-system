@@ -493,5 +493,11 @@
 
         {{-- Issue Delete Modal --}}
         <livewire:shared.issues.delete :config="['minUserType' => 1]" />
+
+        {{-- Restore modals only for superadmin, but include them here for consistency --}}
+        @if ($showRestore ?? false)
+            <livewire:shared.slips.restore :config="['minUserType' => 2]" />
+            <livewire:shared.issues.restore :config="['minUserType' => 2]" />
+        @endif
     </div>
 </div>

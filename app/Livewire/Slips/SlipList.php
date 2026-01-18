@@ -9,16 +9,11 @@ use App\Models\DisinfectionSlip;
 use App\Models\Vehicle;
 use App\Models\Location;
 use App\Models\Driver;
-use App\Models\Photo;
 use App\Models\Reason;
 use App\Services\Logger;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 /**
  * @method void resetPage()
@@ -32,11 +27,13 @@ class SlipList extends Component
     use WithPagination;
 
     public $type = 'incoming'; // incoming or outgoing
+    public $viewMode = 'active'; // 'active' or 'completed'
     protected $paginationTheme = 'tailwind';
     
     public $search = '';
     public $showFilters = false;
         
+    // Active mode filters
     public $filterDateFrom;
     public $filterDateTo;
     public $filterStatus = '';
@@ -44,6 +41,26 @@ class SlipList extends Component
     public $appliedDateFrom = null;
     public $appliedDateTo = null;
     public $appliedStatus = '';
+    
+    // Completed mode filters
+    public $filterDestination = [];
+    public $filterDriver = [];
+    public $filterVehicle = [];
+    public $filterCompletedFrom = '';
+    public $filterCompletedTo = '';
+    public $filterStatusCompleted = 'all'; // 'all', 'completed', 'incomplete'
+    
+    public $appliedDestination = [];
+    public $appliedDriver = [];
+    public $appliedVehicle = [];
+    public $appliedCompletedFrom = null;
+    public $appliedCompletedTo = null;
+    public $appliedStatusCompleted = 'all';
+    
+    // Search properties for completed mode filter dropdowns
+    public $searchFilterVehicle = '';
+    public $searchFilterDriver = '';
+    public $searchFilterDestination = '';
     
     public $filtersActive = false;
     public $sortDirection = null; // null, 'asc', 'desc' (applied)
@@ -55,31 +72,7 @@ class SlipList extends Component
         2 => 'In-Transit',
     ];
 
-    // Create Modal
-    public $showCreateModal = false;
-    public $showCancelCreateConfirmation = false;
-    public $vehicle_id;
-    public $destination_id;
-    public $driver_id;
-    public $reason_id;
-    public $remarks_for_disinfection;
-    public $isCreating = false;
-
-    // Photo properties for creation
-    public $showAddAttachmentModal = false;
-    public $pendingAttachmentIds = []; // Store Photo IDs before slip is created
-    public $showRemovePendingAttachmentConfirmation = false;
-    public $pendingAttachmentToDelete = null;
-    
-    // Pending Photo Modal (for viewing pending photos)
-    public $showPendingAttachmentModal = false;
-    public $currentPendingAttachmentIndex = 0;
-
-    // Search properties for dropdowns
-    public $searchVehicle = '';
-    public $searchDestination = '';
-    public $searchDriver = '';
-    public $searchReason = '';
+    // Create functionality moved to Shared/Slips/Create component
 
     // Reason management properties (for super guards)
     public $showReasonsModal = false;
@@ -97,7 +90,6 @@ class SlipList extends Component
     public $filterReasonStatus = 'all'; // Filter: 'all', 'enabled', 'disabled'
     public $reasonsPage = 1; // Page for reasons pagination
 
-    protected $listeners = ['slip-created' => '$refresh'];
     
     public function updatedSearchReasonSettings()
     {
@@ -109,25 +101,34 @@ class SlipList extends Component
         $this->reasonsPage = 1; // Reset to first page when filter changes
     }
 
-    public function mount($type = 'incoming')
+    public function mount($type = 'incoming', $viewMode = 'active')
     {
         $this->type = $type;
+        $this->viewMode = $viewMode; // 'active' or 'completed'
         
-        // Clean up any orphaned pending photos from previous session
-        // This catches cases where user uploaded but didn't create slip and navigated away
-        $this->cleanupOrphanedPendingAttachments();
-        
-        // Outgoing: set default filter values to today (for UI), but don't apply them automatically
-        // Incoming: no default date filter
-        if ($this->type === 'outgoing') {
-            $today = now()->format('Y-m-d');
-            $this->filterDateFrom = $today;
-            $this->filterDateTo = $today;
-            $this->appliedDateFrom = null;
-            $this->appliedDateTo = null;
+        // Initialize filters based on current mode
+        if ($this->viewMode === 'completed') {
+            // Completed mode: Initialize completed filters
+            $this->filterDestination = $this->appliedDestination ?? [];
+            $this->filterDriver = $this->appliedDriver ?? [];
+            $this->filterVehicle = $this->appliedVehicle ?? [];
+            $this->filterCompletedFrom = $this->appliedCompletedFrom ?? '';
+            $this->filterCompletedTo = $this->appliedCompletedTo ?? '';
+            $this->filterStatusCompleted = $this->appliedStatusCompleted ?? 'all';
         } else {
-            $this->filterDateFrom = null;
-            $this->filterDateTo = null;
+            // Active mode: Initialize active filters
+            // Outgoing: set default filter values to today (for UI), but don't apply them automatically
+            // Incoming: no default date filter
+            if ($this->type === 'outgoing') {
+                $today = now()->format('Y-m-d');
+                $this->filterDateFrom = $today;
+                $this->filterDateTo = $today;
+                $this->appliedDateFrom = null;
+                $this->appliedDateTo = null;
+            } else {
+                $this->filterDateFrom = null;
+                $this->filterDateTo = null;
+            }
         }
         
         $this->filterSortDirection = $this->sortDirection; // Initialize filter sort with current sort
@@ -135,7 +136,7 @@ class SlipList extends Component
 
         // Check if we should open create modal from route parameter (only if location allows)
         if (request()->has('openCreate') && $this->type === 'outgoing' && $this->canCreateSlip) {
-            $this->showCreateModal = true;
+            $this->dispatch('openCreateModal');
         }
     }
     
@@ -189,6 +190,13 @@ class SlipList extends Component
     // NOTE: Old computed properties removed - now using paginated dropdowns
     
     // Paginated data fetching methods for searchable dropdowns
+    #[Renderless]
+    public function getPaginatedTrucks($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        // Alias for getPaginatedVehicles for compatibility
+        return $this->getPaginatedVehicles($search, $page, $perPage, $includeIds);
+    }
+
     #[Renderless]
     public function getPaginatedVehicles($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
@@ -338,20 +346,41 @@ class SlipList extends Component
 
     public function applyFilters()
     {
-        $this->appliedDateFrom = $this->filterDateFrom;
-        $this->appliedDateTo = $this->filterDateTo;
-        $this->appliedStatus = $this->filterStatus;
-        $this->sortDirection = $this->filterSortDirection;
+        if ($this->viewMode === 'completed') {
+            $this->appliedDestination = $this->filterDestination;
+            $this->appliedDriver = $this->filterDriver;
+            $this->appliedVehicle = $this->filterVehicle;
+            $this->appliedCompletedFrom = $this->filterCompletedFrom;
+            $this->appliedCompletedTo = $this->filterCompletedTo;
+            $this->appliedStatusCompleted = $this->filterStatusCompleted ?: 'all';
+            $this->sortDirection = $this->filterSortDirection;
+        } else {
+            $this->appliedDateFrom = $this->filterDateFrom;
+            $this->appliedDateTo = $this->filterDateTo;
+            $this->appliedStatus = $this->filterStatus;
+            $this->sortDirection = $this->filterSortDirection;
+        }
         $this->checkFiltersActive();
         $this->resetPage();
+        $this->showFilters = false;
     }
     
     private function checkFiltersActive()
     {
-        // Only check actual filters, not sorts (sorts are separate from filters)
-        $this->filtersActive = !empty($this->appliedDateFrom) ||
-                              !empty($this->appliedDateTo) ||
-                              $this->appliedStatus !== '';
+        if ($this->viewMode === 'completed') {
+            $this->filtersActive = !empty($this->appliedDestination) ||
+                                  !empty($this->appliedDriver) ||
+                                  !empty($this->appliedVehicle) ||
+                                  !empty($this->appliedCompletedFrom) ||
+                                  !empty($this->appliedCompletedTo) ||
+                                  ($this->appliedStatusCompleted !== 'all' && $this->appliedStatusCompleted !== null) ||
+                                  ($this->sortDirection !== null && $this->sortDirection !== 'desc');
+        } else {
+            // Only check actual filters, not sorts (sorts are separate from filters)
+            $this->filtersActive = !empty($this->appliedDateFrom) ||
+                                  !empty($this->appliedDateTo) ||
+                                  $this->appliedStatus !== '';
+        }
     }
 
     public function cancelFilters()
@@ -370,801 +399,215 @@ class SlipList extends Component
 
     public function clearFilters()
     {
-        $this->filterDateFrom = null;
-        $this->filterDateTo = null;
-        $this->filterStatus = '';
-        $this->filterSortDirection = null;
-        $this->appliedDateFrom = null;
-        $this->appliedDateTo = null;
-        $this->appliedStatus = '';
-        $this->sortDirection = null;
+        if ($this->viewMode === 'completed') {
+            $this->filterDestination = [];
+            $this->filterDriver = [];
+            $this->filterVehicle = [];
+            $this->filterCompletedFrom = '';
+            $this->filterCompletedTo = '';
+            $this->filterStatusCompleted = 'all';
+            $this->filterSortDirection = null;
+            
+            $this->appliedDestination = [];
+            $this->appliedDriver = [];
+            $this->appliedVehicle = [];
+            $this->appliedCompletedFrom = null;
+            $this->appliedCompletedTo = null;
+            $this->appliedStatusCompleted = 'all';
+            $this->sortDirection = null;
+        } else {
+            $this->filterDateFrom = null;
+            $this->filterDateTo = null;
+            $this->filterStatus = '';
+            $this->filterSortDirection = null;
+            $this->appliedDateFrom = null;
+            $this->appliedDateTo = null;
+            $this->appliedStatus = '';
+            $this->sortDirection = null;
+        }
         $this->filtersActive = false;
+        $this->resetPage();
+    }
+    
+    public function removeFilter($filterName)
+    {
+        if ($this->viewMode === 'completed') {
+            switch ($filterName) {
+                case 'destination':
+                    $this->filterDestination = [];
+                    $this->appliedDestination = [];
+                    break;
+                case 'driver':
+                    $this->filterDriver = [];
+                    $this->appliedDriver = [];
+                    break;
+                case 'vehicle':
+                    $this->filterVehicle = [];
+                    $this->appliedVehicle = [];
+                    break;
+                case 'completedFrom':
+                    $this->filterCompletedFrom = '';
+                    $this->appliedCompletedFrom = null;
+                    break;
+                case 'completedTo':
+                    $this->filterCompletedTo = '';
+                    $this->appliedCompletedTo = null;
+                    break;
+            }
+        } else {
+            // Active mode remove filter logic (if needed)
+        }
+        $this->checkFiltersActive();
+        $this->resetPage();
+    }
+    
+    public function removeSpecificFilter($filterName, $value)
+    {
+        if ($this->viewMode === 'completed') {
+            switch ($filterName) {
+                case 'destination':
+                    $this->filterDestination = array_values(array_filter($this->filterDestination, fn($id) => $id != $value));
+                    $this->appliedDestination = array_values(array_filter($this->appliedDestination, fn($id) => $id != $value));
+                    break;
+                case 'driver':
+                    $this->filterDriver = array_values(array_filter($this->filterDriver, fn($id) => $id != $value));
+                    $this->appliedDriver = array_values(array_filter($this->appliedDriver, fn($id) => $id != $value));
+                    break;
+                case 'vehicle':
+                    $this->filterVehicle = array_values(array_filter($this->filterVehicle, fn($id) => $id != $value));
+                    $this->appliedVehicle = array_values(array_filter($this->appliedVehicle, fn($id) => $id != $value));
+                    break;
+            }
+        }
+        $this->checkFiltersActive();
         $this->resetPage();
     }
 
     public function openCreateModal()
     {
-        // Authorization check: Only allow if location permits slip creation
-        if (!$this->canCreateSlip) {
-            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-            return;
-        }
-        
-        $this->resetCreateForm();
-        $this->showCreateModal = true;
+        // Dispatch event to shared create component
+        $this->dispatch('openCreateModal');
     }
 
-    public function closeCreateModal()
-    {
-        // Clean up pending photos if modal is closed without creating
-        $this->cleanupPendingAttachments();
-        
-        $this->showCreateModal = false;
-        // Use dispatch to reset form after modal animation completes
-        $this->dispatch('modal-closed');
-    }
-
-    public function updatedShowCreateModal($value)
-    {
-        // When modal is closed (set to false) and there are pending photos, clean them up
-        // This catches when modal is closed via backdrop click or X button
-        if ($value === false && !empty($this->pendingAttachmentIds)) {
-            $this->cleanupPendingAttachments();
-        }
-    }
-
-    public function dehydrate()
-    {
-        // Clean up pending photos when component is being dehydrated (page navigation, refresh, etc.)
-        // This ensures cleanup even if modal wasn't properly closed or user navigates away
-        if (!empty($this->pendingAttachmentIds)) {
-            // Only cleanup if modal is not open (to avoid cleanup during normal operation)
-            if (!$this->showCreateModal) {
-                $this->cleanupPendingAttachments();
-            }
-        }
-    }
-
-    public function cancelCreate()
-    {
-        // Clean up pending photos
-        $this->cleanupPendingAttachments();
-        
-        // Reset all form fields and close modals
-        $this->resetCreateForm();
-        $this->showCancelCreateConfirmation = false;
-        $this->showCreateModal = false;
-    }
-
-    private function cleanupPendingAttachments()
-    {
-        if (empty($this->pendingAttachmentIds)) {
-            return;
-        }
-        
-        // Store IDs to clean up before clearing the array
-        $attachmentIdsToCleanup = $this->pendingAttachmentIds;
-        
-        // Clear the array immediately to prevent double cleanup
-        $this->pendingAttachmentIds = [];
-        
-        // Optimize: Fetch all photos in one query instead of N queries
-        $photos = Photo::whereIn('id', $attachmentIdsToCleanup, 'and', false)->get();
-        
-        foreach ($photos as $Photo) {
-            try {
-                // Delete the physical file from storage
-                if (Storage::disk('public')->exists($Photo->file_path)) {
-                    Storage::disk('public')->delete($Photo->file_path);
-                }
-                // Hard delete the Photo record
-                $Photo->forceDelete();
-            } catch (\Exception $e) {
-                Log::error('Failed to cleanup Photo ' . $Photo->id . ': ' . $e->getMessage());
-            }
-        }
-    }
-
-    public function resetCreateForm()
-    {
-        $this->vehicle_id = null;
-        $this->destination_id = null;
-        $this->driver_id = null;
-        $this->reason_id = null;
-        $this->remarks_for_disinfection = null;
-        $this->searchVehicle = '';
-        $this->searchDestination = '';
-        $this->searchDriver = '';
-        $this->searchReason = '';
-        // Clean up pending photos before clearing the array
-        $this->cleanupPendingAttachments();
-        $this->showAddAttachmentModal = false;
-        $this->showRemovePendingAttachmentConfirmation = false;
-        $this->pendingAttachmentToDelete = null;
-        $this->showPendingAttachmentModal = false;
-        $this->currentPendingAttachmentIndex = 0;
-        $this->resetErrorBag();
-    }
-
-    /**
-     * Clean up orphaned pending photos that are not referenced by any slip
-     * This catches cases where photos were uploaded but slip creation was cancelled
-     * and the cleanup didn't run (e.g., page refresh, navigation away)
-     */
-    private function cleanupOrphanedPendingAttachments()
-    {
-        // Find all photos with "pending" in filename that are not referenced by any slip
-        /** @phpstan-ignore-next-line */
-        $orphanedAttachments = Photo::where('file_path', 'like', 'images/uploads/disinfection_slip_pending_%')
-            ->get()
-            ->filter(function ($Photo) {
-                // Check if this Photo is referenced by any slip
-                /** @phpstan-ignore-next-line */
-                $isReferenced = DisinfectionSlip::whereJsonContains('photo_ids', $Photo->id)->exists();
-                return !$isReferenced;
-            });
-
-        foreach ($orphanedAttachments as $Photo) {
-            try {
-                // Delete the physical file from storage
-                if (Storage::disk('public')->exists($Photo->file_path)) {
-                    Storage::disk('public')->delete($Photo->file_path);
-                }
-                // Hard delete the Photo record
-                $Photo->forceDelete();
-            } catch (\Exception $e) {
-                Log::error('Failed to cleanup orphaned pending Photo ' . $Photo->id . ': ' . $e->getMessage());
-            }
-        }
-    }
-
-    /**
-     * Check if the current user is disabled
-     */
-    private function isUserDisabled()
-    {
-        $user = Auth::user();
-        return $user && $user->disabled;
-    }
-
-    public function createSlip()
-    {
-        // Prevent multiple submissions
-        if ($this->isCreating) {
-            return;
-        }
-
-        $this->isCreating = true;
-
-        try {
-        // Authorization check: Only allow if location permits slip creation
-        if (!$this->canCreateSlip) {
-            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-            return;
-        }
-        
-        // Check if user is disabled
-        if ($this->isUserDisabled()) {
-            $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
-            return;
-        }
-
-        // Get current location to validate against
-        $currentLocationId = Session::get('location_id');
-        
-        $this->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'destination_id' => [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) use ($currentLocationId) {
-                    if ($value == $currentLocationId) {
-                        $fail('The destination cannot be the same as the current location.');
-                    }
-                },
-            ],
-            'driver_id' => 'required|exists:drivers,id',
-            'reason_id' => [
-                'required',
-                'exists:reasons,id',
-                function ($attribute, $value, $fail) {
-                    if ($value) {
-                        $reason = Reason::find($value, ['id', 'is_disabled']);
-                        if (!$reason || $reason->is_disabled) {
-                            $fail('The selected reason is not available.');
-                        }
-                    }
-                },
-            ],
-            'remarks_for_disinfection' => 'nullable|string|max:1000',
-        ]);
-
-        // Sanitize remarks_for_disinfection
-        $sanitizedRemarks = $this->sanitizeText($this->remarks_for_disinfection);
-
-        $slip = DisinfectionSlip::create([
-            'vehicle_id' => $this->vehicle_id,
-            'destination_id' => $this->destination_id,
-            'driver_id' => $this->driver_id,
-            'reason_id' => $this->reason_id,
-            'remarks_for_disinfection' => $sanitizedRemarks,
-            'location_id' => $currentLocationId,
-            'hatchery_guard_id' => Auth::id(),
-            'status' => 0, // Pending
-            'slip_id' => $this->generateSlipId(),
-            'photo_ids' => !empty($this->pendingAttachmentIds) ? $this->pendingAttachmentIds : null,
-        ]);
-        Cache::forget('disinfection_slips_all');
-
-        // Log the create action
-        Logger::create(
-            DisinfectionSlip::class,
-            $slip->id,
-            "Created disinfection slip {$slip->slip_id}",
-            $slip->only(['vehicle_id', 'destination_id', 'driver_id', 'location_id', 'reason_id', 'status'])
-        );
-
-        $this->dispatch('toast', message: 'Disinfection slip created successfully!', type: 'success');        
-        
-        // Clear pending photos since they're now attached to the slip
-        $this->pendingAttachmentIds = [];
-        
-        // Close modal first
-        $this->showCreateModal = false;
-        
-        // Then reset form and page after a brief delay
-        $this->dispatch('modal-closed');
-        $this->resetPage();
-        } finally {
-            $this->isCreating = false;
-        }
-    }
-
-    private function generateSlipId()
-    {
-        $year = now()->format('y'); // Last 2 digits of year
-        
-        // Get the last slip ID for this year (including soft-deleted ones)
-        $lastSlip = DisinfectionSlip::withTrashed()
-            ->where('slip_id', 'like', $year . '-%')
-            ->orderBy('slip_id', 'desc')
-            ->first();
-        
-        if ($lastSlip) {
-            // Extract the number part and increment
-            $lastNumber = (int) substr($lastSlip->slip_id, 3);
-            $newNumber = $lastNumber + 1;
-        } else {
-            // First slip of the year
-            $newNumber = 1;
-        }
-        
-        // Format: YY-NNNNN (e.g., 25-00001)
-        return $year . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
-    }
-
-    public function openAddAttachmentModal()
-    {
-        if ($this->isUserDisabled()) {
-            $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
-            return;
-        }
-        $this->showAddAttachmentModal = true;
-        $this->dispatch('showAddAttachmentModal');
-    }
-
-    public function closeAddAttachmentModal()
-    {
-        $this->showAddAttachmentModal = false;
-    }
-
-    public function uploadAttachment($imageData)
-    {
-        try {
-            // Authorization check: Only allow if location permits slip creation
-            if (!$this->canCreateSlip) {
-                $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-                return;
-            }
-            
-            if ($this->isUserDisabled()) {
-                $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
-                return;
-            }
-
-            // Validate image data format
-            if (!preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData)) {
-                $this->dispatch('toast', message: 'Invalid image format. Only JPEG, PNG, GIF, and WebP are allowed.', type: 'error');
-                return;
-            }
-
-            // Extract image type
-            preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData, $matches);
-            $imageType = $matches[1];
-            
-            // Normalize jpg to jpeg
-            if ($imageType === 'jpg') {
-                $imageType = 'jpeg';
-            }
-
-            // Decode base64 image
-            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageDecoded = base64_decode($imageData);
-
-            // Validate base64 decode success
-            if ($imageDecoded === false) {
-                $this->dispatch('toast', message: 'Failed to decode image data.', type: 'error');
-                return;
-            }
-
-            // Validate file size (15MB max)
-            $fileSizeInMB = strlen($imageDecoded) / 1024 / 1024;
-            if ($fileSizeInMB > 15) {
-                $this->dispatch('toast', message: 'Image size exceeds 15MB limit.', type: 'error');
-                return;
-            }
-
-            // Validate image using getimagesizefromstring
-            $imageInfo = @getimagesizefromstring($imageDecoded);
-            if ($imageInfo === false) {
-                $this->dispatch('toast', message: 'Invalid image file. Please capture a valid image.', type: 'error');
-                return;
-            }
-
-            // Validate MIME type
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (!in_array($imageInfo['mime'], $allowedMimeTypes)) {
-                $this->dispatch('toast', message: 'Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed.', type: 'error');
-                return;
-            }
-
-            // Generate unique filename with correct extension
-            $extension = $imageType;
-            $filename = 'disinfection_slip_pending_' . time() . '_' . Str::random(8) . '.' . $extension;
-            
-            // Use Storage facade for consistency - save to public disk
-            Storage::disk('public')->put('images/uploads/' . $filename, $imageDecoded);
-
-            // Store relative path in database
-            $relativePath = 'images/uploads/' . $filename;
-
-            // Create Photo record
-            $Photo = Photo::create([
-                'file_path' => $relativePath,
-                'user_id' => Auth::id(),
-            ]);
-
-            // Add new Photo ID to pending array
-            $this->pendingAttachmentIds[] = $Photo->id;
-
-            $totalAttachments = count($this->pendingAttachmentIds);
-            $this->dispatch('toast', message: "Photo added ({$totalAttachments} total).", type: 'success');
-            Cache::forget('disinfection_slips_all');
-        } catch (\Exception $e) {
-            Log::error('Photo upload error: ' . $e->getMessage());
-            Cache::forget('disinfection_slips_all');
-            $this->dispatch('toast', message: 'Failed to upload photo. Please try again.', type: 'error');
-        }
-    }
-
-    public function uploadAttachments($imagesData)
-    {
-        try {
-            // Authorization check: Only allow if location permits slip creation
-            if (!$this->canCreateSlip) {
-                $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-                return;
-            }
-            
-            if ($this->isUserDisabled()) {
-                $this->dispatch('toast', message: 'Your account has been disabled. Please contact an administrator.', type: 'error');
-                return;
-            }
-
-            // Validate that imagesData is an array
-            if (!is_array($imagesData) || empty($imagesData)) {
-                $this->dispatch('toast', message: 'No images provided for upload.', type: 'error');
-                return;
-            }
-
-            $newAttachmentIds = [];
-            $validImages = [];
-            $errors = [];
-
-            // Process all images first to validate them
-            foreach ($imagesData as $index => $imageData) {
-                // Validate image data format
-                if (!preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData)) {
-                    $errors[] = "Image " . ($index + 1) . ": Invalid image format. Only JPEG, PNG, GIF, and WebP are allowed.";
-                    continue;
-                }
-
-                // Extract image type
-                preg_match('/^data:image\/(jpeg|jpg|png|gif|webp);base64,/', $imageData, $matches);
-                $imageType = $matches[1];
-                
-                // Normalize jpg to jpeg
-                if ($imageType === 'jpg') {
-                    $imageType = 'jpeg';
-                }
-
-                // Decode base64 image
-                $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
-                $imageData = str_replace(' ', '+', $imageData);
-                $imageDecoded = base64_decode($imageData);
-
-                // Validate base64 decode success
-                if ($imageDecoded === false) {
-                    $errors[] = "Image " . ($index + 1) . ": Failed to decode image data.";
-                    continue;
-                }
-
-                // Validate file size (15MB max)
-                $fileSizeInMB = strlen($imageDecoded) / 1024 / 1024;
-                if ($fileSizeInMB > 15) {
-                    $errors[] = "Image " . ($index + 1) . ": Image size exceeds 15MB limit.";
-                    continue;
-                }
-
-                // Validate image using getimagesizefromstring
-                $imageInfo = @getimagesizefromstring($imageDecoded);
-                if ($imageInfo === false) {
-                    $errors[] = "Image " . ($index + 1) . ": Invalid image file. Please capture a valid image.";
-                    continue;
-                }
-
-                // Validate MIME type
-                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                if (!in_array($imageInfo['mime'], $allowedMimeTypes)) {
-                    $errors[] = "Image " . ($index + 1) . ": Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed.";
-                    continue;
-                }
-
-                // Store valid image data for processing
-                $validImages[] = [
-                    'decoded' => $imageDecoded,
-                    'type' => $imageType,
-                ];
-            }
-
-            // If there are validation errors, show them and return
-            if (!empty($errors)) {
-                $errorMessage = implode(' ', $errors);
-                $this->dispatch('toast', message: $errorMessage, type: 'error');
-                return;
-            }
-
-            // If no valid images, return
-            if (empty($validImages)) {
-                $this->dispatch('toast', message: 'No valid images to upload.', type: 'error');
-                return;
-            }
-
-            // Process all valid images in a single transaction
-            DB::beginTransaction();
-            try {
-                foreach ($validImages as $image) {
-                    // Generate unique filename with correct extension
-                    $extension = $image['type'];
-                    $filename = 'disinfection_slip_pending_' . time() . '_' . Str::random(8) . '.' . $extension;
-                    
-                    // Use Storage facade for consistency - save to public disk
-                    Storage::disk('public')->put('images/uploads/' . $filename, $image['decoded']);
-
-                    // Store relative path in database
-                    $relativePath = 'images/uploads/' . $filename;
-
-                    // Create Photo record
-                    $Photo = Photo::create([
-                        'file_path' => $relativePath,
-                        'user_id' => Auth::id(),
-                    ]);
-
-                    // Add new Photo ID to pending array
-                    $newAttachmentIds[] = $Photo->id;
-                }
-
-                // Add all new Photo IDs to pending array
-                $this->pendingAttachmentIds = array_merge($this->pendingAttachmentIds, $newAttachmentIds);
-
-                // Commit transaction
-                DB::commit();
-
-                $totalAttachments = count($this->pendingAttachmentIds);
-                $uploadedCount = count($newAttachmentIds);
-                $this->dispatch('toast', message: "{$uploadedCount} photo(s) added ({$totalAttachments} total).", type: 'success');
-                Cache::forget('disinfection_slips_all');
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Batch Photo upload error: ' . $e->getMessage());
-            Cache::forget('disinfection_slips_all');
-            $this->dispatch('toast', message: 'Failed to upload photos. Please try again.', type: 'error');
-        }
-    }
-
-    public function confirmRemovePendingAttachment($attachmentId)
-    {
-        // Authorization check: Only allow if location permits slip creation
-        if (!$this->canCreateSlip) {
-            $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-            return;
-        }
-        
-        $this->pendingAttachmentToDelete = $attachmentId;
-        $this->showRemovePendingAttachmentConfirmation = true;
-    }
-
-    public function removePendingAttachment()
-    {
-        try {
-            // Authorization check: Only allow if location permits slip creation
-            if (!$this->canCreateSlip) {
-                $this->dispatch('toast', message: 'This location is not authorized to create slips.', type: 'error');
-                return;
-            }
-            
-            if (!$this->pendingAttachmentToDelete) {
-                $this->dispatch('toast', message: 'No Photo specified to remove.', type: 'error');
-                $this->showRemovePendingAttachmentConfirmation = false;
-                return;
-            }
-
-            $attachmentId = $this->pendingAttachmentToDelete;
-            
-            // Find and remove from pending array
-            $key = array_search($attachmentId, $this->pendingAttachmentIds);
-            if ($key !== false) {
-                // Get the Photo record before deletion
-                $Photo = Photo::find($attachmentId, ['id', 'user_id', 'file_path']);
-                if ($Photo) {
-                    // Check if current user is the one who uploaded this Photo (unless admin/superadmin)
-                    $user = Auth::user();
-                    $isAdminOrSuperAdmin = in_array($user->user_type, [1, 2]); // 1 = Admin, 2 = SuperAdmin
-                    
-                    if (!$isAdminOrSuperAdmin && $Photo->user_id !== Auth::id()) {
-                        $this->dispatch('toast', message: 'You can only delete photos that you uploaded.', type: 'error');
-                        $this->showRemovePendingAttachmentConfirmation = false;
-                        $this->pendingAttachmentToDelete = null;
-                        return;
-                    }
-
-                    // Delete the physical file from storage
-                    if (Storage::disk('public')->exists($Photo->file_path)) {
-                        Storage::disk('public')->delete($Photo->file_path);
-                    }
-                    // Hard delete the Photo record
-                    $Photo->forceDelete();
-                }
-
-                // Remove from array and re-index
-                unset($this->pendingAttachmentIds[$key]);
-                $this->pendingAttachmentIds = array_values($this->pendingAttachmentIds); // Re-index array
-                
-                // Adjust current index after deletion
-                $totalAttachments = count($this->pendingAttachmentIds);
-                if ($totalAttachments === 0) {
-                    // No photos left, close the modal
-                    $this->currentPendingAttachmentIndex = 0;
-                    $this->showPendingAttachmentModal = false;
-                } else {
-                    // Adjust index to stay within bounds
-                    // If we deleted the last item, move to the new last item
-                    if ($this->currentPendingAttachmentIndex >= $totalAttachments) {
-                        $this->currentPendingAttachmentIndex = $totalAttachments - 1;
-                    }
-                    // If we deleted an item before the current index, no adjustment needed
-                    // If we deleted the current item, stay at the same index (which now shows the next item)
-                }
-
-                $this->dispatch('toast', message: 'Photo removed.', type: 'success');
-            }
-            
-            $this->showRemovePendingAttachmentConfirmation = false;
-            $this->pendingAttachmentToDelete = null;
-        } catch (\Exception $e) {
-            Log::error('Photo removal error: ' . $e->getMessage());
-            Cache::forget('disinfection_slips_all');
-            $this->dispatch('toast', message: 'Failed to remove photo. Please try again.', type: 'error');
-            $this->showRemovePendingAttachmentConfirmation = false;
-            $this->pendingAttachmentToDelete = null;
-        }
-    }
-
-    // Pending Photo Modal Methods
-    public function openPendingAttachmentModal($index = 0)
-    {
-        $this->currentPendingAttachmentIndex = $index;
-        $this->showPendingAttachmentModal = true;
-    }
-
-    public function closePendingAttachmentModal()
-    {
-        $this->showPendingAttachmentModal = false;
-        $this->currentPendingAttachmentIndex = 0;
-    }
-
-    public function nextPendingAttachment()
-    {
-        $totalAttachments = count($this->pendingAttachmentIds);
-        if ($this->currentPendingAttachmentIndex < $totalAttachments - 1) {
-            $this->currentPendingAttachmentIndex++;
-        }
-    }
-
-    public function previousPendingAttachment()
-    {
-        if ($this->currentPendingAttachmentIndex > 0) {
-            $this->currentPendingAttachmentIndex--;
-        }
-    }
-
-    public function getCurrentPendingAttachmentId()
-    {
-        $totalAttachments = count($this->pendingAttachmentIds);
-        if ($totalAttachments === 0 || $this->currentPendingAttachmentIndex < 0 || $this->currentPendingAttachmentIndex >= $totalAttachments) {
-            return null;
-        }
-        return $this->pendingAttachmentIds[$this->currentPendingAttachmentIndex] ?? null;
-    }
-    
-    /**
-     * Get pending photos collection
-     */
-    public function getPendingAttachmentsProperty()
-    {
-        if (empty($this->pendingAttachmentIds)) {
-            return collect([]);
-        }
-        
-        return Photo::whereIn('id', $this->pendingAttachmentIds, 'and', false)->get();
-    }
-    
-    /**
-     * Get total count of pending photos
-     */
-    public function getTotalPendingAttachmentsProperty()
-    {
-        return count($this->pendingAttachmentIds);
-    }
-
-    public function canDeleteCurrentPendingAttachment()
-    {
-        $attachmentId = $this->getCurrentPendingAttachmentId();
-        if (!$attachmentId) {
-            return false;
-        }
-
-        $Photo = Photo::find($attachmentId, ['id', 'user_id']);
-        if (!$Photo) {
-            return false;
-        }
-
-        $user = Auth::user();
-        if (!$user) {
-            return false;
-        }
-
-        $currentRoute = request()->path();
-        $isOnUserRoute = str_starts_with($currentRoute, 'user');
-        $isAdminOrSuperAdmin = !$isOnUserRoute && in_array($user->user_type ?? 0, [1, 2]); // 1 = Admin, 2 = SuperAdmin
-        
-        return $isAdminOrSuperAdmin || $Photo->user_id === Auth::id();
-    }
-
-    /**
-     * Sanitize text input (for textarea fields like remarks_for_disinfection)
-     * Removes HTML tags, decodes entities, removes control characters
-     * Preserves newlines and normalizes whitespace
-     * 
-     * @param string|null $text
-     * @return string|null
-     */
-    private function sanitizeText($text)
-    {
-        if (empty($text)) {
-            return null;
-        }
-
-        // Remove HTML tags
-        $text = strip_tags($text);
-        
-        // Decode HTML entities
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        // Remove control characters (but preserve newlines \n and carriage returns \r)
-        $text = preg_replace('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/u', '', $text);
-        
-        // Normalize line endings to \n
-        $text = preg_replace('/\r\n|\r/', "\n", $text);
-        
-        // Normalize multiple spaces to single space (but preserve newlines)
-        $text = preg_replace('/[ \t]+/', ' ', $text);
-        
-        // Remove trailing whitespace from each line
-        $lines = explode("\n", $text);
-        $lines = array_map('rtrim', $lines);
-        $text = implode("\n", $lines);
-        
-        // Trim the entire text
-        return trim($text) ?: null;
-    }
+    // Create functionality moved to Shared/Slips/Create component
     
     public function render()
     {
         $location = Session::get('location_id');
+        $isCompletedMode = $this->viewMode === 'completed';
 
-        // Base query with type filter FIRST
-        $query = DisinfectionSlip::query();
+        // Optimize relationship loading by only selecting needed fields
+        $query = DisinfectionSlip::with([
+            'vehicle' => function($q) {
+                $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed();
+            },
+            'location' => function($q) {
+                $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed();
+            },
+            'destination' => function($q) {
+                $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed();
+            },
+            'driver' => function($q) {
+                $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed();
+            },
+            'hatcheryGuard' => function($q) {
+                $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed();
+            },
+            'receivedGuard' => function($q) {
+                $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed();
+            }
+        ]);
 
-        // Apply type-specific filter first (most restrictive)
-        if ($this->type === 'incoming') {
-            // Incoming: Status 2 (In-Transit) - show only unclaimed slips or slips claimed by the current user at destination
-            $query->where('destination_id', $location)
-                  ->where('location_id', '!=', $location)
-                  ->where('status', 2)
-                  ->where(function($q) {
-                      $q->whereNull('received_guard_id')
-                        ->orWhere('received_guard_id', Auth::id());
-                  });
-        } else {
-            // Outgoing: Status 0 (Pending), 1 (Disinfecting), 2 (In-Transit) - only show slips created by the current user
-            $query->where('location_id', $location)
-                  ->where('hatchery_guard_id', Auth::id())
-                  ->whereIn('status', [0, 1, 2]);
-        }
-
-        // Then apply other filters
-        $slips = $query
-            // SEARCH (only search within already filtered type)
-            ->when($this->search, function($q) {
-                $q->where('slip_id', 'like', '%' . $this->search . '%');
-            })
+        if ($isCompletedMode) {
+            // Completed mode query
+            $query->whereIn('status', [3, 4])
+                ->where(function($query) use ($location) {
+                    $query->where(function($q) use ($location) {
+                        $q->where('location_id', $location)
+                          ->where('hatchery_guard_id', Auth::id());
+                    })
+                    ->orWhere(function($q) use ($location) {
+                        $q->where('destination_id', $location)
+                          ->where('received_guard_id', Auth::id());
+                    });
+                })
+                ->when($this->search, function($q) {
+                    $q->where('slip_id', 'like', '%' . $this->search . '%');
+                })
+                ->when(!empty($this->appliedDestination), function($q) {
+                    $q->whereIn('destination_id', $this->appliedDestination);
+                })
+                ->when(!empty($this->appliedDriver), function($q) {
+                    $q->whereIn('driver_id', $this->appliedDriver);
+                })
+                ->when(!empty($this->appliedVehicle), function($q) {
+                    $q->whereIn('vehicle_id', $this->appliedVehicle);
+                })
+                ->when($this->appliedCompletedFrom, function($q) {
+                    $q->whereDate('completed_at', '>=', $this->appliedCompletedFrom);
+                })
+                ->when($this->appliedCompletedTo, function($q) {
+                    $q->whereDate('completed_at', '<=', $this->appliedCompletedTo);
+                })
+                ->when(in_array($this->appliedStatusCompleted, ['completed', 'incomplete']), function($q) {
+                    $statusValue = $this->appliedStatusCompleted === 'completed' ? 3 : 4;
+                    $q->where('status', $statusValue);
+                })
+                ->when($this->sortDirection === 'asc', function($q) {
+                    $q->orderBy('completed_at', 'asc');
+                })
+                ->when($this->sortDirection === 'desc', function($q) {
+                    $q->orderBy('completed_at', 'desc');
+                })
+                ->when($this->sortDirection === null, function($q) {
+                    $q->orderBy('completed_at', 'desc');
+                });
             
+            $slips = $query->paginate(10);
+        } else {
+            // Active mode query
+            if ($this->type === 'incoming') {
+                $query->where('destination_id', $location)
+                      ->where('location_id', '!=', $location)
+                      ->where('status', 2)
+                      ->where(function($q) {
+                          $q->whereNull('received_guard_id')
+                            ->orWhere('received_guard_id', Auth::id());
+                      });
+            } else {
+                $query->where('location_id', $location)
+                      ->where('hatchery_guard_id', Auth::id())
+                      ->whereIn('status', [0, 1, 2]);
+            }
 
-            // DATE RANGE FILTER
-            ->when($this->filtersActive && $this->appliedDateFrom, function($q) {
-                $q->whereDate('created_at', '>=', $this->appliedDateFrom);
-            })
-            ->when($this->filtersActive && $this->appliedDateTo, function($q) {
-                $q->whereDate('created_at', '<=', $this->appliedDateTo);
-            })
-
-            // STATUS FILTER 
-            ->when($this->filtersActive && $this->appliedStatus !== '', function($q) {
-                $q->where('status', $this->appliedStatus);
-            })
-
-            // Optimize relationship loading by only selecting needed fields
-            // This significantly reduces memory usage with large datasets (5,000+ records)
-            ->with([
-                'vehicle' => function($q) {
-                    $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed();
-                },
-                'location:id,location_name,disabled,deleted_at',
-                'destination:id,location_name,disabled,deleted_at',
-                'driver:id,first_name,middle_name,last_name,disabled,deleted_at',
-                'hatcheryGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at',
-                'receivedGuard:id,first_name,middle_name,last_name,username,disabled,deleted_at'
-            ]) // Eager load all relationships to prevent N+1 queries
-            ->when($this->sortDirection === 'asc', function($q) {
-                $q->orderBy('slip_id', 'asc');
-            })
-            ->when($this->sortDirection === 'desc', function($q) {
-                $q->orderBy('slip_id', 'desc');
-            })
-            ->when($this->sortDirection === null, function($q) {
-                $q->orderBy('created_at', 'desc'); // default
-            })
-            ->paginate(5);
+            $slips = $query
+                ->when($this->search, function($q) {
+                    $q->where('slip_id', 'like', '%' . $this->search . '%');
+                })
+                ->when($this->filtersActive && $this->appliedDateFrom, function($q) {
+                    $q->whereDate('created_at', '>=', $this->appliedDateFrom);
+                })
+                ->when($this->filtersActive && $this->appliedDateTo, function($q) {
+                    $q->whereDate('created_at', '<=', $this->appliedDateTo);
+                })
+                ->when($this->filtersActive && $this->appliedStatus !== '', function($q) {
+                    $q->where('status', $this->appliedStatus);
+                })
+                ->when($this->sortDirection === 'asc', function($q) {
+                    $q->orderBy('slip_id', 'asc');
+                })
+                ->when($this->sortDirection === 'desc', function($q) {
+                    $q->orderBy('slip_id', 'desc');
+                })
+                ->when($this->sortDirection === null, function($q) {
+                    $q->orderBy('created_at', 'desc');
+                })
+                ->paginate(5);
+        }
 
         return view('livewire.slips.slip-list', [
             'slips' => $slips,
+            'viewMode' => $this->viewMode,
             'availableStatuses' => $this->availableStatuses,
             // NOTE: vehicles, locations, drivers removed - views use searchable-dropdown-paginated component
             // which calls getPaginatedVehicles, getPaginatedLocations, getPaginatedDrivers on-demand

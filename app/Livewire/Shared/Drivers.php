@@ -6,6 +6,7 @@ use App\Models\Driver;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
@@ -30,6 +31,7 @@ class Drivers extends Component
         'showRestore' => false, // Show restore functionality
         'printRoute' => 'admin.print.drivers', // Route name for print functionality
         'minUserType' => 1, // Minimum user_type required (1 = admin, 2 = superadmin)
+        'viewPath' => 'livewire.shared.drivers', // View path for rendering
     ];
 
     public $search = '';
@@ -59,12 +61,8 @@ class Drivers extends Component
         1 => 'Disabled',
     ];
     
-    // Restore functionality (only for superadmin)
+    // Restore functionality moved to Shared\Drivers\Restore component
     public $showDeleted = false;
-    public $selectedDriverId;
-    public $selectedDriverName = '';
-    public $showRestoreModal = false;
-    public $isRestoring = false;
 
     protected $queryString = ['search'];
 
@@ -77,8 +75,33 @@ class Drivers extends Component
 
     public function mount($config = [])
     {
+        // Auto-detect user type if config not provided
+        $user = Auth::user();
+        $userType = $user->user_type ?? 1;
+        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) ?? false;
+        $isSuperAdmin = $userType === 2;
+        
+        // Default config based on user type
+        if ($isSuperGuard) {
+            $defaultConfig = [
+                'role' => 'user',
+                'showRestore' => false,
+                'printRoute' => 'user.print.drivers',
+                'minUserType' => 0,
+                'viewPath' => 'livewire.user.data.drivers',
+            ];
+        } else {
+            $defaultConfig = [
+                'role' => $isSuperAdmin ? 'superadmin' : 'admin',
+                'showRestore' => $isSuperAdmin,
+                'printRoute' => $isSuperAdmin ? 'superadmin.print.drivers' : 'admin.print.drivers',
+                'minUserType' => $isSuperAdmin ? 2 : 1,
+                'viewPath' => 'livewire.shared.drivers',
+            ];
+        }
+        
         // Merge provided config with defaults
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_merge($defaultConfig, $config);
     }
 
     public function handleDriverCreated()
@@ -279,68 +302,15 @@ class Drivers extends Component
             return;
         }
 
-        $driver = Driver::onlyTrashed()->findOrFail($driverId);
-        $this->selectedDriverId = $driverId;
-        $this->selectedDriverName = $this->getDriverFullName($driver);
-        $this->showRestoreModal = true;
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $driverId);
     }
 
-    public function restoreDriver()
+    #[On('driver-restored')]
+    public function handleDriverRestored()
     {
-        if (!$this->config['showRestore']) {
-            return;
-        }
-
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        // Authorization check
-        if (Auth::user()->user_type < $this->config['minUserType']) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $this->isRestoring = true;
-
-        try {
-            if (!$this->selectedDriverId) {
-                return;
-            }
-
-            // Atomic restore: Only restore if currently deleted to prevent race conditions
-            $restored = Driver::onlyTrashed()
-                ->where('id', $this->selectedDriverId)
-                ->update(['deleted_at' => null]);
-            
-            if ($restored === 0) {
-                // Driver was already restored or doesn't exist
-                $this->showRestoreModal = false;
-                $this->reset(['selectedDriverId', 'selectedDriverName']);
-                $this->dispatch('toast', message: 'This driver was already restored or does not exist. Please refresh the page.', type: 'error');
-                $this->resetPage();
-                return;
-            }
-            
-            // Now load the restored driver
-            $driver = Driver::findOrFail($this->selectedDriverId);
-            
-            // Log the restore action
-            Logger::restore(
-                Driver::class,
-                $driver->id,
-                "Restored driver {$this->getDriverFullName($driver)}"
-            );
-            
-            Cache::forget('drivers_all');
-
-            $this->showRestoreModal = false;
-            $this->reset(['selectedDriverId', 'selectedDriverName']);
-            $this->resetPage();
-            $this->dispatch('toast', message: "{$this->getDriverFullName($driver)} has been restored.", type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
+        Cache::forget('drivers_all');
+        $this->resetPage();
     }
 
     public function openPrintView()
@@ -552,7 +522,7 @@ class Drivers extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.shared.drivers', [
+        return view($this->config['viewPath'] ?? 'livewire.shared.drivers', [
             'drivers' => $drivers,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,

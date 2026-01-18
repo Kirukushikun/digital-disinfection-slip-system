@@ -46,8 +46,10 @@ class Disable extends Component
             return;
         }
 
-        // Authorization check
-        if (Auth::user()->user_type < $this->minUserType) {
+        // Authorization check - allow super guards OR users with minUserType
+        $user = Auth::user();
+        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) ?? false;
+        if (!$isSuperGuard && $user->user_type < $this->minUserType) {
             abort(403, 'Unauthorized action.');
         }
 

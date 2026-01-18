@@ -2,5 +2,5 @@
     <x-navigation.navbar module="Locations">
     </x-navigation.navbar>
 
-    <livewire:user.data.locations />
+    <livewire:shared.locations />
 </x-layout>

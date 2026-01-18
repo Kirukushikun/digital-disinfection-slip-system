@@ -1,20 +1,33 @@
+@php
+    // Determine if this is completed mode
+    $isCompletedMode = isset($viewMode) && $viewMode === 'completed';
+@endphp
+
 <div class="max-w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 m-4 pb-16 sm:pb-4">
 
     {{-- Simple Header --}}
     <div class="mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">
-                @if ($type === 'incoming')
-                    Incoming Trips
+                @if ($isCompletedMode)
+                    Completed & Incomplete Trips
                 @else
-                    Outgoing Trips
+                    @if ($type === 'incoming')
+                        Incoming Trips
+                    @else
+                        Outgoing Trips
+                    @endif
                 @endif
             </h1>
             <p class="text-gray-600 text-sm mt-1">
-                @if ($type === 'incoming')
-                    View all incoming trips for disinfection
+                @if ($isCompletedMode)
+                    View all completed and incomplete disinfection slips
                 @else
-                    View all outgoing trips and create new disinfection slips
+                    @if ($type === 'incoming')
+                        View all incoming trips for disinfection
+                    @else
+                        View all outgoing trips and create new disinfection slips
+                    @endif
                 @endif
             </p>
         </div>
@@ -57,8 +70,8 @@
             </div>
         </div>
 
-        {{-- Super Guard: 3-dot menu (mobile) or separate buttons (desktop) (Only for Outgoing) --}}
-        @if ($type === 'outgoing' && $this->isSuperGuard())
+        {{-- Buttons (Only for active mode, outgoing) --}}
+        @if (!$isCompletedMode && $type === 'outgoing' && $this->isSuperGuard())
             @if ($this->canCreateSlip)
                 {{-- Desktop: Separate Create and Reasons buttons --}}
                 <div class="hidden md:flex gap-3">
@@ -135,7 +148,7 @@
                     </svg>
                 </button>
             @endif
-        @elseif ($type === 'outgoing' && $this->canCreateSlip)
+        @elseif (!$isCompletedMode && $type === 'outgoing' && $this->canCreateSlip)
             {{-- Regular guard: Create button --}}
             <x-buttons.submit-button wire:click="openCreateModal" color="blue">
                 <div class="flex items-center gap-2">
@@ -152,130 +165,343 @@
     {{-- Filter Modal --}}
     <x-modals.filter-modal>
         <x-slot name="filters">
-            {{-- Status Filter (Only for Outgoing) --}}
-            @if ($type === 'outgoing')
-            <div x-data="{
-                open: false,
-                options: @js($availableStatuses),
-                selected: @entangle('filterStatus').live,
-                placeholder: 'Select status',
-                get displayText() {
-                    if (this.selected === null || this.selected === undefined || this.selected === '') {
-                        return this.placeholder;
-                    }
-                    const key = String(this.selected);
-                    return this.options[key] || this.placeholder;
-                },
-                closeDropdown() {
-                    this.open = false;
-                },
-                handleFocusIn(event) {
-                    const target = event.target;
-                    const container = $refs.statusDropdownContainer;
-                    if (this.open && !container.contains(target)) {
-                        if (target.tagName === 'INPUT' ||
-                            target.tagName === 'SELECT' ||
-                            target.tagName === 'TEXTAREA' ||
-                            (target.tagName === 'BUTTON' && target.closest('[x-data]') && !container.contains(target.closest('[x-data]')))) {
-                            this.closeDropdown();
+            @if ($isCompletedMode)
+                {{-- Completed Mode Filters --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Status Filter --}}
+                    <div x-data="{
+                        open: false,
+                        options: {'all': 'All', 'completed': 'Completed', 'incomplete': 'Incomplete'},
+                        selected: @entangle('filterStatus').live,
+                        placeholder: 'Select status',
+                        get displayText() {
+                            if (this.selected === null || this.selected === undefined || this.selected === '') {
+                                return this.placeholder;
+                            }
+                            return this.options[this.selected] || this.placeholder;
+                        },
+                        closeDropdown() {
+                            this.open = false;
+                        },
+                        handleFocusIn(event) {
+                            const target = event.target;
+                            const container = $refs.statusDropdownContainer;
+                            if (this.open && !container.contains(target)) {
+                                if (target.tagName === 'INPUT' ||
+                                    target.tagName === 'SELECT' ||
+                                    target.tagName === 'TEXTAREA' ||
+                                    (target.tagName === 'BUTTON' && target.closest('[x-data]') && !container.contains(target.closest('[x-data]')))) {
+                                    this.closeDropdown();
+                                }
+                            }
                         }
-                    }
-                }
-            }" x-ref="statusDropdownContainer" @click.outside="closeDropdown()"
-                @focusin.window="handleFocusIn($event)">
-                <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-medium text-gray-700">Status</label>
-                    <button type="button" wire:click="$set('filterStatus', '')"
-                        x-show="selected !== null && selected !== undefined && selected !== ''"
-                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                        Clear
-                    </button>
-                </div>
+                    }" x-ref="statusDropdownContainer" @click.outside="closeDropdown()"
+                        @focusin.window="handleFocusIn($event)">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Status</label>
+                            <button type="button" wire:click="$set('filterStatusCompleted', 'all')"
+                                x-show="selected !== 'all' && selected !== null && selected !== ''"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
 
-                <div class="relative">
-                    <button type="button" x-on:click="open = !open"
-                        class="inline-flex justify-between w-full px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500"
-                        :class="{ 'ring-2 ring-orange-500': open }">
-                        <span :class="{ 'text-gray-400': selected === null || selected === undefined || selected === '' }">
-                            <span x-text="displayText"></span>
-                        </span>
-                        <svg xmlns="https://www.w3.org/2000/svg" class="w-4 h-4 ml-2 -mr-1 transition-transform"
-                            :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd"
-                                d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </button>
+                        <div class="relative">
+                            <button type="button" x-on:click="open = !open"
+                                class="inline-flex justify-between w-full px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500"
+                                :class="{ 'ring-2 ring-blue-500': open }">
+                                <span :class="{ 'text-gray-400': selected === null || selected === undefined || selected === '' }">
+                                    <span x-text="displayText"></span>
+                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-2 -mr-1 transition-transform"
+                                    :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
 
-                    <!-- Dropdown Menu -->
-                    <div x-show="open" x-transition:enter="transition ease-out duration-100"
-                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                        x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
-                        x-transition:leave-end="opacity-0 scale-95"
-                        class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50"
-                        style="display: none;" x-cloak @click.stop>
-                        <template x-for="[value, label] in Object.entries(options)" :key="value">
-                            <a href="#"
-                                @click.prevent="
-                                    selected = String(value);
-                                    closeDropdown();
-                                "
-                                class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 active:bg-orange-100 cursor-pointer rounded-md transition-colors"
-                                :class="{
-                                    'bg-orange-50 text-orange-700': selected !== null && selected !== undefined && String(selected) === String(value)
-                                }">
-                                <span x-text="label"></span>
-                            </a>
-                        </template>
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50"
+                                style="display: none;" x-cloak @click.stop>
+                                <template x-for="[value, label] in Object.entries(options)" :key="value">
+                                    <a href="#"
+                                        @click.prevent="
+                                            selected = value;
+                                            closeDropdown();
+                                        "
+                                        class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
+                                        :class="{
+                                            'bg-blue-50 text-blue-700': selected === value
+                                        }">
+                                        <span x-text="label"></span>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Vehicle Filter --}}
+                    <div x-data="{ filterValue: @entangle('filterVehicle') }">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Vehicle</label>
+                            <button type="button" wire:click="$set('filterVehicle', [])"
+                                x-show="filterValue && filterValue.length > 0"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
+                        <x-forms.searchable-dropdown-paginated wireModel="filterVehicle" data-method="getPaginatedTrucks"
+                            search-property="searchFilterVehicle" placeholder="Select vehicle..."
+                            search-placeholder="Search vehicles..." :multiple="true" :per-page="20" />
+                    </div>
+
+                    {{-- Driver Filter --}}
+                    <div x-data="{ filterValue: @entangle('filterDriver') }">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Driver</label>
+                            <button type="button" wire:click="$set('filterDriver', [])" x-show="filterValue && filterValue.length > 0"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
+                        <x-forms.searchable-dropdown-paginated wireModel="filterDriver" data-method="getPaginatedDrivers" search-property="searchFilterDriver"
+                            placeholder="Select drivers..." search-placeholder="Search drivers..." :multiple="true" :per-page="20" />
+                    </div>
+
+                    {{-- Destination Filter --}}
+                    <div x-data="{ filterValue: @entangle('filterDestination') }">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Destination</label>
+                            <button type="button" wire:click="$set('filterDestination', [])"
+                                x-show="filterValue && filterValue.length > 0"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
+                        <x-forms.searchable-dropdown-paginated wireModel="filterDestination" data-method="getPaginatedLocations"
+                            search-property="searchFilterDestination" placeholder="Select destination..."
+                            search-placeholder="Search destinations..." :multiple="true" :per-page="20" />
+                    </div>
+
+                    {{-- From Date Input --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">From Date</label>
+                            <button type="button" wire:click="$set('filterCompletedFrom', '')"
+                                x-show="$wire.filterCompletedFrom"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
+                        <input type="date" wire:model.live="filterCompletedFrom"
+                            x-ref="fromDateInput"
+                            @input="
+                                const toInput = $refs.toDateInput;
+                                const today = '<?php echo date('Y-m-d'); ?>';
+                                if (toInput) {
+                                    toInput.min = $el.value || '';
+                                    if (toInput.value && $el.value && toInput.value < $el.value) {
+                                        toInput.value = '';
+                                        $wire.set('filterCompletedTo', '');
+                                    }
+                                    if (toInput.value && $el.value && $el.value > toInput.value) {
+                                        $el.value = '';
+                                        $wire.set('filterCompletedFrom', '');
+                                    }
+                                }
+                            "
+                            :max="$wire.filterCompletedTo || '<?php echo date('Y-m-d'); ?>'"
+                            class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
+                    </div>
+
+                    {{-- To Date Input --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">To Date</label>
+                            <button type="button" wire:click="$set('filterCompletedTo', '')"
+                                x-show="$wire.filterCompletedTo"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Clear
+                            </button>
+                        </div>
+                        <input type="date" wire:model.live="filterCompletedTo"
+                            x-ref="toDateInput"
+                            @input="
+                                const fromInput = $refs.fromDateInput;
+                                if (fromInput) {
+                                    if (fromInput.value && $el.value && fromInput.value > $el.value) {
+                                        fromInput.value = '';
+                                        $wire.set('filterCompletedFrom', '');
+                                    }
+                                    if (fromInput.value && $el.value && $el.value < fromInput.value) {
+                                        $el.value = '';
+                                        $wire.set('filterCompletedTo', '');
+                                    }
+                                }
+                            "
+                            :min="$wire.filterCompletedFrom || ''"
+                            max="<?php echo date('Y-m-d'); ?>"
+                            class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500">
                     </div>
                 </div>
-            </div>
-            @endif
 
-            {{-- Sort Section --}}
-            <div class="@if ($type === 'outgoing') mt-4 pt-4 border-t border-gray-200 @endif">
-                <label class="block text-xs font-medium text-gray-700 mb-2">Sort by Created Date</label>
-                <div class="flex gap-2">
-                    <button wire:click="$set('filterSortDirection', 'asc')" type="button"
-                        class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
-                            @if ($filterSortDirection === 'asc') bg-green-50 border-green-500 text-green-700 hover:bg-green-100 focus:ring-green-500
-                            @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
-                            @endif">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                        </svg>
-                        Asc
-                    </button>
-                    <button wire:click="$set('filterSortDirection', 'desc')" type="button"
-                        class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
-                            @if ($filterSortDirection === 'desc' || $filterSortDirection === null) bg-red-50 border-red-500 text-red-700 hover:bg-red-100 focus:ring-red-500
-                            @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
-                            @endif">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                        Desc
-                    </button>
+                {{-- Sort Section --}}
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <label class="block text-xs font-medium text-gray-700 mb-2">Sort by End Date</label>
+                    <div class="flex gap-2">
+                        <button wire:click="$set('filterSortDirection', 'asc')" type="button"
+                            class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                                @if ($filterSortDirection === 'asc') bg-green-50 border-green-500 text-green-700 hover:bg-green-100 focus:ring-green-500
+                                @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                                @endif">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                            </svg>
+                            Asc
+                        </button>
+                        <button wire:click="$set('filterSortDirection', 'desc')" type="button"
+                            class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                                @if ($filterSortDirection === 'desc' || $filterSortDirection === null) bg-red-50 border-red-500 text-red-700 hover:bg-red-100 focus:ring-red-500
+                                @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                                @endif">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            Desc
+                        </button>
+                    </div>
                 </div>
-            </div>
+            @else
+                {{-- Active Mode Filters --}}
+                {{-- Status Filter (Only for Outgoing) --}}
+                @if ($type === 'outgoing')
+                <div x-data="{
+                    open: false,
+                    options: @js($availableStatuses),
+                    selected: @entangle('filterStatus').live,
+                    placeholder: 'Select status',
+                    get displayText() {
+                        if (this.selected === null || this.selected === undefined || this.selected === '') {
+                            return this.placeholder;
+                        }
+                        const key = String(this.selected);
+                        return this.options[key] || this.placeholder;
+                    },
+                    closeDropdown() {
+                        this.open = false;
+                    },
+                    handleFocusIn(event) {
+                        const target = event.target;
+                        const container = $refs.statusDropdownContainer;
+                        if (this.open && !container.contains(target)) {
+                            if (target.tagName === 'INPUT' ||
+                                target.tagName === 'SELECT' ||
+                                target.tagName === 'TEXTAREA' ||
+                                (target.tagName === 'BUTTON' && target.closest('[x-data]') && !container.contains(target.closest('[x-data]')))) {
+                                this.closeDropdown();
+                            }
+                        }
+                    }
+                }" x-ref="statusDropdownContainer" @click.outside="closeDropdown()"
+                    @focusin.window="handleFocusIn($event)">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-medium text-gray-700">Status</label>
+                        <button type="button" wire:click="$set('filterStatus', '')"
+                            x-show="selected !== null && selected !== undefined && selected !== ''"
+                            class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <button type="button" x-on:click="open = !open"
+                            class="inline-flex justify-between w-full px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-orange-500"
+                            :class="{ 'ring-2 ring-orange-500': open }">
+                            <span :class="{ 'text-gray-400': selected === null || selected === undefined || selected === '' }">
+                                <span x-text="displayText"></span>
+                            </span>
+                            <svg xmlns="https://www.w3.org/2000/svg" class="w-4 h-4 ml-2 -mr-1 transition-transform"
+                                :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50"
+                            style="display: none;" x-cloak @click.stop>
+                            <template x-for="[value, label] in Object.entries(options)" :key="value">
+                                <a href="#"
+                                    @click.prevent="
+                                        selected = String(value);
+                                        closeDropdown();
+                                    "
+                                    class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 active:bg-orange-100 cursor-pointer rounded-md transition-colors"
+                                    :class="{
+                                        'bg-orange-50 text-orange-700': selected !== null && selected !== undefined && String(selected) === String(value)
+                                    }">
+                                    <span x-text="label"></span>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Sort Section --}}
+                <div class="@if ($type === 'outgoing') mt-4 pt-4 border-t border-gray-200 @endif">
+                    <label class="block text-xs font-medium text-gray-700 mb-2">Sort by Created Date</label>
+                    <div class="flex gap-2">
+                        <button wire:click="$set('filterSortDirection', 'asc')" type="button"
+                            class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                                @if ($filterSortDirection === 'asc') bg-green-50 border-green-500 text-green-700 hover:bg-green-100 focus:ring-green-500
+                                @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                                @endif">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                            </svg>
+                            Asc
+                        </button>
+                        <button wire:click="$set('filterSortDirection', 'desc')" type="button"
+                            class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2
+                                @if ($filterSortDirection === 'desc' || $filterSortDirection === null) bg-red-50 border-red-500 text-red-700 hover:bg-red-100 focus:ring-red-500
+                                @else bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500
+                                @endif">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            Desc
+                        </button>
+                    </div>
+                </div>
+            @endif
         </x-slot>
     </x-modals.filter-modal>
 
-    {{-- CREATE MODAL --}}
-    <x-modals.slip-creation-modal show="showCreateModal" :is-creating="$isCreating" :pendingAttachmentIds="$pendingAttachmentIds" />
-
-    {{-- Add Photo Modal is now inline Alpine.js modal in slip-creation-modal --}}
-
-    {{-- Reasons Settings Modal (for super guards) --}}
-    @if ($this->isSuperGuard())
-        <x-modals.reason-settings :reasons="$this->reasons" :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
+    {{-- CREATE MODAL (Only for active mode) --}}
+    @if (!$isCompletedMode)
+        <livewire:shared.slips.create :config="['minUserType' => 0, 'useGuardMode' => true]" />
+        {{-- Reasons Settings Modal (for super guards) --}}
+        @if ($this->isSuperGuard())
+            <x-modals.reason-settings :reasons="$this->reasons" :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
+        @endif
     @endif
 
     {{-- Disinfection Slip Details Modal --}}
     <livewire:slips.disinfection-slip />
 
     {{-- Card List --}}
-    <div @if (!$showFilters && !$showCreateModal) wire:poll.keep-alive @endif class="space-y-3 pb-4">
+    <div @if (!$showFilters) wire:poll.keep-alive @endif class="space-y-3 pb-4">
 
         @forelse ($slips as $index => $slip)
             @php
@@ -290,7 +516,7 @@
             @endphp
 
             {{-- Card (Now Clickable) --}}
-            <div wire:click="$dispatch('open-disinfection-details', { id: {{ $slip->id }}, type: '{{ $type }}' })"
+            <div wire:click="$dispatch('open-disinfection-details', { id: {{ $slip->id }}, type: '{{ $isCompletedMode ? 'incoming' : $type }}' })"
                 class="flex justify-between items-center p-2.5 border-l-4 rounded-lg shadow-sm transition hover:shadow-md cursor-pointer {{ $statusMap[$status]['bg'] }} {{ $statusMap[$status]['color'] }}">
 
                 <div class="flex-1">
@@ -301,29 +527,48 @@
                     </div>
 
                     {{-- Date/Time --}}
-                    @php
-                        $createdDate = \Carbon\Carbon::parse($slip->created_at);
-                        $isToday = $createdDate->isToday();
-                    @endphp
-                    <div class="flex items-center gap-1 text-xs">
-                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span class="text-gray-600">
-                            @if ($isToday)
-                                {{ $createdDate->format('h:i A') }}
-                            @else
-                                {{ $createdDate->format('M d, Y') }}
-                            @endif
-                        </span>
-                    </div>
+                    @if ($isCompletedMode && $slip->completed_at)
+                        @php
+                            $completedDate = \Carbon\Carbon::parse($slip->completed_at);
+                            $isToday = $completedDate->isToday();
+                        @endphp
+                        <div class="flex items-center gap-1 text-xs">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-gray-600">
+                                @if ($isToday)
+                                    {{ $completedDate->format('h:i A') }}
+                                @else
+                                    {{ $completedDate->format('M d, Y') }}
+                                @endif
+                            </span>
+                        </div>
+                    @elseif (!$isCompletedMode)
+                        @php
+                            $createdDate = \Carbon\Carbon::parse($slip->created_at);
+                            $isToday = $createdDate->isToday();
+                        @endphp
+                        <div class="flex items-center gap-1 text-xs">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-gray-600">
+                                @if ($isToday)
+                                    {{ $createdDate->format('h:i A') }}
+                                @else
+                                    {{ $createdDate->format('M d, Y') }}
+                                @endif
+                            </span>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Right Side --}}
-                <div class="flex flex-col items-end ml-3">
+                <div class="flex flex-col items-end {{ $isCompletedMode ? 'justify-center' : '' }} ml-3">
                     {{-- Status Badge --}}
                     <span
-                        class="px-2 py-0.5 text-[10px] font-semibold rounded-full
+                        class="px-2 py-0.5 text-[10px] font-semibold rounded-full {{ $isCompletedMode ? 'whitespace-nowrap' : '' }}
                         {{ $status === 0 ? 'bg-gray-100 text-gray-700' : '' }}
                         {{ $status === 1 ? 'bg-orange-100 text-orange-700' : '' }}
                         {{ $status === 2 ? 'bg-yellow-100 text-yellow-700' : '' }}

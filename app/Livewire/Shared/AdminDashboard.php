@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\Shared;
 
 use App\Models\DisinfectionSlip;
 use App\Models\User;
@@ -10,12 +10,16 @@ use App\Models\Location;
 use App\Models\Issue;
 use Carbon\Carbon;
 use Livewire\Component;
+use Illuminate\Support\Facades\Auth;
 
 class AdminDashboard extends Component
 {
     public function getStatsProperty()
     {
-        return [
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        
+        $stats = [
             'week_disinfected' => $this->getWeekDisinfectedCount(),
             'month_disinfected' => $this->getMonthDisinfectedCount(),
             'year_disinfected' => $this->getYearDisinfectedCount(),
@@ -28,6 +32,13 @@ class AdminDashboard extends Component
             'total_created_slips_today' => $this->getTotalCreatedSlipsTodayCount(),
             'in_progress_slips_today' => $this->getInProgressSlipsTodayCount(),
         ];
+        
+        // Only include admins count for superadmins
+        if ($isSuperAdmin) {
+            $stats['total_admins'] = $this->getAdminsCount();
+        }
+        
+        return $stats;
     }
 
     /**
@@ -84,6 +95,16 @@ class AdminDashboard extends Component
     private function getGuardsCount()
     {
         return User::where('user_type', 0)
+            ->whereNull('deleted_at')
+            ->count();
+    }
+
+    /**
+     * Get count of active admins (user_type = 1, not soft deleted)
+     */
+    private function getAdminsCount()
+    {
+        return User::where('user_type', 1)
             ->whereNull('deleted_at')
             ->count();
     }
@@ -151,6 +172,14 @@ class AdminDashboard extends Component
 
     public function render()
     {
-        return view('livewire.admin.admin-dashboard');
+        $userType = Auth::user()->user_type ?? 1; // Default to admin if not set
+        $isSuperAdmin = $userType === 2;
+        $routePrefix = $isSuperAdmin ? 'superadmin' : 'admin';
+        
+        // Use shared view with dynamic route prefix
+        return view('livewire.admin.admin-dashboard', [
+            'routePrefix' => $routePrefix,
+            'isSuperAdmin' => $isSuperAdmin,
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Vehicle;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
@@ -26,10 +27,11 @@ class Vehicles extends Component
 
     // Role-based configuration
     public $config = [
-        'role' => 'admin', // 'admin' or 'superadmin'
+        'role' => 'admin', // 'admin', 'superadmin', or 'user'
         'showRestore' => false, // Show restore functionality
         'printRoute' => 'admin.print.vehicles', // Route name for print functionality
         'minUserType' => 1, // Minimum user_type required (1 = admin, 2 = superadmin)
+        'viewPath' => 'livewire.shared.vehicles', // View path for rendering
     ];
 
     public $search = '';
@@ -59,12 +61,8 @@ class Vehicles extends Component
         1 => 'Disabled',
     ];
     
-    // Restore functionality (only for superadmin)
+    // Restore functionality moved to Shared\Vehicles\Restore component
     public $showDeleted = false;
-    public $selectedVehicleId;
-    public $selectedVehicleName = '';
-    public $showRestoreModal = false;
-    public $isRestoring = false;
 
     protected $queryString = ['search'];
 
@@ -77,8 +75,33 @@ class Vehicles extends Component
 
     public function mount($config = [])
     {
+        // Auto-detect user type if config not provided
+        $user = Auth::user();
+        $userType = $user->user_type ?? 1;
+        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) ?? false;
+        $isSuperAdmin = $userType === 2;
+        
+        // Default config based on user type
+        if ($isSuperGuard) {
+            $defaultConfig = [
+                'role' => 'user',
+                'showRestore' => false,
+                'printRoute' => 'user.print.vehicles',
+                'minUserType' => 0,
+                'viewPath' => 'livewire.user.data.vehicles',
+            ];
+        } else {
+            $defaultConfig = [
+                'role' => $isSuperAdmin ? 'superadmin' : 'admin',
+                'showRestore' => $isSuperAdmin,
+                'printRoute' => $isSuperAdmin ? 'superadmin.print.vehicles' : 'admin.print.vehicles',
+                'minUserType' => $isSuperAdmin ? 2 : 1,
+                'viewPath' => 'livewire.shared.vehicles',
+            ];
+        }
+        
         // Merge provided config with defaults
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_merge($defaultConfig, $config);
     }
 
     public function handleVehicleCreated()
@@ -269,68 +292,15 @@ class Vehicles extends Component
             return;
         }
 
-        $vehicle = Vehicle::onlyTrashed()->findOrFail($vehicleId);
-        $this->selectedVehicleId = $vehicleId;
-        $this->selectedVehicleName = $vehicle->vehicle;
-        $this->showRestoreModal = true;
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $vehicleId);
     }
 
-    public function restoreVehicle()
+    #[On('vehicle-restored')]
+    public function handleVehicleRestored()
     {
-        if (!$this->config['showRestore']) {
-            return;
-        }
-
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        // Authorization check
-        if (Auth::user()->user_type < $this->config['minUserType']) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $this->isRestoring = true;
-
-        try {
-            if (!$this->selectedVehicleId) {
-                return;
-            }
-
-            // Atomic restore: Only restore if currently deleted to prevent race conditions
-            $restored = Vehicle::onlyTrashed()
-                ->where('id', $this->selectedVehicleId)
-                ->update(['deleted_at' => null]);
-            
-            if ($restored === 0) {
-                // Vehicle was already restored or doesn't exist
-                $this->showRestoreModal = false;
-                $this->reset(['selectedVehicleId', 'selectedVehicleName']);
-                $this->dispatch('toast', message: 'This vehicle was already restored or does not exist. Please refresh the page.', type: 'error');
-                $this->resetPage();
-                return;
-            }
-            
-            // Now load the restored vehicle
-            $vehicle = Vehicle::findOrFail($this->selectedVehicleId);
-            
-            // Log the restore action
-            Logger::restore(
-                Vehicle::class,
-                $vehicle->id,
-                "Restored vehicle {$vehicle->vehicle}"
-            );
-            
-            Cache::forget('vehicles_all');
-
-            $this->showRestoreModal = false;
-            $this->reset(['selectedVehicleId', 'selectedVehicleName']);
-            $this->resetPage();
-            $this->dispatch('toast', message: "{$vehicle->vehicle} has been restored.", type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
+        Cache::forget('vehicles_all');
+        $this->resetPage();
     }
 
     public function openPrintView()
@@ -512,7 +482,7 @@ class Vehicles extends Component
 
         $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
-        return view('livewire.shared.vehicles', [
+        return view($this->config['viewPath'] ?? 'livewire.shared.vehicles', [
             'vehicles' => $vehicles,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,

@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Services\Logger;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
@@ -27,10 +28,11 @@ class Locations extends Component
 
     // Role-based configuration
     public $config = [
-        'role' => 'admin', // 'admin' or 'superadmin'
+        'role' => 'admin', // 'admin', 'superadmin', or 'user'
         'showRestore' => false, // Show restore functionality
         'printRoute' => 'admin.print.locations', // Route name for print functionality
         'minUserType' => 1, // Minimum user_type required (1 = admin, 2 = superadmin)
+        'viewPath' => 'livewire.shared.locations', // View path for rendering
     ];
 
     public $search = '';
@@ -60,12 +62,8 @@ class Locations extends Component
         1 => 'Disabled',
     ];
     
-    // Restore functionality (only for superadmin)
+    // Restore functionality moved to Shared\Locations\Restore component
     public $showDeleted = false;
-    public $selectedLocationId;
-    public $selectedLocationName = '';
-    public $showRestoreModal = false;
-    public $isRestoring = false;
 
     protected $queryString = ['search'];
 
@@ -78,8 +76,33 @@ class Locations extends Component
 
     public function mount($config = [])
     {
+        // Auto-detect user type if config not provided
+        $user = Auth::user();
+        $userType = $user->user_type ?? 1;
+        $isSuperGuard = ($user->user_type === 0 && $user->super_guard) ?? false;
+        $isSuperAdmin = $userType === 2;
+        
+        // Default config based on user type
+        if ($isSuperGuard) {
+            $defaultConfig = [
+                'role' => 'user',
+                'showRestore' => false,
+                'printRoute' => 'user.print.locations',
+                'minUserType' => 0,
+                'viewPath' => 'livewire.user.data.locations',
+            ];
+        } else {
+            $defaultConfig = [
+                'role' => $isSuperAdmin ? 'superadmin' : 'admin',
+                'showRestore' => $isSuperAdmin,
+                'printRoute' => $isSuperAdmin ? 'superadmin.print.locations' : 'admin.print.locations',
+                'minUserType' => $isSuperAdmin ? 2 : 1,
+                'viewPath' => 'livewire.shared.locations',
+            ];
+        }
+        
         // Merge provided config with defaults
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_merge($defaultConfig, $config);
     }
 
     public function handleLocationCreated()
@@ -288,68 +311,15 @@ class Locations extends Component
             return;
         }
 
-        $location = Location::onlyTrashed()->findOrFail($locationId);
-        $this->selectedLocationId = $locationId;
-        $this->selectedLocationName = $location->location_name;
-        $this->showRestoreModal = true;
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $locationId);
     }
 
-    public function restoreLocation()
+    #[On('location-restored')]
+    public function handleLocationRestored()
     {
-        if (!$this->config['showRestore']) {
-            return;
-        }
-
-        // Prevent multiple submissions
-        if ($this->isRestoring) {
-            return;
-        }
-
-        // Authorization check
-        if (Auth::user()->user_type < $this->config['minUserType']) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $this->isRestoring = true;
-
-        try {
-            if (!$this->selectedLocationId) {
-                return;
-            }
-
-            // Atomic restore: Only restore if currently deleted to prevent race conditions
-            $restored = Location::onlyTrashed()
-                ->where('id', $this->selectedLocationId)
-                ->update(['deleted_at' => null]);
-            
-            if ($restored === 0) {
-                // Location was already restored or doesn't exist
-                $this->showRestoreModal = false;
-                $this->reset(['selectedLocationId', 'selectedLocationName']);
-                $this->dispatch('toast', message: 'This location was already restored or does not exist. Please refresh the page.', type: 'error');
-                $this->resetPage();
-                return;
-            }
-            
-            // Now load the restored location
-            $location = Location::findOrFail($this->selectedLocationId);
-            
-            // Log the restore action
-            Logger::restore(
-                Location::class,
-                $location->id,
-                "Restored location {$location->location_name}"
-            );
-            
-            Cache::forget('locations_all');
-
-            $this->showRestoreModal = false;
-            $this->reset(['selectedLocationId', 'selectedLocationName']);
-            $this->resetPage();
-            $this->dispatch('toast', message: "{$location->location_name} has been restored.", type: 'success');
-        } finally {
-            $this->isRestoring = false;
-        }
+        Cache::forget('locations_all');
+        $this->resetPage();
     }
 
     public function openPrintView()
@@ -532,7 +502,7 @@ class Locations extends Component
 
         $defaultLogoPath = $this->getDefaultLogoPath();
 
-        return view('livewire.shared.locations', [
+        return view($this->config['viewPath'] ?? 'livewire.shared.locations', [
             'locations' => $locations,
             'filtersActive' => $filtersActive,
             'availableStatuses' => $this->availableStatuses,
