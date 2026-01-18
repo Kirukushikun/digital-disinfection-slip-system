@@ -170,14 +170,13 @@ class SessionController extends Controller
 
     public function destroy(Request $request)
     {
-        // Redirect to landing page first (before ending session)
-        $redirect = redirect('/');
-        
-        // Then clear the session
+        // Clear the session
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-    
-        return $redirect;
+        
+        // Redirect to landing page with success message
+        // The message will be flashed to the newly regenerated session
+        return redirect('/')->with('status', 'You have been successfully logged out.');
     }
 }
