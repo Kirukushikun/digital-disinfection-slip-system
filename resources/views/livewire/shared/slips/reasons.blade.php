@@ -273,7 +273,7 @@
 
 {{-- Delete Confirmation Modal --}}
 @if($this->showReasonsDeleteConfirmation)
-<div class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div class="fixed inset-0 z-100 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     {{-- Backdrop --}}
     <div class="fixed inset-0 bg-black/80 transition-opacity" wire:click="$set('showReasonsDeleteConfirmation', false)"></div>
 
@@ -293,7 +293,7 @@
 
                 <div class="px-4 py-3 sm:px-6 sm:py-4">
                     <p class="text-sm text-gray-600">
-                        Are you sure you want to delete this reason? Any disinfection slips using this reason will show "No Reason" instead.
+                        Are you sure you want to delete <span class="font-semibold text-gray-900">"{{ $reasonToDeleteText }}"</span>? Any disinfection slips using this reason will show "No Reason" instead.
                     </p>
                 </div>
 
@@ -323,4 +323,7 @@
     </div>
 </div>
 @endif
+
+{{-- Disable/Enable Reason Modal --}}
+<livewire:shared.slips.disable />
 </div>

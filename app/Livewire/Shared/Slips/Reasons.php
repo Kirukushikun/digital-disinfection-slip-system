@@ -22,6 +22,7 @@ class Reasons extends Component
     public $originalReasonText = '';
     public $savingReason = false;
     public $reasonToDelete = null;
+    public $reasonToDeleteText = '';
 
     // Search and filter
     public $searchReasonSettings = '';
@@ -33,6 +34,7 @@ class Reasons extends Component
 
     protected $listeners = [
         'openReasonsModal' => 'openReasonsModal',
+        'reason-status-toggled' => 'handleReasonStatusToggled',
     ];
 
     /**
@@ -188,7 +190,7 @@ class Reasons extends Component
                         return;
                     }
 
-                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                    $exists = Reason::whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                         ->exists();
 
                     if ($exists) {
@@ -216,7 +218,7 @@ class Reasons extends Component
             $reason->only(['reason_text', 'is_disabled'])
         );
 
-        $this->dispatch('toast', message: 'Reason created successfully.', type: 'success');
+        $this->dispatch('toast', message: "\"{$reason->reason_text}\" has been created successfully.", type: 'success');
 
         $this->closeCreateReasonModal();
 
@@ -256,7 +258,7 @@ class Reasons extends Component
                     }
 
                     $exists = Reason::where('id', '!=', $this->editingReasonId)
-                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)])
+                        ->whereRaw('LOWER(reason_text) = ?', [strtolower($trimmedValue)], 'and')
                         ->exists();
 
                     if ($exists) {
@@ -306,7 +308,7 @@ class Reasons extends Component
                 $reason->only(['reason_text', 'is_disabled'])
             );
 
-            $this->dispatch('toast', message: 'Reason updated successfully.', type: 'success');
+            $this->dispatch('toast', message: "\"{$reason->reason_text}\" has been updated successfully.", type: 'success');
         }
 
         $this->savingReason = false;
@@ -324,37 +326,24 @@ class Reasons extends Component
 
     public function toggleReasonDisabled($reasonId)
     {
-        // Authorization check
-        if (!$this->canManageReasons()) {
-            abort(403, 'Unauthorized action.');
-        }
+        // Dispatch event to the ReasonDisable component
+        $this->dispatch('openDisableModal', $reasonId);
+    }
 
-        $reason = Reason::find($reasonId);
-
-        if ($reason) {
-            $oldValues = $reason->only(['reason_text', 'is_disabled']);
-
-            $reason->is_disabled = !$reason->is_disabled;
-            $reason->save();
-
-            // Log the update action
-            Logger::update(
-                Reason::class,
-                $reason->id,
-                ($reason->is_disabled ? "Disabled reason: {$reason->reason_text}" : "Enabled reason: {$reason->reason_text}"),
-                $oldValues,
-                $reason->only(['reason_text', 'is_disabled'])
-            );
-
-            $status = $reason->is_disabled ? 'disabled' : 'enabled';
-            $this->dispatch('toast', message: "Reason {$status} successfully.", type: 'success');
-        }
+    public function handleReasonStatusToggled()
+    {
+        // Refresh the component data if needed
+        // This is called when the disable/enable action is completed
     }
 
     public function confirmDeleteReason($reasonId)
     {
-        $this->reasonToDelete = $reasonId;
-        $this->showReasonsDeleteConfirmation = true;
+        $reason = Reason::find($reasonId);
+        if ($reason) {
+            $this->reasonToDelete = $reasonId;
+            $this->reasonToDeleteText = $reason->reason_text;
+            $this->showReasonsDeleteConfirmation = true;
+        }
     }
 
     public function deleteReason()
@@ -385,11 +374,12 @@ class Reasons extends Component
                 $oldValues
             );
 
-            $this->dispatch('toast', message: 'Reason deleted successfully.', type: 'success');
+            $this->dispatch('toast', message: "\"{$reasonText}\" has been deleted successfully.", type: 'success');
         }
 
         $this->showReasonsDeleteConfirmation = false;
         $this->reasonToDelete = null;
+        $this->reasonToDeleteText = '';
     }
 
     public function attemptCloseReasonsModal()
@@ -414,6 +404,7 @@ class Reasons extends Component
         $this->showReasonsDeleteConfirmation = false;
         $this->showCreateReasonModal = false;
         $this->reasonToDelete = null;
+        $this->reasonToDeleteText = '';
         $this->reasonsPage = 1;
         $this->filterReasonStatus = 'all';
     }
