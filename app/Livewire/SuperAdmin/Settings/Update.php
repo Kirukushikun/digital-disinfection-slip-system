@@ -68,8 +68,9 @@ class Update extends Component
     public function getHasChangesProperty()
     {
         $attachmentChanged = (string)$this->original_attachment_retention_days !== (string)$this->attachment_retention_days;
-        // Password changed only if user entered a new non-empty password
-        $passwordChanged = !empty($this->default_guard_password) && $this->original_default_guard_password !== $this->default_guard_password;
+        // Password changed if user entered any non-empty password (since field starts blank)
+        $passwordChanged = !empty($this->default_guard_password);
+
         $logRetentionChanged = (string)$this->original_log_retention_months !== (string)$this->log_retention_months;
         $resolvedIssuesRetentionChanged = (string)$this->original_resolved_issues_retention_months !== (string)$this->resolved_issues_retention_months;
         $softDeletedRetentionChanged = (string)$this->original_soft_deleted_retention_months !== (string)$this->soft_deleted_retention_months;
@@ -122,14 +123,15 @@ class Update extends Component
 
         // Check if there are any changes (excluding logo file which is handled separately)
         $attachmentChanged = (string)$this->original_attachment_retention_days !== (string)$this->attachment_retention_days;
-        $passwordChanged = !empty($this->default_guard_password) && $this->original_default_guard_password !== $this->default_guard_password;
+        $passwordChanged = !empty($this->default_guard_password);
         $logRetentionChanged = (string)$this->original_log_retention_months !== (string)$this->log_retention_months;
         $resolvedIssuesRetentionChanged = (string)$this->original_resolved_issues_retention_months !== (string)$this->resolved_issues_retention_months;
         $softDeletedRetentionChanged = (string)$this->original_soft_deleted_retention_months !== (string)$this->soft_deleted_retention_months;
         $logoChanged = $this->default_logo_file !== null;
 
+
         if (!$attachmentChanged && !$passwordChanged && !$logRetentionChanged && !$resolvedIssuesRetentionChanged && !$softDeletedRetentionChanged && !$logoChanged) {
-            $this->dispatch('toast', message: 'No changes detected. Please modify at least one setting before saving.', type: 'info');
+            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
             return;
         }
 
@@ -149,7 +151,7 @@ class Update extends Component
             ['value' => (string)$this->attachment_retention_days]
         );
 
-        // Only update password if a new one was provided
+        // Update password if a new one was provided (any non-empty value since field starts blank)
         if (!empty($this->default_guard_password)) {
         Setting::updateOrCreate(
             ['setting_name' => 'default_guard_password'],
@@ -213,7 +215,7 @@ class Update extends Component
 
         // Update original values after successful save
         $this->original_attachment_retention_days = (string)$this->attachment_retention_days;
-        // Keep the stored password value for comparison, but reset field to blank
+        // Update the stored password value for comparison, and reset field to blank
         if ($passwordChanged) {
         $this->original_default_guard_password = $this->default_guard_password;
         }
