@@ -83,7 +83,7 @@
                             Create
                         </div>
                     </x-buttons.submit-button>
-                    <x-buttons.submit-button wire:click="openReasonsModal" color="indigo" size="lg">
+                    <x-buttons.submit-button wire:click="$dispatch('openReasonsModal')" color="indigo" size="lg">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -121,7 +121,7 @@
                                 </div>
                             </button>
                             <div class="border-t border-gray-200 my-1"></div>
-                            <button wire:click="openReasonsModal" @click="open = false"
+                            <button wire:click="$dispatch('openReasonsModal')" @click="open = false"
                                 class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">
                                 <div class="flex items-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,7 +138,7 @@
                 </div>
             @else
                 {{-- Only settings icon for reasons (location doesn't allow slip creation) --}}
-                <button wire:click="openReasonsModal" title="Reason Settings"
+                <button wire:click="$dispatch('openReasonsModal')" title="Reason Settings"
                     class="inline-flex items-center justify-center w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:cursor-pointer cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

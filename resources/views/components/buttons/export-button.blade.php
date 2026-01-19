@@ -113,7 +113,7 @@
                 <div class="border-t border-gray-200 my-1"></div>
                 
                 {{-- Reasons option --}}
-                <a href="#" wire:click.prevent="openReasonsModal" @click="open = false"
+                <a href="#" wire:click.prevent="$dispatch('openReasonsModal')" @click="open = false"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:cursor-pointer cursor-pointer">
                     <div class="flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

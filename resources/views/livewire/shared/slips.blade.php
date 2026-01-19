@@ -691,7 +691,8 @@
         {{-- Create Modal --}}
         <livewire:shared.slips.create :config="['minUserType' => $minUserType]" />
 
-        <x-modals.reason-settings :editing-reason-id="$editingReasonId" :editing-reason-text="$editingReasonText" :show-unsaved-changes-confirmation="$showUnsavedChangesConfirmation" :show-save-confirmation="$showSaveConfirmation" :saving-reason="$savingReason" />
+        {{-- Reasons Modal --}}
+        <livewire:shared.slips.reasons :config="['minUserType' => $minUserType]" />
         
         {{-- Restore Modal - Only for super-admin --}}
         @if ($showRestore)
