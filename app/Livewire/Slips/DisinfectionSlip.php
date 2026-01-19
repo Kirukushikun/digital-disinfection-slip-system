@@ -624,6 +624,7 @@ class DisinfectionSlip extends Component
         $this->selectedSlip->update([
             'status' => 4, // Incomplete
             'completed_at' => now(), // Set completion timestamp for incomplete status
+            'received_guard_id' => $oldReceivedGuardId, // Preserve the guard who received it
         ]);
 
         $slipId = $this->selectedSlip->slip_id;
