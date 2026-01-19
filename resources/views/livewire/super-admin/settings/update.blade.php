@@ -1,12 +1,6 @@
 <div>
     {{-- Settings Form Card --}}
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        {{-- Header --}}
-        <div class="px-6 py-5 bg-gray-50 border-b border-gray-200">
-            <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
-            <p class="text-gray-600 text-sm mt-1">Manage system configuration and preferences</p>
-        </div>
-
         <form wire:submit.prevent="update">
             @csrf
             <div class="p-6">
@@ -111,9 +105,9 @@
                             </label>
                             <input type="text" id="default_guard_password" wire:model="default_guard_password"
                                 class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-900 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Default Password">
+                                placeholder="Leave blank to keep current password, or enter new password">
                             <p class="text-xs text-gray-600 leading-relaxed">
-                                This password will be used when creating new guards or resetting guard passwords.
+                                This password will be used when creating new guards or resetting guard passwords. Leave blank to keep the current password unchanged.
                             </p>
                             @error('default_guard_password')
                                 <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>

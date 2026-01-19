@@ -129,7 +129,7 @@ class Update extends Component
         $logoChanged = $this->default_logo_file !== null;
 
         if (!$attachmentChanged && !$passwordChanged && !$logRetentionChanged && !$resolvedIssuesRetentionChanged && !$softDeletedRetentionChanged && !$logoChanged) {
-            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
+            $this->dispatch('toast', message: 'No changes detected. Please modify at least one setting before saving.', type: 'info');
             return;
         }
 
