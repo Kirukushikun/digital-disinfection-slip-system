@@ -69,13 +69,12 @@
             <template x-for="[value, label] in Object.entries(options)" :key="value">
                 <a href="#"
                     @click.prevent="
-                        selected = Number(value);
+                        selected = value;
                         closeDropdown();
                     "
                     class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
                     :class="{
-                        'bg-blue-50 text-blue-700': selected !== null && selected !== undefined && Number(
-                            selected) === Number(value)
+                        'bg-blue-50 text-blue-700': selected !== null && selected !== undefined && selected === value
                     }">
                     <span x-text="label"></span>
                 </a>

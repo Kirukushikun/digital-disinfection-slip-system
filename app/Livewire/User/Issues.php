@@ -44,6 +44,8 @@ class Issues extends Component
     {
         $this->filterResolved = null;
         $this->appliedResolved = null;
+        $this->filterIssueType = null;
+        $this->appliedIssueType = null;
         $this->filterSortDirection = $this->sortDirection; // Initialize filter sort with current sort
         $this->checkFiltersActive();
     }
@@ -127,9 +129,27 @@ class Issues extends Component
 
     public function getIssuesProperty()
     {
+        $user = Auth::user();
+        $isSuperAdmin = $user && $user->user_type === 2;
+
         $query = Issue::where('user_id', Auth::id())
-            ->whereNull('deleted_at')
-            ->with(['slip']);
+            ->whereNull('deleted_at');
+
+        // For non-superadmin users, exclude issues with deleted slips
+        if (!$isSuperAdmin) {
+            $query->where(function ($q) {
+                $q->whereNull('slip_id') // Include miscellaneous issues
+                  ->orWhereHas('slip', function ($slipQuery) {
+                      $slipQuery->whereNull('deleted_at'); // Only include issues with non-deleted slips
+                  });
+            });
+        }
+
+        $query->with(['slip' => function ($q) use ($isSuperAdmin) {
+            if ($isSuperAdmin) {
+                $q->withTrashed(); // SuperAdmins can see deleted slips
+            }
+        }]);
 
         // Search
         if (!empty($this->search)) {
