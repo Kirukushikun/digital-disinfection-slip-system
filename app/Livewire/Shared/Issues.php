@@ -1024,7 +1024,7 @@ class Issues extends Component
                     Logger::delete(
                         Photo::class,
                         $Photo->id,
-                        "Deleted Photo/photo from disinfection slip {$this->selectedSlip->slip_id}",
+                        "Deleted photo from disinfection slip {$this->selectedSlip->slip_id}",
                         $oldValues,
                         ['related_slip' => $this->selectedSlip->id]
                     );

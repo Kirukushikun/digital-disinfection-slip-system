@@ -1127,7 +1127,7 @@ class DisinfectionSlip extends Component
                     Logger::delete(
                         Photo::class,
                         $Photo->id,
-                        "Deleted Photo/photo from disinfection slip {$this->selectedSlip->slip_number}",
+                        "Deleted photo from disinfection slip {$this->selectedSlip->slip_number}",
                         $oldValues,
                         ['related_slip' => $this->selectedSlip->id]
                     );
