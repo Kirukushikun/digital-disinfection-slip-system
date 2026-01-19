@@ -970,7 +970,7 @@
     </x-modals.modal-template>
 
     {{-- Photo Gallery Modal --}}
-    <x-modals.Photo show="showAttachmentModal" :selectedSlip="$selectedSlip" />
+    <x-modals.photo show="showAttachmentModal" :selectedSlip="$selectedSlip" />
 
     {{-- Add Photos Modal is now inline Alpine.js modal above --}}
 
