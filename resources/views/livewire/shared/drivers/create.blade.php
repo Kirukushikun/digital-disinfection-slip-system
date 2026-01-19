@@ -33,9 +33,8 @@
                                 @error('last_name')
                                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
-                </div>
-            </div>
-        </div>
+                            </div>
+                        </div>
 
         <x-slot name="footer">
             <button wire:click="closeModal"

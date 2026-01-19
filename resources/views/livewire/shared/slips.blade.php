@@ -713,6 +713,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
     document.addEventListener('livewire:init', () => {
         Livewire.on('open-print-window', (event) => {
@@ -723,3 +724,4 @@
         });
     });
 </script>
+@endpush

@@ -105,41 +105,21 @@ class Slips extends Component
         4 => 'Incomplete',
     ];
 
-    // Details Modal
+    // Details Modal - kept for viewing slip details
     public $showDetailsModal = false;
     public $showAttachmentModal = false;
     public $showDeleteConfirmation = false;
     public $showRemoveAttachmentConfirmation = false;
-    // Restore functionality moved to Shared\Slips\Restore component
-    public $showDeleted = false; // Toggle to show deleted items
-
-    // Reasons Modal
-    public $showReasonsModal = false;
-    public $showCreateReasonModal = false;
-
-    #[Locked]
     public $selectedSlip = null;
-    public $attachmentFile = null;
     public $currentAttachmentIndex = 0;
     public $attachmentToDelete = null;
 
-    // Protection flags
-    public $isDeleting = false;
     // Restore functionality moved to Shared\Slips\Restore component
+    public $showDeleted = false; // Toggle to show deleted items
 
-    // Create Modal
-    public $showCreateModal = false;
-    public $showCancelCreateConfirmation = false;
-    public $vehicle_id;
-    public $location_id; // Origin
-    public $destination_id;
-    public $driver_id;
-    public $hatchery_guard_id;
-    public $received_guard_id = null; // Optional receiving guard for creation
-    public $reason_id;
-    public $remarks_for_disinfection;
-    public $isCreating = false;
-    public $isUpdating = false;
+    // Reason management properties (kept in main component as it's not a modal)
+    public $showReasonsModal = false;
+    public $showCreateReasonModal = false;
     public $newReasonText = '';
     public $editingReasonId = null;
     public $editingReasonText = '';
@@ -147,59 +127,12 @@ class Slips extends Component
     public $showSaveConfirmation = false;
     public $showUnsavedChangesConfirmation = false;
     public $savingReason = false;
-    
-    // Search properties for dropdowns (create modal)
-    public $searchOrigin = '';
-    public $searchDestination = '';
-    public $searchVehicle = '';
-    public $searchDriver = '';
-    public $searchHatcheryGuard = '';
-    public $searchReceivedGuard = '';
-    public $searchReason = '';
-    
-    // Search properties for details modal
-    public $searchDetailsVehicle = '';
-    public $searchDetailsDestination = '';
-    public $searchDetailsDriver = '';
+    public $showDeleteReasonConfirmation = false;
+    public $reasonToDelete = null;
     public $searchReasonSettings = '';
     public $filterReasonStatus = 'all'; // Filter: 'all', 'enabled', 'disabled'
     public $reasonsPage = 1; // Page for reasons pagination
-    
-    public function updatedSearchReasonSettings()
-    {
-        $this->reasonsPage = 1; // Reset to first page when search changes
-    }
 
-    public function updatedFilterReasonStatus()
-    {
-        $this->reasonsPage = 1; // Reset to first page when filter changes
-    }
-    
-    // Edit Modal
-    public $showEditModal = false;
-    public $showCancelEditConfirmation = false;
-    public $showFinalStatusConfirmation = false;
-    public $editVehicleId;
-    public $editLocationId; // Origin (for status 0)
-    public $editDestinationId;
-    public $editDriverId;
-    public $editHatcheryGuardId; // For status 0
-    public $editReceivedGuardId = null;
-    public $editReasonId;
-    public $editRemarksForDisinfection;
-    public $editStatus;
-    
-    // Search properties for edit modal
-    public $searchEditVehicle = '';
-    public $searchEditOrigin = '';
-    public $searchEditDestination = '';
-    public $searchEditDriver = '';
-    public $searchEditHatcheryGuard = '';
-    public $searchEditReceivedGuard = '';
-    public $searchEditReason = '';
-    
-    public $showDeleteReasonConfirmation = false;
-    public $reasonToDelete = null;
     private $cachedFilterGuards = null;
     private $cachedFilterGuardsCollection = null;
 
@@ -245,10 +178,20 @@ class Slips extends Component
         $this->appliedCreatedTo = $today;
         $this->filtersActive = true;
     }
-    
+
+    // Reason management methods
+    public function updatedSearchReasonSettings()
+    {
+        $this->reasonsPage = 1; // Reset to first page when search changes
+    }
+
+    public function updatedFilterReasonStatus()
+    {
+        $this->reasonsPage = 1; // Reset to first page when filter changes
+    }
+
     /**
-     * Prevent polling from running when any modal is open
-     * This prevents the selected slip data from being overwritten
+     * Handle slip creation completion
      */
     #[On('slip-created')]
     public function handleSlipCreated()
@@ -256,18 +199,28 @@ class Slips extends Component
         $this->resetPage();
     }
 
+    /**
+     * Handle slip updates
+     */
+    /**
+     * Handle slip deletion
+     */
+    /**
+     * Handle slip restoration
+     */
+    /**
+     * Prevent polling from running when any modal is open
+     * This prevents the selected slip data from being overwritten
+     */
     #[On('polling')]
     public function polling()
     {
         // If any modal is open, skip polling
-        if ($this->showFilters || $this->showDetailsModal || 
-            $this->showDeleteConfirmation || $this->showRemoveAttachmentConfirmation || 
-            $this->showEditModal || $this->showCancelCreateConfirmation || 
-            $this->showCancelEditConfirmation || $this->showAttachmentModal || 
-            $this->showReasonsModal) {
+        if ($this->showFilters || $this->showDetailsModal ||
+            $this->showRemoveAttachmentConfirmation || $this->showAttachmentModal) {
             return;
         }
-        
+
         // If a slip is selected, reload it with trashed relations (including if the slip itself is deleted)
         // Optimize relationship loading by only selecting needed fields
         if ($this->selectedSlip) {
@@ -1095,6 +1048,64 @@ class Slips extends Component
 
         $this->showDetailsModal = true;
     }
+
+    // ==================== MODAL DISPATCH METHODS ====================
+
+    public function openCreateModal()
+    {
+        // Dispatch event to the SlipCreate component
+        $this->dispatch('openCreateModal');
+    }
+
+    public function openEditModal($id = null)
+    {
+        // Load the slip if ID is provided (for other modals like details, delete)
+        if ($id) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($id);
+        }
+        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
+        elseif ($this->selectedSlip && $this->selectedSlip->id) {
+            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
+                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
+                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
+                'reason:id,reason_text,is_disabled',
+                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
+                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
+            ])->find($this->selectedSlip->id);
+        }
+
+        // Dispatch event to the SlipEdit component
+        $slipId = $id ?? ($this->selectedSlip?->id);
+        if ($slipId) {
+            $this->dispatch('openEditModal', $slipId);
+        }
+    }
+
+    public function openDeleteModal()
+    {
+        if (!$this->selectedSlip) {
+            return;
+        }
+
+        // Dispatch event to the Slips Delete component
+        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
+    }
+
+    public function openRestoreModal($slipId)
+    {
+        // Dispatch event to the Restore component
+        $this->dispatch('openRestoreModal', $slipId);
+    }
     
     public function getSelectedSlipAttachmentsProperty()
     {
@@ -1159,40 +1170,6 @@ class Slips extends Component
         return !empty($attachmentIds);
     }
 
-    public function openEditModal($id = null)
-    {
-        // Load the slip if ID is provided (for other modals like details, delete)
-        if ($id) {
-            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($id);
-        }
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations and find deleted slips
-        elseif ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($this->selectedSlip->id);
-        }
-
-        // Dispatch event to the SlipEdit component
-        $slipId = $id ?? ($this->selectedSlip?->id);
-        if ($slipId) {
-            $this->dispatch('openEditModal', $slipId);
-        }
-    }
-
     #[On('slip-updated')]
     public function handleSlipUpdated()
     {
@@ -1211,391 +1188,7 @@ class Slips extends Component
         }
     }
     
-    public function updatedEditStatus($value)
-    {
-        // Status 0, 1, 2 (Pending, Disinfecting, In-Transit): Receiving guard is optional
-        // Status 3 (Completed): Receiving guard is required (validation will handle this)
-        if ($value == 0 || $value == 1 || $value == 2) {
-            // Status 0, 1, 2: Receiving guard is optional
-            // Keep it as is - user can manually clear it if needed
-        } elseif ($value == 3) {
-            // Status 3: Receiving guard is required
-            // If it's null, we'll let validation handle the error
-            // Don't auto-set it, let user choose
-        }
-    }
 
-    public function closeEditModal()
-    {
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations
-        // Optimize relationship loading by only selecting needed fields
-        if ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($this->selectedSlip->id);
-        }
-        
-        // Check if form has unsaved changes
-        if ($this->hasEditUnsavedChanges()) {
-            $this->showCancelEditConfirmation = true;
-        } else {
-            $this->resetEditForm();
-            $this->showEditModal = false;
-        }
-    }
-
-    public function cancelEdit()
-    {
-        // Re-fetch selectedSlip with withTrashed() to preserve deleted relations after cancel (including if slip is deleted)
-        // Optimize relationship loading by only selecting needed fields
-        if ($this->selectedSlip && $this->selectedSlip->id) {
-            $this->selectedSlip = DisinfectionSlipModel::withTrashed()->with([
-                'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },
-                'location' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'destination' => function($q) { $q->select('id', 'location_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'driver' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'disabled', 'deleted_at')->withTrashed(); },
-                'reason:id,reason_text,is_disabled',
-                'hatcheryGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); },
-                'receivedGuard' => function($q) { $q->select('id', 'first_name', 'middle_name', 'last_name', 'username', 'disabled', 'deleted_at')->withTrashed(); }
-            ])->find($this->selectedSlip->id);
-        }
-        $this->resetEditForm();
-        $this->showCancelEditConfirmation = false;
-        $this->showEditModal = false;
-    }
-
-    public function resetEditForm()
-    {
-        $this->editVehicleId = null;
-        $this->editLocationId = null;
-        $this->editDestinationId = null;
-        $this->editDriverId = null;
-        $this->editHatcheryGuardId = null;
-        $this->editReceivedGuardId = null;
-        $this->editReasonId = null;
-        $this->editRemarksForDisinfection = null;
-        $this->editStatus = null;
-        $this->searchEditVehicle = '';
-        $this->searchEditOrigin = '';
-        $this->searchEditDestination = '';
-        $this->searchEditDriver = '';
-        $this->searchEditHatcheryGuard = '';
-        $this->searchEditReceivedGuard = '';
-        $this->searchEditReason = '';
-        $this->resetErrorBag();
-    }
-
-    public function hasEditUnsavedChanges()
-    {
-        if (!$this->selectedSlip) {
-            return false;
-        }
-        
-        return $this->editVehicleId != $this->selectedSlip->vehicle_id ||
-               $this->editLocationId != $this->selectedSlip->location_id ||
-               $this->editDestinationId != $this->selectedSlip->destination_id ||
-               $this->editDriverId != $this->selectedSlip->driver_id ||
-               $this->editHatcheryGuardId != $this->selectedSlip->hatchery_guard_id ||
-               $this->editReceivedGuardId != $this->selectedSlip->received_guard_id ||
-               $this->editReasonId != $this->selectedSlip->reason_id ||
-               $this->editRemarksForDisinfection != $this->selectedSlip->remarks_for_disinfection ||
-               $this->editStatus != $this->selectedSlip->status;
-    }
-
-    public function getHasChangesProperty()
-    {
-        return $this->hasEditUnsavedChanges();
-    }
-
-    public function confirmDeleteSlip()
-    {
-        $this->showDeleteConfirmation = true;
-    }
-
-    public function saveEdit()
-    {
-        // Prevent multiple submissions
-        if ($this->isUpdating) {
-            return;
-        }
-
-        $this->isUpdating = true;
-
-        try {
-        if (!$this->canEdit()) {
-            $this->dispatch('toast', message: 'Cannot edit a completed slip.', type: 'error');
-            return;
-        }
-
-        // Use the edited status, not the current status
-        $status = $this->editStatus;
-        
-        // Validate status
-        $this->validate([
-            'editStatus' => 'required|in:0,1,2,3,4',
-        ], [], [
-            'editStatus' => 'Status',
-        ]);
-        
-        // Build validation rules based on selected status
-        $rules = [
-            'editVehicleId' => 'required|exists:vehicles,id',
-            'editDestinationId' => [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) {
-                    if ($value == $this->editLocationId) {
-                        $fail('The destination cannot be the same as the origin.');
-                    }
-                },
-            ],
-            'editDriverId' => 'required|exists:drivers,id',
-            'editReasonId' => [
-                'required',
-                'exists:reasons,id',
-                function ($attribute, $value, $fail) {
-                    if ($value) {
-                        $reason = Reason::find($value);
-                        if (!$reason || $reason->is_disabled) {
-                            $fail('The selected reason is not available.');
-                        }
-                    }
-                },
-            ],
-            'editRemarksForDisinfection' => 'nullable|string|max:1000',
-        ];
-
-        // Status 0, 1, 2 (Pending, Disinfecting, In-Transit): Origin and Hatchery Guard are required, Receiving Guard is optional
-        if ($status == 0 || $status == 1 || $status == 2) {
-            $rules['editLocationId'] = [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) {
-                    if ($value == $this->editDestinationId) {
-                        $fail('The origin cannot be the same as the destination.');
-                    }
-                },
-            ];
-            $rules['editHatcheryGuardId'] = [
-                'required',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    $guard = User::find($value);
-                    if (!$guard) {
-                        $fail('The selected hatchery guard does not exist.');
-                        return;
-                    }
-                    if ($guard->user_type !== 0) {
-                        $fail('The selected user is not a guard.');
-                        return;
-                    }
-                    if ($guard->disabled) {
-                        $fail('The selected hatchery guard has been disabled.');
-                    }
-                },
-            ];
-            $rules['editReceivedGuardId'] = [
-                'nullable',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    if ($value && $value == $this->editHatcheryGuardId) {
-                        $fail('The receiving guard cannot be the same as the hatchery guard.');
-                        return;
-                    }
-                    if ($value) {
-                        $guard = User::find($value);
-                        if (!$guard) {
-                            $fail('The selected receiving guard does not exist.');
-                            return;
-                        }
-                        if ($guard->user_type !== 0) {
-                            $fail('The selected user is not a guard.');
-                            return;
-                        }
-                        if ($guard->disabled) {
-                            $fail('The selected receiving guard has been disabled.');
-                        }
-                    }
-                },
-            ];
-        }
-        
-        // Status 3 (Completed): Origin, Hatchery Guard, and Receiving Guard are all required
-        if ($status == 3) {
-            $rules['editLocationId'] = [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) {
-                    if ($value == $this->editDestinationId) {
-                        $fail('The origin cannot be the same as the destination.');
-                    }
-                },
-            ];
-            $rules['editHatcheryGuardId'] = [
-                'required',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    $guard = User::find($value);
-                    if (!$guard) {
-                        $fail('The selected hatchery guard does not exist.');
-                        return;
-                    }
-                    if ($guard->user_type !== 0) {
-                        $fail('The selected user is not a guard.');
-                        return;
-                    }
-                    if ($guard->disabled) {
-                        $fail('The selected hatchery guard has been disabled.');
-                    }
-                },
-            ];
-            $rules['editReceivedGuardId'] = [
-                'required',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    if ($value && $value == $this->editHatcheryGuardId) {
-                        $fail('The receiving guard cannot be the same as the hatchery guard.');
-                        return;
-                    }
-                    $guard = User::find($value);
-                    if (!$guard) {
-                        $fail('The selected receiving guard does not exist.');
-                        return;
-                    }
-                    if ($guard->user_type !== 0) {
-                        $fail('The selected user is not a guard.');
-                        return;
-                    }
-                    if ($guard->disabled) {
-                        $fail('The selected receiving guard has been disabled.');
-                    }
-                },
-            ];
-        }
-
-        $this->validate($rules, [], [
-            'editVehicleId' => 'Vehicle',
-            'editLocationId' => 'Origin',
-            'editDestinationId' => 'Destination',
-            'editDriverId' => 'Driver',
-            'editHatcheryGuardId' => 'Hatchery Guard',
-            'editReceivedGuardId' => 'Receiving Guard',
-            'editReasonId' => 'Reason',
-            'editRemarksForDisinfection' => 'Remarks for Disinfection',
-            'editStatus' => 'Status',
-        ]);
-
-        // Check if there are any changes
-        if (!$this->hasEditUnsavedChanges()) {
-            $this->dispatch('toast', message: 'No changes detected.', type: 'info');
-            return;
-        }
-
-        // Sanitize remarks_for_disinfection
-        $sanitizedRemarks = $this->sanitizeText($this->editRemarksForDisinfection);
-
-        // Capture old values for logging
-        $oldValues = $this->selectedSlip->only([
-            'vehicle_id',
-            'location_id',
-            'destination_id',
-            'driver_id',
-            'hatchery_guard_id',
-            'received_guard_id',
-            'reason_id',
-            'remarks_for_disinfection',
-            'status'
-        ]);
-
-        // Build update data based on status
-        $updateData = [
-            'vehicle_id' => $this->editVehicleId,
-            'destination_id' => $this->editDestinationId,
-            'driver_id' => $this->editDriverId,
-            'reason_id' => $this->editReasonId,
-            'remarks_for_disinfection' => $sanitizedRemarks,
-            'status' => $this->editStatus,
-        ];
-
-        // Status 0, 1, 2: Update origin and hatchery guard, receiving guard is optional
-        if ($status == 0 || $status == 1 || $status == 2) {
-            $updateData['location_id'] = $this->editLocationId;
-            $updateData['hatchery_guard_id'] = $this->editHatcheryGuardId;
-            $updateData['received_guard_id'] = $this->editReceivedGuardId; // Can be null
-        }
-        
-        // Status 3: Update origin, hatchery guard, and receiving guard (required)
-        if ($status == 3) {
-            $updateData['location_id'] = $this->editLocationId;
-            $updateData['hatchery_guard_id'] = $this->editHatcheryGuardId;
-            $updateData['received_guard_id'] = $this->editReceivedGuardId; // Required, validated above
-        }
-
-        // Handle completed_at based on status changes
-        $oldStatus = $this->selectedSlip->status;
-        $newStatus = $status;
-        
-        // Only update completed_at if status actually changed
-        if ($oldStatus != $newStatus) {
-            // If changing TO status 3 (Completed), set completed_at to current time
-            if ($newStatus == 3) {
-                $updateData['completed_at'] = now();
-            }
-            
-            // If changing FROM status 3 (Completed) to any other status, clear completed_at
-            if ($oldStatus == 3 && $newStatus != 3) {
-                $updateData['completed_at'] = null;
-            }
-        }
-
-        $this->selectedSlip->update($updateData);
-
-        // Refresh the slip with relationships (including trashed relations)
-        $this->selectedSlip->refresh();
-        $this->selectedSlip->load([
-            'vehicle' => function($q) { $q->withTrashed(); },
-            'location' => function($q) { $q->withTrashed(); },
-            'destination' => function($q) { $q->withTrashed(); },
-            'driver' => function($q) { $q->withTrashed(); },
-            'reason',
-            'hatcheryGuard' => function($q) { $q->withTrashed(); },
-            'receivedGuard' => function($q) { $q->withTrashed(); }
-        ]);
-
-        $slipId = $this->selectedSlip->slip_id;
-        
-        // Log the update action
-        Logger::update(
-            DisinfectionSlipModel::class,
-            $this->selectedSlip->id,
-            "Updated slip {$slipId}",
-            $oldValues,
-            $updateData
-        );
-        
-        $this->resetEditForm();
-        $this->showEditModal = false;
-        $this->dispatch('toast', message: "{$slipId} has been updated.", type: 'success');
-        } finally {
-            $this->isUpdating = false;
-        }
-    }
-
-    public function openDeleteModal()
-    {
-        if (!$this->selectedSlip) {
-            return;
-        }
-        
-        // Dispatch event to the Slips Delete component
-        $this->dispatch('openDeleteModal', $this->selectedSlip->id);
-    }
 
     #[On('slip-deleted')]
     public function handleSlipDeleted()
@@ -1605,46 +1198,6 @@ class Slips extends Component
         $this->selectedSlip = null;
     }
 
-    public function toggleDeletedView()
-    {
-        $this->showDeleted = !$this->showDeleted;
-        
-        if ($this->showDeleted) {
-            // Entering restore mode: Store current values only if not already stored, then clear date filters
-            if ($this->previousAppliedCreatedFrom === null && $this->previousAppliedCreatedTo === null) {
-                $this->previousFilterCreatedFrom = $this->filterCreatedFrom;
-                $this->previousFilterCreatedTo = $this->filterCreatedTo;
-                $this->previousAppliedCreatedFrom = $this->appliedCreatedFrom;
-                $this->previousAppliedCreatedTo = $this->appliedCreatedTo;
-            }
-            
-            $this->filterCreatedFrom = '';
-            $this->filterCreatedTo = '';
-            $this->appliedCreatedFrom = null;
-            $this->appliedCreatedTo = null;
-        } else {
-            // Exiting restore mode: Always restore previous values, then reset stored values
-            $this->filterCreatedFrom = $this->previousFilterCreatedFrom ?? '';
-            $this->filterCreatedTo = $this->previousFilterCreatedTo ?? '';
-            $this->appliedCreatedFrom = $this->previousAppliedCreatedFrom;
-            $this->appliedCreatedTo = $this->previousAppliedCreatedTo;
-            $this->filtersActive = ($this->appliedCreatedFrom || $this->appliedCreatedTo);
-            
-            // Reset stored values for next time
-            $this->previousFilterCreatedFrom = null;
-            $this->previousFilterCreatedTo = null;
-            $this->previousAppliedCreatedFrom = null;
-            $this->previousAppliedCreatedTo = null;
-        }
-        
-        $this->resetPage();
-    }
-
-    public function openRestoreModal($slipId)
-    {
-        // Dispatch event to the Restore component
-        $this->dispatch('openRestoreModal', $slipId);
-    }
 
     #[On('slip-restored')]
     public function handleSlipRestored()
@@ -1664,280 +1217,6 @@ class Slips extends Component
     public function clearSelectedSlip()
     {
         $this->selectedSlip = null;
-    }
-
-    // ==================== CREATE MODAL METHODS ====================
-
-    public function openCreateModal()
-    {
-        // Dispatch event to the SlipCreate component
-        $this->dispatch('openCreateModal');
-    }
-
-    public function closeCreateModal()
-    {
-        // Check if form has unsaved changes
-        if ($this->hasUnsavedChanges()) {
-            $this->showCancelCreateConfirmation = true;
-        } else {
-            $this->resetCreateForm();
-            $this->showCreateModal = false;
-        }
-    }
-
-    public function cancelCreate()
-    {
-        $this->resetCreateForm();
-        $this->showCancelCreateConfirmation = false;
-        $this->showCreateModal = false;
-    }
-
-    public function resetCreateForm()
-    {
-        $this->vehicle_id = null;
-        $this->location_id = null;
-        $this->destination_id = null;
-        $this->driver_id = null;
-        $this->hatchery_guard_id = null;
-        $this->received_guard_id = null;
-        $this->reason_id = null;
-        $this->remarks_for_disinfection = null;
-        $this->searchOrigin = '';
-        $this->searchDestination = '';
-        $this->searchVehicle = '';
-        $this->searchDriver = '';
-        $this->searchHatcheryGuard = '';
-        $this->searchReceivedGuard = '';
-        $this->searchReason = '';
-        $this->resetErrorBag();
-    }
-
-    public function hasUnsavedChanges()
-    {
-        return !empty($this->vehicle_id) || 
-               !empty($this->location_id) || 
-               !empty($this->destination_id) || 
-               !empty($this->driver_id) || 
-               !empty($this->hatchery_guard_id) || 
-               !empty($this->received_guard_id) || 
-               !empty($this->reason_id) ||
-               !empty($this->remarks_for_disinfection);
-    }
-
-    public function createSlip()
-    {
-        // Prevent multiple submissions
-        if ($this->isCreating) {
-            return;
-        }
-
-        $this->isCreating = true;
-
-        try {
-        $this->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'location_id' => [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) {
-                    if ($value == $this->destination_id) {
-                        $fail('The origin cannot be the same as the destination.');
-                    }
-                },
-            ],
-            'destination_id' => [
-                'required',
-                'exists:locations,id',
-                function ($attribute, $value, $fail) {
-                    if ($value == $this->location_id) {
-                        $fail('The destination cannot be the same as the origin.');
-                    }
-                },
-            ],
-            'driver_id' => 'required|exists:drivers,id',
-            'hatchery_guard_id' => [
-                'required',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    $guard = User::find($value);
-                    if (!$guard) {
-                        $fail('The selected hatchery guard does not exist.');
-                        return;
-                    }
-                    if ($guard->user_type !== 0) {
-                        $fail('The selected user is not a guard.');
-                        return;
-                    }
-                    if ($guard->disabled) {
-                        $fail('The selected hatchery guard has been disabled.');
-                    }
-                },
-            ],
-            'received_guard_id' => [
-                'nullable',
-                'exists:users,id',
-                function ($attribute, $value, $fail) {
-                    if ($value && $value == $this->hatchery_guard_id) {
-                        $fail('The receiving guard cannot be the same as the hatchery guard.');
-                        return;
-                    }
-                    if ($value) {
-                        $guard = User::find($value);
-                        if (!$guard) {
-                            $fail('The selected receiving guard does not exist.');
-                            return;
-                        }
-                        if ($guard->user_type !== 0) {
-                            $fail('The selected user is not a guard.');
-                            return;
-                        }
-                        if ($guard->disabled) {
-                            $fail('The selected receiving guard has been disabled.');
-                        }
-                    }
-                },
-            ],
-            'reason_id' => [
-                'required',
-                'exists:reasons,id',
-                function ($attribute, $value, $fail) {
-                    if ($value) {
-                        $reason = Reason::find($value);
-                        if (!$reason || $reason->is_disabled) {
-                            $fail('The selected reason is not available.');
-                        }
-                    }
-                },
-            ],
-            'remarks_for_disinfection' => 'nullable|string|max:1000',
-        ], [], [
-            'location_id' => 'Origin',
-            'destination_id' => 'Destination',
-            'vehicle_id' => 'Vehicle',
-            'driver_id' => 'Driver',
-            'hatchery_guard_id' => 'Hatchery Guard',
-            'received_guard_id' => 'Receiving Guard',
-            'reason_id' => 'Reason',
-            'remarks_for_disinfection' => 'Remarks for Disinfection',
-        ]);
-
-        // Sanitize remarks_for_disinfection
-        $sanitizedRemarks = $this->sanitizeText($this->remarks_for_disinfection);
-
-        $slip = DisinfectionSlipModel::create([
-            'vehicle_id' => $this->vehicle_id,
-            'location_id' => $this->location_id,
-            'destination_id' => $this->destination_id,
-            'driver_id' => $this->driver_id,
-            'hatchery_guard_id' => $this->hatchery_guard_id,
-            'received_guard_id' => $this->received_guard_id,
-            'reason_id' => $this->reason_id,
-            'remarks_for_disinfection' => $sanitizedRemarks,
-            'status' => 0, // Pending
-        ]);
-
-        $slipId = $slip->slip_id;
-        
-        // Log the create action
-        Logger::create(
-            DisinfectionSlipModel::class,
-            $slip->id,
-            "Created slip {$slipId}",
-            $slip->only([
-                'vehicle_id',
-                'location_id',
-                'destination_id',
-                'driver_id',
-                'hatchery_guard_id',
-                'received_guard_id',
-                'reason_id',
-                'remarks_for_disinfection',
-                'status'
-            ])
-        );
-        
-        $this->dispatch('toast', message: "{$slipId} has been created.", type: 'success');
-        
-        // Close modal and reset form
-        $this->showCreateModal = false;
-        $this->resetCreateForm();
-        $this->resetPage();
-        } finally {
-            $this->isCreating = false;
-        }
-    }
-
-    // Watch for changes to location_id or destination_id to prevent same selection
-    public function updatedLocationId()
-    {
-        // If destination is the same as origin, clear it
-        if ($this->destination_id == $this->location_id) {
-            $this->destination_id = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedDestinationId()
-    {
-        // If origin is the same as destination, clear it
-        if ($this->location_id == $this->destination_id) {
-            $this->location_id = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedHatcheryGuardId()
-    {
-        // If receiving guard is the same as hatchery guard, clear it
-        if ($this->received_guard_id == $this->hatchery_guard_id) {
-            $this->received_guard_id = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedReceivedGuardId()
-    {
-        // If receiving guard is set to hatchery guard, clear the hatchery guard
-        if ($this->received_guard_id == $this->hatchery_guard_id) {
-            $this->hatchery_guard_id = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedEditLocationId()
-    {
-        // If destination is the same as origin, clear it
-        if ($this->editDestinationId == $this->editLocationId) {
-            $this->editDestinationId = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedEditDestinationId()
-    {
-        // If origin is the same as destination, clear it
-        if ($this->editLocationId == $this->editDestinationId) {
-            $this->editLocationId = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedEditHatcheryGuardId()
-    {
-        // If receiving guard is the same as hatchery guard, clear it
-        if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
-            $this->editReceivedGuardId = null;
-        }
-        // Don't clear search - dropdowns manage their own state
-    }
-
-    public function updatedEditReceivedGuardId()
-    {
-        // If receiving guard is set to hatchery guard, clear the hatchery guard
-        if ($this->editReceivedGuardId == $this->editHatcheryGuardId) {
-            $this->editHatcheryGuardId = null;
-        }
-        // Don't clear search - dropdowns manage their own state
     }
 
     public function openAttachmentModal($index = 0)
