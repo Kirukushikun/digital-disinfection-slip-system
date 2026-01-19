@@ -122,6 +122,14 @@ class Edit extends Component
             if ($attachmentId) {
                 $Photo = Photo::find($attachmentId);
                 if ($Photo) {
+                    // Log the photo deletion before deleting
+                    Logger::delete(
+                        Photo::class,
+                        $Photo->id,
+                        "Deleted location logo: {$Photo->file_path}",
+                        $Photo->only(['file_path', 'user_id'])
+                    );
+
                     // Delete the physical file from storage
                     if (Storage::disk('public')->exists($Photo->file_path)) {
                         Storage::disk('public')->delete($Photo->file_path);
@@ -137,6 +145,14 @@ class Edit extends Component
             if ($attachmentId) {
                 $oldAttachment = Photo::find($attachmentId);
                 if ($oldAttachment) {
+                    // Log the photo deletion before deleting
+                    Logger::delete(
+                        Photo::class,
+                        $oldAttachment->id,
+                        "Deleted old location logo during update: {$oldAttachment->file_path}",
+                        $oldAttachment->only(['file_path', 'user_id'])
+                    );
+
                     if (Storage::disk('public')->exists($oldAttachment->file_path)) {
                         Storage::disk('public')->delete($oldAttachment->file_path);
                     }
