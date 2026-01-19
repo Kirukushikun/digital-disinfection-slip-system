@@ -12,6 +12,7 @@ class Disable extends Component
 {
     public $showModal = false;
     public $locationId;
+    public $locationName = '';
     public $locationDisabled = false;
 
     public $config = ['minUserType' => 2];
@@ -29,6 +30,7 @@ class Disable extends Component
     {
         $location = Location::findOrFail($locationId);
         $this->locationId = $locationId;
+        $this->locationName = $location->location_name;
         $this->locationDisabled = $location->disabled;
         $this->showModal = true;
     }
@@ -36,7 +38,7 @@ class Disable extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['locationId', 'locationDisabled']);
+        $this->reset(['locationId', 'locationName', 'locationDisabled']);
     }
 
     public function toggle()
@@ -77,14 +79,14 @@ class Disable extends Component
             // Refresh location to get updated data
             $location->refresh();
 
-            $locationName = $location->location_name;
-            $message = !$wasDisabled ? "{$locationName} has been disabled." : "{$locationName} has been enabled.";
+            $this->locationName = $location->location_name;
+            $message = !$wasDisabled ? "{$this->locationName} has been disabled." : "{$this->locationName} has been enabled.";
 
             // Log the status change
             Logger::update(
                 Location::class,
                 $location->id,
-                ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " \"{$locationName}\"",
+                ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " \"{$this->locationName}\"",
                 ['disabled' => $wasDisabled],
                 ['disabled' => $newStatus]
             );

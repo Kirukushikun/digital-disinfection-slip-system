@@ -102,7 +102,8 @@ class Restore extends Component
                 return;
             }
 
-            $guardName = $this->getGuardFullName($user);
+            $this->userName = $this->getGuardFullName($user);
+            $guardName = $this->userName;
 
             // Log the restore action
             Logger::restore(
@@ -116,9 +117,9 @@ class Restore extends Component
             $this->showModal = false;
             $this->reset(['userId', 'userName']);
             $this->dispatch('guard-restored');
-            $this->dispatch('toast', message: 'Guard restored successfully.', type: 'success');
+            $this->dispatch('toast', message: "{$guardName} has been restored successfully.", type: 'success');
         } catch (\Exception $e) {
-            $this->dispatch('toast', message: 'Failed to restore guard: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: "Failed to restore {$guardName}: " . $e->getMessage(), type: 'error');
         } finally {
             $this->isRestoring = false;
         }

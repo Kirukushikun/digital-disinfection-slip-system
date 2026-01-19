@@ -77,9 +77,9 @@ class Delete extends Component
             $this->showModal = false;
             $this->reset(['vehicleId', 'vehicleName']);
             $this->dispatch('vehicle-deleted');
-            $this->dispatch('toast', message: "Vehicle {$vehicleName} has been deleted.", type: 'success');
+            $this->dispatch('toast', message: "{$vehicleName} has been deleted.", type: 'success');
         } catch (\Exception $e) {
-            $this->dispatch('toast', message: 'Failed to delete vehicle: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: "Failed to delete {$vehicleName}: " . $e->getMessage(), type: 'error');
         } finally {
             $this->isDeleting = false;
         }

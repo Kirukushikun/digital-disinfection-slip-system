@@ -592,15 +592,6 @@ class Issues extends Component
         $this->selectedSlip = null;
     }
     
-    public function openEditModal()
-    {
-        if (!$this->selectedSlip) {
-            return;
-        }
-        
-        // Dispatch event to the Issues Edit component
-        $this->dispatch('openEditModal', $this->selectedSlip->id);
-    }
 
     #[On('slip-updated')]
     public function handleSlipUpdated()

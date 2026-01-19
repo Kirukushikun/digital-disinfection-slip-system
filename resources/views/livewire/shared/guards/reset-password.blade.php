@@ -16,7 +16,7 @@
 
         @csrf
         <p class="text-sm text-gray-600">
-            Are you sure you want to reset this guard's password? The password will be reset to the
+            Are you sure you want to reset <span class="font-semibold text-gray-900">{{ $userName }}</span>'s password? The password will be reset to the
             default password "<span
                 class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
         </p>

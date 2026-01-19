@@ -13,7 +13,8 @@ class Edit extends Component
 {
     public $showModal = false;
     public $userId;
-    
+    public $guardName = '';
+
     // Form fields
     public $first_name;
     public $middle_name;
@@ -62,7 +63,7 @@ class Edit extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['userId', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard']);
+        $this->reset(['userId', 'guardName', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard']);
     }
 
     public function getHasChangesProperty()
@@ -179,11 +180,15 @@ class Edit extends Component
 
             $user->save();
 
+            // Refresh user to get updated data
+            $user->refresh();
+            $this->guardName = $this->getGuardFullName($user);
+
             Logger::log(
                 'update',
                 User::class,
                 $user->id,
-                "Updated guard: {$user->username}",
+                "Updated guard: {$this->guardName}",
                 $oldValues,
                 [
                     'first_name' => $user->first_name,
@@ -201,7 +206,7 @@ class Edit extends Component
             $this->showModal = false;
             $this->reset(['userId', 'first_name', 'middle_name', 'last_name', 'super_guard', 'original_first_name', 'original_middle_name', 'original_last_name', 'original_super_guard']);
             $this->dispatch('guard-updated');
-            $this->dispatch('toast', message: 'Guard updated successfully.', type: 'success');
+            $this->dispatch('toast', message: "{$this->guardName} has been updated successfully.", type: 'success');
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('toast', message: 'Failed to update guard: ' . $e->getMessage(), type: 'error');
@@ -223,6 +228,15 @@ class Edit extends Component
         $name = preg_replace('/\s+/', ' ', $name);
         
         return mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
+     * Get guard's full name formatted
+     */
+    private function getGuardFullName($user)
+    {
+        $parts = array_filter([$user->first_name, $user->middle_name, $user->last_name]);
+        return implode(' ', $parts);
     }
 
     public function render()

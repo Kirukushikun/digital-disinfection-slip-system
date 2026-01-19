@@ -12,6 +12,7 @@ class Edit extends Component
 {
     public $showModal = false;
     public $vehicleId;
+    public $vehicleName = '';
     public $vehicle = '';
     public $original_vehicle = '';
 
@@ -37,7 +38,7 @@ class Edit extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['vehicleId', 'vehicle', 'original_vehicle']);
+        $this->reset(['vehicleId', 'vehicleName', 'vehicle', 'original_vehicle']);
         $this->resetValidation();
     }
 
@@ -102,12 +103,14 @@ class Edit extends Component
         $vehicle->update([
             'vehicle' => $vehicleValue,
         ]);
-        
+
+        $this->vehicleName = $vehicleValue;
+
         // Log the update action
         Logger::update(
             Vehicle::class,
             $vehicle->id,
-            "Updated to \"{$vehicleValue}\"",
+            "Updated to \"{$this->vehicleName}\"",
             $oldValues,
             ['vehicle' => $vehicleValue]
         );
@@ -117,7 +120,7 @@ class Edit extends Component
         $this->showModal = false;
         $this->reset(['vehicleId', 'vehicle', 'original_vehicle']);
         $this->dispatch('vehicle-updated');
-        $this->dispatch('toast', message: "Vehicle {$vehicleValue} has been updated.", type: 'success');
+        $this->dispatch('toast', message: "{$this->vehicleName} has been updated successfully.", type: 'success');
     }
 
     /**

@@ -29,10 +29,10 @@
         @csrf
         <p class="text-sm text-gray-600">
             @if ($locationDisabled)
-                Are you sure you want to enable this location? This location will be
+                Are you sure you want to enable <span class="font-semibold text-gray-900">{{ $locationName }}</span>? This location will be
                 available for use again.
             @else
-                Are you sure you want to disable this location? This location will not be
+                Are you sure you want to disable <span class="font-semibold text-gray-900">{{ $locationName }}</span>? This location will not be
                 available for use.
             @endif
         </p>

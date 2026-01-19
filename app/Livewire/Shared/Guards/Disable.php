@@ -92,10 +92,14 @@ class Disable extends Component
 
             DB::commit();
 
+            $this->userName = $this->getGuardFullName(User::findOrFail($this->userId));
+
+            $message = !$oldStatus ? "{$this->userName} has been disabled successfully." : "{$this->userName} has been enabled successfully.";
+
             $this->showModal = false;
             $this->reset(['userId', 'userDisabled', 'userName']);
             $this->dispatch('guard-status-toggled');
-            $this->dispatch('toast', message: "Guard " . ($newStatus ? 'disabled' : 'enabled') . " successfully.", type: 'success');
+            $this->dispatch('toast', message: $message, type: 'success');
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('toast', message: 'Failed to toggle status: ' . $e->getMessage(), type: 'error');

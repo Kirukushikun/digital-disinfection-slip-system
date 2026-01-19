@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Cache;
 class Create extends Component
 {
     public $showModal = false;
+    public $vehicleName = '';
     public $vehicle = '';
-    
+
     // Configuration - minimum user_type required (1 = admin, 2 = superadmin)
     public $minUserType = 1;
 
@@ -33,7 +34,7 @@ class Create extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['vehicle']);
+        $this->reset(['vehicleName', 'vehicle']);
         $this->resetValidation();
     }
 
@@ -73,20 +74,22 @@ class Create extends Component
             'disabled' => false,
         ]);
 
+        $this->vehicleName = $vehicleValue;
+
         Cache::forget('vehicles_all');
 
         // Log the create action
         Logger::create(
             Vehicle::class,
             $vehicle->id,
-            "Created \"{$vehicleValue}\"",
+            "Created \"{$this->vehicleName}\"",
             $vehicle->only(['vehicle', 'disabled'])
         );
 
         $this->showModal = false;
         $this->reset(['vehicle']);
         $this->dispatch('vehicle-created');
-        $this->dispatch('toast', message: "Vehicle {$vehicleValue} has been created.", type: 'success');
+        $this->dispatch('toast', message: "{$this->vehicleName} has been created successfully.", type: 'success');
     }
 
     /**

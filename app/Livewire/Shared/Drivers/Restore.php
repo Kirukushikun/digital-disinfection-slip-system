@@ -78,20 +78,22 @@ class Restore extends Component
             
             // Now load the restored driver
             $driver = Driver::findOrFail($this->driverId);
-            
+            $this->driverName = $this->getDriverFullName($driver);
+            $driverName = $this->driverName;
+
             // Log the restore action
             Logger::restore(
                 Driver::class,
                 $driver->id,
-                "Restored driver {$this->getDriverFullName($driver)}"
+                "Restored driver {$driverName}"
             );
-            
+
             Cache::forget('drivers_all');
 
             $this->showModal = false;
             $this->reset(['driverId', 'driverName']);
             $this->dispatch('driver-restored');
-            $this->dispatch('toast', message: "{$this->driverName} has been restored successfully.", type: 'success');
+            $this->dispatch('toast', message: "{$driverName} has been restored successfully.", type: 'success');
         } catch (\Exception $e) {
             $this->dispatch('toast', message: "Failed to restore {$this->driverName}: " . $e->getMessage(), type: 'error');
         } finally {

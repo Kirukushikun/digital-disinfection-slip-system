@@ -87,15 +87,15 @@ class Create extends Component
 
             Cache::forget('issues_all');
 
-            $this->dispatch('toast', message: 'Issue submitted successfully. It will be reviewed by administrators.', type: 'success');
+            $this->dispatch('toast', message: "Issue ID:{$issue->id} submitted successfully. It will be reviewed by administrators.", type: 'success');
             $this->dispatch('issue-created');
             
             $this->description = '';
             $this->showSuccess = true;
             $this->showModal = false;
         } catch (\Exception $e) {
-            Log::error('Failed to create miscellaneous issue: ' . $e->getMessage());
-            $this->dispatch('toast', message: 'Failed to submit issue. Please try again.', type: 'error');
+            Log::error("Failed to create miscellaneous issue: " . $e->getMessage());
+            $this->dispatch('toast', message: "Failed to create miscellaneous issue. Please try again.", type: 'error');
         } finally {
             $this->isSubmitting = false;
         }

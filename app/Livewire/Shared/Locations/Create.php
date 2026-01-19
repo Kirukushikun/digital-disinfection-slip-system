@@ -16,6 +16,7 @@ class Create extends Component
     use WithFileUploads;
 
     public $showModal = false;
+    public $locationName = '';
     public $location_name;
     public $logo;
     public $create_slip = false;
@@ -39,7 +40,7 @@ class Create extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['location_name', 'logo', 'create_slip']);
+        $this->reset(['locationName', 'location_name', 'logo', 'create_slip']);
         $this->resetValidation();
     }
 
@@ -95,20 +96,22 @@ class Create extends Component
             'create_slip' => $this->create_slip,
         ]);
 
+        $this->locationName = $locationName;
+
         Cache::forget('locations_all');
-        
+
         // Log the create action
         Logger::create(
             Location::class,
             $location->id,
-            "Created \"{$locationName}\"",
+            "Created \"{$this->locationName}\"",
             $location->only(['location_name', 'photo_id', 'disabled'])
         );
 
         $this->showModal = false;
         $this->reset(['location_name', 'logo', 'create_slip']);
         $this->dispatch('location-created');
-        $this->dispatch('toast', message: "{$locationName} has been created.", type: 'success');
+        $this->dispatch('toast', message: "{$this->locationName} has been created.", type: 'success');
     }
 
     public function clearLogo()

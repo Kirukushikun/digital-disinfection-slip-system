@@ -78,20 +78,22 @@ class Restore extends Component
             
             // Now load the restored location
             $location = Location::findOrFail($this->locationId);
-            
+            $this->locationName = $location->location_name;
+            $locationName = $this->locationName;
+
             // Log the restore action
             Logger::restore(
                 Location::class,
                 $location->id,
-                "Restored location {$location->location_name}"
+                "Restored location {$locationName}"
             );
-            
+
             Cache::forget('locations_all');
 
             $this->showModal = false;
             $this->reset(['locationId', 'locationName']);
             $this->dispatch('location-restored');
-            $this->dispatch('toast', message: "{$location->location_name} has been restored.", type: 'success');
+            $this->dispatch('toast', message: "{$locationName} has been restored.", type: 'success');
         } catch (\Exception $e) {
             $this->dispatch('toast', message: 'Failed to restore location: ' . $e->getMessage(), type: 'error');
         } finally {

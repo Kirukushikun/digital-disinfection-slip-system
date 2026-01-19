@@ -15,7 +15,7 @@
 
         @csrf
         <p class="text-sm text-gray-600">
-            Are you sure you want to delete this issue?
+            Are you sure you want to delete <span class="font-semibold text-gray-900">{{ $issueName }}</span>?
         </p>
 
         <x-slot name="footer">

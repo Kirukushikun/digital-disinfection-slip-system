@@ -19,6 +19,7 @@ class Edit extends Component
 
     public $showModal = false;
     public $locationId;
+    public $locationName = '';
     public $location_name;
     public $logo;
     public $current_logo_path;
@@ -67,7 +68,7 @@ class Edit extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['locationId', 'location_name', 'logo', 'current_logo_path', 'remove_logo', 'original_location_name', 'original_attachment_id', 'create_slip', 'original_create_slip']);
+        $this->reset(['locationId', 'locationName', 'location_name', 'logo', 'current_logo_path', 'remove_logo', 'original_location_name', 'original_attachment_id', 'create_slip', 'original_create_slip']);
         $this->resetValidation();
     }
 
@@ -109,8 +110,9 @@ class Edit extends Component
 
         // Sanitize, trim, and capitalize input
         $locationName = $this->sanitizeAndCapitalizeLocationName($this->location_name);
-        
+
         $location = Location::findOrFail($this->locationId);
+        $this->locationName = $locationName;
         
         // Handle logo update/removal first to determine new photo_id
         $attachmentId = $location->photo_id;
@@ -211,7 +213,7 @@ class Edit extends Component
         $this->showModal = false;
         $this->reset(['locationId', 'location_name', 'logo', 'current_logo_path', 'remove_logo', 'original_location_name', 'original_attachment_id', 'create_slip', 'original_create_slip']);
         $this->dispatch('location-updated');
-        $this->dispatch('toast', message: "{$locationName} has been updated.", type: 'success');
+        $this->dispatch('toast', message: "{$this->locationName} has been updated.", type: 'success');
     }
 
     public function clearLogo()

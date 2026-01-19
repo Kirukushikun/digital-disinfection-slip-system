@@ -568,8 +568,6 @@
         {{-- Slip Details Modal --}}
         @include('livewire.shared.slip-details-modal')
 
-        {{-- Edit Modal --}}
-        <livewire:shared.issues.edit :config="['minUserType' => $minUserType]" />
 
         {{-- Slip Delete Modal --}}
         <livewire:shared.slips.delete :config="['minUserType' => $minUserType]" />

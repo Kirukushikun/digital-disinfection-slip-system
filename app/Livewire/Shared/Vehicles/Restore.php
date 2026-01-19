@@ -78,22 +78,24 @@ class Restore extends Component
             
             // Now load the restored vehicle
             $vehicle = Vehicle::findOrFail($this->vehicleId);
-            
+            $this->vehicleName = $vehicle->vehicle;
+            $vehicleName = $this->vehicleName;
+
             // Log the restore action
             Logger::restore(
                 Vehicle::class,
                 $vehicle->id,
-                "Restored vehicle {$vehicle->vehicle}"
+                "Restored vehicle {$vehicleName}"
             );
-            
+
             Cache::forget('vehicles_all');
 
             $this->showModal = false;
             $this->reset(['vehicleId', 'vehicleName']);
             $this->dispatch('vehicle-restored');
-            $this->dispatch('toast', message: "{$vehicle->vehicle} has been restored.", type: 'success');
+            $this->dispatch('toast', message: "{$vehicleName} has been restored successfully.", type: 'success');
         } catch (\Exception $e) {
-            $this->dispatch('toast', message: 'Failed to restore vehicle: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: "Failed to restore {$vehicleName}: " . $e->getMessage(), type: 'error');
         } finally {
             $this->isRestoring = false;
         }

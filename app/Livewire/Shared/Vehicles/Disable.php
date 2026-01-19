@@ -12,6 +12,7 @@ class Disable extends Component
 {
     public $showModal = false;
     public $vehicleId;
+    public $vehicleName = '';
     public $vehicleDisabled = false;
     public $isToggling = false;
 
@@ -29,6 +30,7 @@ class Disable extends Component
     {
         $vehicle = Vehicle::findOrFail($vehicleId);
         $this->vehicleId = $vehicleId;
+        $this->vehicleName = $vehicle->vehicle;
         $this->vehicleDisabled = $vehicle->disabled;
         $this->showModal = true;
     }
@@ -36,7 +38,7 @@ class Disable extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['vehicleId', 'vehicleDisabled', 'isToggling']);
+        $this->reset(['vehicleId', 'vehicleName', 'vehicleDisabled', 'isToggling']);
     }
 
     public function toggle()
@@ -69,21 +71,20 @@ class Disable extends Component
                 $vehicle->refresh();
                 $this->showModal = false;
                 $this->reset(['vehicleId', 'vehicleDisabled']);
-                $this->dispatch('toast', message: 'The vehicle status was changed by another administrator. Please refresh the page.', type: 'error');
+                $this->dispatch('toast', message: "The vehicle status was changed by another administrator. Please refresh the page.", type: 'error');
                 return;
             }
             
             // Refresh vehicle to get updated data
             $vehicle->refresh();
-            
-            $vehicleName = $vehicle->vehicle;
-            $message = !$wasDisabled ? "Vehicle {$vehicleName} has been disabled." : "Vehicle {$vehicleName} has been enabled.";
+
+            $this->vehicleName = $vehicle->vehicle;
 
             // Log the status change
             Logger::update(
                 Vehicle::class,
                 $vehicle->id,
-                ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " vehicle \"{$vehicleName}\"",
+                ucfirst(!$wasDisabled ? 'disabled' : 'enabled') . " vehicle \"{$this->vehicleName}\"",
                 ['disabled' => $wasDisabled],
                 ['disabled' => $newStatus]
             );
@@ -93,9 +94,9 @@ class Disable extends Component
             $this->showModal = false;
             $this->reset(['vehicleId', 'vehicleDisabled']);
             $this->dispatch('vehicle-status-toggled');
-            $this->dispatch('toast', message: $message, type: 'success');
+            $this->dispatch('toast', message: "{$this->vehicleName} has been " . (!$wasDisabled ? 'disabled' : 'enabled') . " successfully.", type: 'success');
         } catch (\Exception $e) {
-            $this->dispatch('toast', message: 'Failed to toggle status: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: "Failed to toggle status for {$this->vehicleName}: " . $e->getMessage(), type: 'error');
         } finally {
             $this->isToggling = false;
         }

@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Cache;
 class Create extends Component
 {
     public $showModal = false;
-    
+    public $guardName = '';
+
     // Form fields
     public $first_name;
     public $middle_name;
@@ -40,7 +41,7 @@ class Create extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['first_name', 'middle_name', 'last_name', 'super_guard']);
+        $this->reset(['guardName', 'first_name', 'middle_name', 'last_name', 'super_guard']);
     }
 
     public function create()
@@ -106,11 +107,13 @@ class Create extends Component
 
             $newUser = User::create($userData);
 
+            $this->guardName = $this->getGuardFullName($newUser);
+
             Logger::log(
                 'create',
                 User::class,
                 $newUser->id,
-                "Created guard: {$newUser->username}",
+                "Created guard: {$this->guardName}",
                 null,
                 null
             );
@@ -122,7 +125,7 @@ class Create extends Component
             $this->showModal = false;
             $this->reset(['first_name', 'middle_name', 'last_name', 'super_guard']);
             $this->dispatch('guard-created');
-            $this->dispatch('toast', message: 'Guard created successfully.', type: 'success');
+            $this->dispatch('toast', message: "{$this->guardName} has been created successfully.", type: 'success');
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('toast', message: 'Failed to create guard: ' . $e->getMessage(), type: 'error');
@@ -158,6 +161,15 @@ class Create extends Component
         $name = preg_replace('/\s+/', ' ', $name);
         
         return mb_convert_case($name, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
+     * Get guard's full name formatted
+     */
+    private function getGuardFullName($user)
+    {
+        $parts = array_filter([$user->first_name, $user->middle_name, $user->last_name]);
+        return implode(' ', $parts);
     }
 
     public function render()

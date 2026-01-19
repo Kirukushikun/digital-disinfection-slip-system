@@ -72,7 +72,7 @@ class Restore extends Component
                 // Issue was already restored or doesn't exist
                 $this->showModal = false;
                 $this->reset(['issueId', 'issueName']);
-                $this->dispatch('toast', message: 'This issue was already restored or does not exist. Please refresh the page.', type: 'error');
+                $this->dispatch('toast', message: "This issue was already restored or does not exist. Please refresh the page.", type: 'error');
                 $this->dispatch('issue-restored'); // Notify parent to refresh
                 return;
             }
@@ -91,9 +91,9 @@ class Restore extends Component
             $this->showModal = false;
             $this->reset(['issueId', 'issueName']);
             $this->dispatch('issue-restored');
-            $this->dispatch('toast', message: 'Issue has been restored.', type: 'success');
+            $this->dispatch('toast', message: "Issue ID:{$issue->id} has been restored successfully.", type: 'success');
         } catch (\Exception $e) {
-            $this->dispatch('toast', message: 'Failed to restore issue: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: "Failed to restore Issue ID:{$issue->id}: " . $e->getMessage(), type: 'error');
         } finally {
             $this->isRestoring = false;
         }
