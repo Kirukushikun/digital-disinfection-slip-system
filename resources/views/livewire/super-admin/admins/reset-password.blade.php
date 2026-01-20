@@ -26,9 +26,7 @@
                     <div class="px-6 py-4">
                         @csrf
                         <p class="text-sm text-gray-600">
-                            Are you sure you want to reset this admin's password? The password will be reset to the
-                            default password "<span
-                                class="font-medium text-gray-900">{{ $this->defaultPassword }}</span>".
+                            Are you sure you want to reset this admin's password? The password will be reset to the default password.
                         </p>
                     </div>
 
