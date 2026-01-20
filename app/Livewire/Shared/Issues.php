@@ -501,7 +501,7 @@ class Issues extends Component
     #[Renderless]
     public function getPaginatedVehicles($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $query = Vehicle::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'vehicle']);
+        $query = Vehicle::query()->whereNull('deleted_at')->select(['id', 'vehicle']);
         if (!empty($search)) $query->where('vehicle', 'like', '%' . $search . '%');
         if (!empty($includeIds)) return ['data' => Vehicle::whereIn('id', $includeIds)->orderBy('vehicle')->get()->pluck('vehicle', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
         $query->orderBy('vehicle');
@@ -513,7 +513,7 @@ class Issues extends Component
     #[Renderless]
     public function getPaginatedDrivers($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $query = Driver::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'first_name', 'middle_name', 'last_name']);
+        $query = Driver::query()->whereNull('deleted_at')->select(['id', 'first_name', 'middle_name', 'last_name']);
         if (!empty($search)) $query->where(function($q) use ($search) { $q->where('first_name', 'like', "%$search%")->orWhere('middle_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%"); });
         if (!empty($includeIds)) return ['data' => Driver::whereIn('id', $includeIds)->orderBy('first_name')->orderBy('last_name')->get()->mapWithKeys(fn($d) => [$d->id => trim("{$d->first_name} {$d->middle_name} {$d->last_name}")])->toArray(), 'has_more' => false, 'total' => count($includeIds)];
         $query->orderBy('first_name')->orderBy('last_name');
@@ -525,7 +525,7 @@ class Issues extends Component
     #[Renderless]
     public function getPaginatedGuards($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $query = User::query()->where('user_type', 0)->where('disabled', false)->select(['id', 'first_name', 'middle_name', 'last_name', 'username']);
+        $query = User::query()->where('user_type', 0)->select(['id', 'first_name', 'middle_name', 'last_name', 'username']);
         if (!empty($search)) $query->where(function($q) use ($search) { $q->where('first_name', 'like', "%$search%")->orWhere('middle_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%")->orWhere('username', 'like', "%$search%"); });
         if (!empty($includeIds)) return ['data' => User::whereIn('id', $includeIds)->orderBy('first_name')->orderBy('last_name')->get()->mapWithKeys(fn($u) => [$u->id => trim("{$u->first_name} {$u->middle_name} {$u->last_name}") . " @{$u->username}"])->toArray(), 'has_more' => false, 'total' => count($includeIds)];
         $query->orderBy('first_name')->orderBy('last_name');
@@ -537,7 +537,7 @@ class Issues extends Component
     #[Renderless]
     public function getPaginatedLocations($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
-        $query = Location::query()->whereNull('deleted_at')->where('disabled', false)->select(['id', 'location_name']);
+        $query = Location::query()->whereNull('deleted_at')->select(['id', 'location_name']);
         if (!empty($search)) $query->where('location_name', 'like', '%' . $search . '%');
         if (!empty($includeIds)) return ['data' => Location::whereIn('id', $includeIds)->orderBy('location_name')->get()->pluck('location_name', 'id')->toArray(), 'has_more' => false, 'total' => count($includeIds)];
         $query->orderBy('location_name');

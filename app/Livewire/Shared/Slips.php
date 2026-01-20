@@ -498,7 +498,6 @@ class Slips extends Component
     {
         $query = Vehicle::query()
             ->whereNull('deleted_at')
-            ->where('disabled', false)
             ->select(['id', 'vehicle']);
 
         // Apply search filter
@@ -556,7 +555,6 @@ class Slips extends Component
     {
         $query = Driver::query()
             ->whereNull('deleted_at')
-            ->where('disabled', false)
             ->select(['id', 'first_name', 'middle_name', 'last_name']);
 
         // Apply search filter
@@ -625,7 +623,6 @@ class Slips extends Component
     {
         $query = Location::query()
             ->whereNull('deleted_at')
-            ->where('disabled', false)
             ->select(['id', 'location_name']);
 
         // Apply search filter
@@ -683,7 +680,6 @@ class Slips extends Component
     {
         $query = User::query()
             ->where('user_type', 0)
-            ->where('disabled', false)
             ->select(['id', 'first_name', 'middle_name', 'last_name', 'username']);
 
         // Apply search filter
