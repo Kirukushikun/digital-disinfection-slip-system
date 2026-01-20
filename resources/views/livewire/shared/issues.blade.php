@@ -566,7 +566,7 @@
         </x-modals.filter-modal>
 
         {{-- Slip Details Modal --}}
-        @include('livewire.shared.slip-details-modal')
+        @include('livewire.shared.slip-details-modal', ['showProp' => 'showSlipModal'])
 
 
         {{-- Slip Delete Modal --}}

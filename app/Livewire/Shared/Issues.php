@@ -68,13 +68,15 @@ class Issues extends Component
     public $viewPath = 'livewire.shared.issues';
     public $printRoutePrefix = 'superadmin';
     public $minUserType = 2;
+    public $userType;
     
     public function mount($config = [])
     {
         // Auto-detect user type if config not provided
         $userType = Auth::user()->user_type ?? 1;
+        $this->userType = $userType; // Set for frontend access
         $isSuperAdmin = $userType === 2;
-        
+
         // Apply config or use auto-detected values
         $this->role = $config['role'] ?? ($isSuperAdmin ? 'superadmin' : 'admin');
         $this->showRestore = $config['showRestore'] ?? $isSuperAdmin;
@@ -218,6 +220,7 @@ class Issues extends Component
     
     // View Details Modal
     public $showDetailsModal = false;
+    public $showSlipModal = false;
 
     #[Locked]
     public $selectedIssue = null;
@@ -371,9 +374,12 @@ class Issues extends Component
     
     public function openDetailsModal($issueId)
     {
+        // Close slip details modal if open
+        $this->selectedSlip = null;
+
         // Set modal state FIRST to prevent polling from interfering
         $this->showDetailsModal = true;
-        
+
         $this->selectedIssue = $this->showDeleted
             ? Issue::onlyTrashed()->with([
                 'user' => function($q) { $q->withTrashed(); },
@@ -429,6 +435,7 @@ class Issues extends Component
     public function closeDetailsModal()
     {
         $this->showDetailsModal = false;
+        $this->showSlipModal = false;
         $this->selectedIssue = null;
         $this->selectedSlip = null;
         $this->showAttachmentModal = false;
@@ -439,9 +446,9 @@ class Issues extends Component
     {
         // Close issue details modal if open
         $this->selectedIssue = null;
-        
+
         // Set modal state FIRST to prevent polling from interfering
-        $this->showDetailsModal = true;
+        $this->showSlipModal = true;
 
         $slip = DisinfectionSlipModel::withTrashed()->with([
             'vehicle' => function($q) { $q->select('id', 'vehicle', 'disabled', 'deleted_at')->withTrashed(); },

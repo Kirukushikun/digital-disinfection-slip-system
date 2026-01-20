@@ -1,8 +1,10 @@
+@props(['showProp' => 'showDetailsModal'])
+
 @if ($selectedSlip)
     @php
         $status = $selectedSlip?->status ?? null;
         // Status: 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
-        
+
         // Header class based on status
         $headerClass = '';
         if ($status == 0) {
@@ -18,7 +20,7 @@
         }
     @endphp
     {{-- MAIN DETAILS MODAL --}}
-    <x-modals.modal-template show="showDetailsModal"
+    <x-modals.modal-template show="{{ $showProp }}"
         max-width="max-w-3xl"
         header-class="{{ $headerClass }}">
         <x-slot name="titleSlot">
