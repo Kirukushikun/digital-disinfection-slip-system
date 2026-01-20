@@ -8,6 +8,7 @@ use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Services\Logger;
 
 class Update extends Component
@@ -49,7 +50,7 @@ class Update extends Component
             'log_retention_months',
             'resolved_issues_retention_months',
             'soft_deleted_retention_months'
-        ])->pluck('value', 'setting_name');
+        ], 'and')->pluck('value', 'setting_name');
 
         $this->attachment_retention_days = $settings->get('attachment_retention_days', '30');
         // Don't populate the password field for security - keep it blank
@@ -144,7 +145,8 @@ class Update extends Component
 
         // Use database transaction for atomicity and better performance
         $oldSettings = [];
-        DB::transaction(function () use ($attachmentChanged, $passwordChanged, $logRetentionChanged, $resolvedIssuesRetentionChanged, $softDeletedRetentionChanged, $logoChanged, &$oldSettings) {
+        $settingsToUpdate = [];
+        DB::transaction(function () use ($attachmentChanged, $passwordChanged, $logRetentionChanged, $resolvedIssuesRetentionChanged, $softDeletedRetentionChanged, $logoChanged, &$oldSettings, &$settingsToUpdate) {
             // Capture old values for logging (single query)
             $oldSettingsQuery = Setting::whereIn('setting_name', [
                 'attachment_retention_days',
@@ -153,7 +155,7 @@ class Update extends Component
                 'log_retention_months',
                 'resolved_issues_retention_months',
                 'soft_deleted_retention_months'
-            ])->pluck('value', 'setting_name');
+            ], 'and')->pluck('value', 'setting_name');
 
             $oldSettings = [
                 'attachment_retention_days' => $oldSettingsQuery->get('attachment_retention_days', ''),
@@ -232,6 +234,13 @@ class Update extends Component
             $oldSettings,
             $newSettings
         );
+
+        // Clear caches for updated settings
+        if (array_key_exists('default_location_logo', $settingsToUpdate)) {
+            Cache::forget('default_location_logo');
+            // Dispatch event to refresh location cards that use the default logo
+            $this->dispatch('refreshLocationCards');
+        }
 
         // Update original values after successful save
         $this->original_attachment_retention_days = (string)$this->attachment_retention_days;
