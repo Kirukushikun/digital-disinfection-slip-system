@@ -2,9 +2,8 @@
     'label' => 'Status',
     'wireModel' => 'filterStatus',
     'options' => [],
-    'placeholder' => 'Select status',
+    'placeholder' => 'Select statuses',
     'fullWidth' => false, // If true, spans full width (md:col-span-2)
-    'multiple' => false, // If true, allows multiple selection
 ])
 
 <div class="{{ $fullWidth ? 'md:col-span-2' : '' }}" x-data="{
@@ -12,24 +11,15 @@
     options: @js($options),
     selected: @entangle($wireModel).live,
     placeholder: '{{ $placeholder }}',
-    multiple: {{ $multiple ? 'true' : 'false' }},
     get displayText() {
-        if (this.multiple) {
-            if (!this.selected || this.selected.length === 0) {
-                return this.placeholder;
-            }
-            if (this.selected.length === 1) {
-                const key = String(this.selected[0]);
-                return this.options[key] || this.placeholder;
-            }
-            return this.selected.length + ' selected';
-        } else {
-            if (this.selected === null || this.selected === undefined || this.selected === '') {
-                return this.placeholder;
-            }
-            const key = String(this.selected);
+        if (!this.selected || this.selected.length === 0) {
+            return this.placeholder;
+        }
+        if (this.selected.length === 1) {
+            const key = String(this.selected[0]);
             return this.options[key] || this.placeholder;
         }
+        return this.selected.length + ' selected';
     },
     closeDropdown() {
         this.open = false;
@@ -47,39 +37,22 @@
         }
     },
     toggleOption(value) {
-        if (!this.multiple) {
-            this.selected = value;
-            this.closeDropdown();
-            return;
-        }
-
-        if (!Array.isArray(this.selected)) {
-            this.selected = [];
-        }
-
-        const index = this.selected.indexOf(Number(value));
+        const index = this.selected.indexOf(value);
         if (index > -1) {
             this.selected.splice(index, 1);
         } else {
-            this.selected.push(Number(value));
+            this.selected.push(value);
         }
     },
     isSelected(value) {
-        if (this.multiple) {
-            return Array.isArray(this.selected) && this.selected.includes(Number(value));
-        } else {
-            return Number(this.selected) === Number(value);
-        }
-    },
-    clearSelection() {
-        this.selected = this.multiple ? [] : null;
+        return this.selected.includes(value);
     }
 }" x-ref="statusDropdownContainer" @click.outside="closeDropdown()"
     @focusin.window="handleFocusIn($event)">
     <div class="flex items-center justify-between mb-1">
         <label class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-        <button type="button" @click="clearSelection()"
-            x-show="multiple ? (selected && selected.length > 0) : (selected !== null && selected !== undefined && selected !== '')"
+        <button type="button" wire:click="$set('{{ $wireModel }}', [])"
+            x-show="selected && selected.length > 0"
             class="text-xs text-blue-600 hover:text-blue-800 font-medium">
             Clear
         </button>
@@ -89,12 +62,12 @@
         <button type="button" x-on:click="open = !open"
             class="inline-flex justify-between w-full px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500"
             :class="{ 'ring-2 ring-blue-500': open }">
-            <span :class="{ 'text-gray-400': multiple ? (!selected || selected.length === 0) : (selected === null || selected === undefined || selected === '') }"
+            <span :class="{ 'text-gray-400': !selected || selected.length === 0 }"
                 x-text="displayText"></span>
             <svg class="ml-2 -mr-1 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                 fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd"
-                    d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 111.414 1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
                     clip-rule="evenodd" />
             </svg>
         </button>
@@ -105,22 +78,20 @@
             x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50"
+            class="absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-1 space-y-1 z-50 max-h-60 overflow-y-auto"
             style="display: none;" @click.stop>
             <template x-for="[value, label] in Object.entries(options)" :key="value">
                 <a href="#"
-                    @click.prevent="toggleOption(value); if (!multiple) closeDropdown();"
+                    @click.prevent="toggleOption(value)"
                     class="block px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-blue-100 cursor-pointer rounded-md transition-colors"
                     :class="{
                         'bg-blue-50 text-blue-700': isSelected(value)
                     }">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input type="checkbox" :checked="isSelected(value)"
+                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3"
+                            @click.stop="toggleOption(value)">
                         <span x-text="label"></span>
-                        <svg x-show="multiple && isSelected(value)" class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20" style="display: none;">
-                            <path fill-rule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clip-rule="evenodd"></path>
-                        </svg>
                     </div>
                 </a>
             </template>

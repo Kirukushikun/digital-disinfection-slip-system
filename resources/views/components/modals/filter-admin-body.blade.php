@@ -5,13 +5,14 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    {{-- Status Filter using shared component --}}
-    <x-filters.status-dropdown 
+    {{-- Status Filter using multiselect dropdown --}}
+    <x-filters.status-dropdown
         label="Status"
         wireModel="filterStatus"
         :options="$availableStatuses"
-        placeholder="Select status"
+        placeholder="Select statuses"
         :fullWidth="true"
+        :multiple="true"
     />
 
     {{-- Vehicle Filter using shared component --}}

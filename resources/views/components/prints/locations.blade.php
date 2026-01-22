@@ -10,6 +10,7 @@
             <tr>
                 <th>Location Name</th>
                 <th>Status</th>
+                <th>Can Create Slip</th>
                 <th>Created Date</th>
             </tr>
         </thead>
@@ -18,6 +19,7 @@
                 <tr>
                     <td>{{ $location->location_name ?? ($location['location_name'] ?? '') }}</td>
                     <td>{{ $location->disabled ?? ($location['disabled'] ?? false) ? 'Disabled' : 'Enabled' }}</td>
+                    <td>{{ $location->create_slip ?? ($location['create_slip'] ?? false) ? 'Yes' : 'No' }}</td>
                     <td>
                         @if (isset($location->created_at))
                             {{ \Carbon\Carbon::parse($location->created_at)->format('M d, Y h:i A') }}
@@ -30,7 +32,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" style="text-align: center;">No locations found</td>
+                    <td colspan="4" style="text-align: center;">No locations found</td>
                 </tr>
             @endforelse
         </tbody>
