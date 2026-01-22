@@ -99,6 +99,13 @@ class Disable extends Component
 
             $this->userName = $this->getGuardFullName(User::findOrFail($this->userId));
 
+            // If the disabled user is the currently authenticated user, force logout
+            if ($user->id === Auth::id() && $newStatus) {
+                Auth::logout();
+                $this->dispatch('toast', message: "Your account has been disabled.", type: 'info');
+                return redirect('/')->with('status', 'Your account has been disabled. Please contact an administrator.');
+            }
+
             $message = !$oldStatus ? "{$this->userName} has been disabled successfully." : "{$this->userName} has been enabled successfully.";
 
             $this->showModal = false;

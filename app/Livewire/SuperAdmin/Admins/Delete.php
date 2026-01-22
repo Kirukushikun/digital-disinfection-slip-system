@@ -78,6 +78,14 @@ class Delete extends Component
 
             $this->showModal = false;
             $this->reset(['userId', 'userName']);
+
+            // If the deleted user is the currently authenticated user, force logout
+            if ($userIdForLog === Auth::id()) {
+                Auth::logout();
+                $this->dispatch('toast', message: "Your account has been deleted.", type: 'info');
+                return redirect('/')->with('status', 'Your account has been deleted.');
+            }
+
             $this->dispatch('admin-deleted');
             $this->dispatch('toast', message: "{$adminName} has been deleted successfully.", type: 'success');
         } catch (\Exception $e) {

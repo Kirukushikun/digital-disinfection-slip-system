@@ -92,7 +92,14 @@ class Disable extends Component
 
             $this->showModal = false;
             $this->reset(['userId', 'userDisabled']);
-            
+
+            // If the disabled user is the currently authenticated user, force logout
+            if ($user->id === Auth::id() && $newStatus) {
+                Auth::logout();
+                $this->dispatch('toast', message: "Your account has been disabled.", type: 'info');
+                return redirect('/')->with('status', 'Your account has been disabled. Please contact an administrator.');
+            }
+
             $this->dispatch('admin-status-toggled');
             $this->dispatch('toast', message: "{$adminName} has been " . ($newStatus ? 'disabled' : 'enabled') . " successfully.", type: 'success');
         } catch (\Exception $e) {

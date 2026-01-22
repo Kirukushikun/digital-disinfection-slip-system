@@ -70,6 +70,14 @@ class Delete extends Component
 
             $this->showModal = false;
             $this->reset(['userId', 'userName']);
+
+            // If the deleted user is the currently authenticated user, force logout
+            if ($user->id === Auth::id()) {
+                Auth::logout();
+                $this->dispatch('toast', message: "Your account has been deleted.", type: 'info');
+                return redirect('/')->with('status', 'Your account has been deleted.');
+            }
+
             $this->dispatch('guard-deleted');
             $this->dispatch('toast', message: "{$userName} has been deleted.", type: 'success');
         } catch (\Exception $e) {
