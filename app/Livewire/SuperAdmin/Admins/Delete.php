@@ -62,7 +62,10 @@ class Delete extends Component
             
             // Soft delete the user
             $user->delete();
-            
+
+            // Invalidate all sessions for this user to log them out immediately
+            $user->invalidateAllSessions();
+
             // Log the delete action
             Logger::delete(
                 User::class,

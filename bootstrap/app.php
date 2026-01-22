@@ -22,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'custom.throttle' => \App\Http\Middleware\CustomThrottleRequests::class,
             'super.guard' => \App\Http\Middleware\EnsureSuperGuard::class,
         ]);
-        
+
+        // Apply EnsureUserType middleware to all authenticated routes
+        $middleware->appendToGroup('auth', \App\Http\Middleware\EnsureUserType::class);
+
         // Customize authentication redirect to go to landing page instead of login
         $middleware->redirectGuestsTo(fn () => '/');
     })

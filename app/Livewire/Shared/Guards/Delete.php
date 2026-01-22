@@ -52,6 +52,9 @@ class Delete extends Component
             $userName = $this->getGuardFullName($user);
             $user->delete();
 
+            // Invalidate all sessions for this user to log them out immediately
+            $user->invalidateAllSessions();
+
             Logger::log(
                 'delete',
                 User::class,
