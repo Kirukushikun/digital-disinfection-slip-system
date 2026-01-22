@@ -79,6 +79,11 @@ class Disable extends Component
                 throw new \Exception('Guard not found or update failed');
             }
 
+            // If the guard was disabled, invalidate all their sessions to log them out immediately
+            if ($newStatus) {
+                $user->invalidateAllSessions();
+            }
+
             Logger::log(
                 'update',
                 User::class,

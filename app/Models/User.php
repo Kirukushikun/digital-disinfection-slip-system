@@ -147,4 +147,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Issue::class);
     }
+
+    /**
+     * Invalidate all active sessions for this user.
+     * This will log out the user from all devices/browsers.
+     */
+    public function invalidateAllSessions()
+    {
+        // Delete all sessions for this user from the sessions table
+        \Illuminate\Support\Facades\DB::table('sessions')
+            ->where('user_id', $this->id)
+            ->delete();
+    }
 }

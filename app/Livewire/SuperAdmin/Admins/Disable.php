@@ -73,7 +73,12 @@ class Disable extends Component
             
             // Refresh user to get updated data
             $user->refresh();
-            
+
+            // If the user was disabled, invalidate all their sessions to log them out immediately
+            if ($newStatus) {
+                $user->invalidateAllSessions();
+            }
+
             // Log the status change
             Logger::update(
                 User::class,
