@@ -1,5 +1,6 @@
 @props([
     'availableStatuses' => [],
+    'availableCreateSlipOptions' => [],
 ])
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -10,6 +11,15 @@
         wireModel="filterStatus"
         :options="$availableStatuses"
         placeholder="Select status"
+        :fullWidth="true"
+    />
+
+    {{-- Create Slip Filter using shared component --}}
+    <x-filters.status-dropdown
+        label="Create Slip Permission"
+        wireModel="filterCreateSlip"
+        :options="$availableCreateSlipOptions"
+        placeholder="Select permission"
         :fullWidth="true"
     />
 

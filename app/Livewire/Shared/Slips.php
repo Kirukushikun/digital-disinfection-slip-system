@@ -37,26 +37,20 @@ class Slips extends Component
     public $sortDirection = 'desc'; // Default descending
     
     // Filter fields
-    public $filterStatus = null; // null = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+    public $filterStatus = []; // Array of status values: [] = All Statuses, [0] = Pending, [1] = Disinfecting, etc.
     
     // Ensure filterStatus is properly typed when updated
     public function updatedFilterStatus($value)
     {
-        // Handle null, empty string, or numeric values (0, 1, 2, 3, 4 matching backend)
-        // null/empty = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
-        // The select will send values as strings, so we convert to int
-        if ($value === null || $value === '' || $value === false) {
-            $this->filterStatus = null;
-        } elseif (is_numeric($value)) {
-            $intValue = (int)$value;
-            if ($intValue >= 0 && $intValue <= 4) {
-                // Store as integer (0, 1, 2, 3, or 4)
-                $this->filterStatus = $intValue;
-            } else {
-                $this->filterStatus = null;
-            }
+        // Handle array of status values
+        // The component sends arrays, so we ensure it's always an array
+        if (!is_array($value)) {
+            $this->filterStatus = [];
         } else {
-            $this->filterStatus = null;
+            // Filter out invalid values and ensure integers
+            $this->filterStatus = array_filter(array_map('intval', $value), function($status) {
+                return $status >= 0 && $status <= 4;
+            });
         }
     }
     public $filterOrigin = [];
@@ -69,6 +63,7 @@ class Slips extends Component
     public $filterCreatedTo = '';
     
     // Search properties for filter dropdowns
+    public $searchFilterStatus = '';
     public $searchFilterVehicle = '';
     public $searchFilterDriver = '';
     public $searchFilterOrigin = '';
@@ -77,7 +72,7 @@ class Slips extends Component
     public $searchFilterReceivedGuard = '';
     
     // Applied filters (stored separately)
-    public $appliedStatus = null; // null = All Statuses, 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed
+    public $appliedStatus = []; // Array of applied status values: [] = All Statuses, [0] = Pending, [1] = Disinfecting, etc.
     public $appliedOrigin = [];
     public $appliedDestination = [];
     public $appliedDriver = [];
@@ -147,12 +142,14 @@ class Slips extends Component
         $this->minUserType = $config['minUserType'] ?? ($isSuperAdmin ? 2 : 1);
         
         // Initialize array filters
+        $this->filterStatus = [];
         $this->filterOrigin = [];
         $this->filterDestination = [];
         $this->filterDriver = [];
         $this->filterVehicle = [];
         $this->filterHatcheryGuard = [];
         $this->filterReceivedGuard = [];
+        $this->appliedStatus = [];
         $this->appliedOrigin = [];
         $this->appliedDestination = [];
         $this->appliedDriver = [];
@@ -676,6 +673,49 @@ class Slips extends Component
     }
 
     #[Renderless]
+    public function getPaginatedStatuses($search = '', $page = 1, $perPage = 20, $includeIds = [])
+    {
+        // Static status options - no need for database query
+        $allStatuses = $this->availableStatuses;
+
+        // Apply search filter if provided
+        if (!empty($search)) {
+            $searchTerm = strtolower($search);
+            $allStatuses = array_filter($allStatuses, function($label) use ($searchTerm) {
+                return str_contains(strtolower($label), $searchTerm);
+            });
+        }
+
+        // Include specific IDs (for selected items)
+        if (!empty($includeIds)) {
+            $includedItems = [];
+            foreach ($includeIds as $statusId) {
+                if (isset($allStatuses[$statusId])) {
+                    $includedItems[$statusId] = $allStatuses[$statusId];
+                }
+            }
+            return [
+                'data' => $includedItems,
+                'has_more' => false,
+                'total' => count($includedItems),
+            ];
+        }
+
+        // For regular pagination, return all items (statuses are small, no real pagination needed)
+        $total = count($allStatuses);
+        $offset = ($page - 1) * $perPage;
+
+        // Slice the array for pagination (though statuses are small)
+        $paginatedStatuses = array_slice($allStatuses, $offset, $perPage, true);
+
+        return [
+            'data' => $paginatedStatuses,
+            'has_more' => ($offset + $perPage) < $total,
+            'total' => $total,
+        ];
+    }
+
+    #[Renderless]
     public function getPaginatedGuards($search = '', $page = 1, $perPage = 20, $includeIds = [])
     {
         $query = User::query()
@@ -771,9 +811,9 @@ class Slips extends Component
 
     public function applyFilters()
     {
-        // Use filterStatus directly - it's already an integer (0, 1, 2, 3, 4) or null
-        // null = All Statuses (no filter), 0 = Pending, 1 = Disinfecting, 2 = In-Transit, 3 = Completed, 4 = Incomplete
-        $this->appliedStatus = $this->filterStatus; // Already an int or null
+        // Use filterStatus directly - it's now an array of integers (0, 1, 2, 3, 4)
+        // [] = All Statuses (no filter), [0] = Pending, [1] = Disinfecting, etc.
+        $this->appliedStatus = array_values(array_map('intval', $this->filterStatus ?? []));
         // Create new array instances to ensure Livewire detects the change
         // Convert string IDs to integers for proper filtering
         $this->appliedOrigin = array_values(array_map('intval', $this->filterOrigin ?? []));
@@ -784,10 +824,10 @@ class Slips extends Component
         $this->appliedReceivedGuard = array_values(array_map('intval', $this->filterReceivedGuard ?? []));
         $this->appliedCreatedFrom = !empty($this->filterCreatedFrom) ? $this->filterCreatedFrom : null;
         $this->appliedCreatedTo = !empty($this->filterCreatedTo) ? $this->filterCreatedTo : null;
-        
+
         // Update filters active status
-        $this->filtersActive = 
-            ($this->appliedStatus !== null) ||
+        $this->filtersActive =
+            !empty($this->appliedStatus) ||
             !empty($this->appliedOrigin) ||
             !empty($this->appliedDestination) ||
             !empty($this->appliedDriver) ||
@@ -850,6 +890,12 @@ class Slips extends Component
     public function removeSpecificFilter($filterType, $valueToRemove)
     {
         switch($filterType) {
+            case 'status':
+                $this->appliedStatus = array_values(array_filter($this->appliedStatus, function($id) use ($valueToRemove) {
+                    return $id != $valueToRemove;
+                }));
+                $this->filterStatus = $this->appliedStatus;
+                break;
             case 'origin':
                 $this->appliedOrigin = array_values(array_filter($this->appliedOrigin, function($id) use ($valueToRemove) {
                     return $id != $valueToRemove;
@@ -895,9 +941,8 @@ class Slips extends Component
     public function updateFiltersActive()
     {
         // Check if any filters are actually applied
-        // Important: 0 is a valid status (Pending), so check for null explicitly
-        $this->filtersActive = 
-            ($this->appliedStatus !== null) ||
+        $this->filtersActive =
+            !empty($this->appliedStatus) ||
             !empty($this->appliedOrigin) ||
             !empty($this->appliedDestination) ||
             !empty($this->appliedDriver) ||
@@ -915,7 +960,7 @@ class Slips extends Component
 
     public function clearFilters()
     {
-        $this->filterStatus = null;
+        $this->filterStatus = [];
         $this->filterOrigin = [];
         $this->filterDestination = [];
         $this->filterDriver = [];
@@ -924,16 +969,17 @@ class Slips extends Component
         $this->filterReceivedGuard = [];
         $this->filterCreatedFrom = null;
         $this->filterCreatedTo = null;
-        
+
         // Clear search properties
+        $this->searchFilterStatus = '';
         $this->searchFilterVehicle = '';
         $this->searchFilterDriver = '';
         $this->searchFilterOrigin = '';
         $this->searchFilterDestination = '';
         $this->searchFilterHatcheryGuard = '';
         $this->searchFilterReceivedGuard = '';
-        
-        $this->appliedStatus = null;
+
+        $this->appliedStatus = [];
         $this->appliedOrigin = [];
         $this->appliedDestination = [];
         $this->appliedDriver = [];
@@ -1489,10 +1535,9 @@ class Slips extends Component
                 });
             })
             // Status filter
-            // Important: Check for null explicitly, as 0 is a valid status (Pending)
-            ->when($this->filtersActive && $this->appliedStatus !== null, function($query) {
-                // appliedStatus is already an integer (0, 1, 2, 3, or 4)
-                $query->where('status', $this->appliedStatus);
+            // appliedStatus is now an array of integers (0, 1, 2, 3, or 4)
+            ->when($this->filtersActive && !empty($this->appliedStatus), function($query) {
+                $query->whereIn('status', $this->appliedStatus);
             })
             // Origin filter
             ->when($this->filtersActive && !empty($this->appliedOrigin), function($query) {
@@ -1652,8 +1697,8 @@ class Slips extends Component
                         });
                 });
             })
-            ->when($this->appliedStatus !== null, function($query) {
-                $query->where('status', $this->appliedStatus);
+            ->when(!empty($this->appliedStatus), function($query) {
+                $query->whereIn('status', $this->appliedStatus);
             })
             ->when(!empty($this->appliedOrigin), function($query) {
                 $query->whereIn('location_id', $this->appliedOrigin);

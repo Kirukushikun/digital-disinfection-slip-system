@@ -7,20 +7,32 @@
         @endif
 
         @if (isset($filters['status']) && $filters['status'] !== null)
-            <p><strong>Status:</strong> {{ $filters['status'] == 0 ? 'Enabled' : 'Disabled' }}</p>
+            @if (is_array($filters['status']))
+                @php
+                    $statusLabels = [];
+                    $statuses = ['Pending', 'Disinfecting', 'In-Transit', 'Completed', 'Incomplete'];
+                    foreach ($filters['status'] as $statusId) {
+                        if (isset($statuses[$statusId])) {
+                            $statusLabels[] = $statuses[$statusId];
+                        }
+                    }
+                @endphp
+                @if (!empty($statusLabels))
+                    <p><strong>Status:</strong> {{ implode(', ', $statusLabels) }}</p>
+                @endif
+            @else
+                <p><strong>Status:</strong> {{ $filters['status'] == 0 ? 'Enabled' : 'Disabled' }}</p>
+            @endif
+        @endif
+
+        @if (isset($filters['create_slip']) && $filters['create_slip'] !== null)
+            <p><strong>Create Slip Permission:</strong> {{ $filters['create_slip'] ? 'Can Create Slip' : 'Cannot Create Slip' }}</p>
         @endif
 
         @if (isset($filters['guard_type']) && $filters['guard_type'] !== null)
             <p><strong>Guard Type:</strong> {{ $filters['guard_type'] == 0 ? 'Regular Guards' : 'Super Guards' }}</p>
         @endif
 
-        @if (isset($filters['status']) && is_numeric($filters['status']) && $filters['status'] >= 0 && $filters['status'] <= 4)
-            @php
-                $statuses = ['Pending', 'Disinfecting', 'In-Transit', 'Completed', 'Incomplete'];
-                $status = $statuses[$filters['status']] ?? 'Unknown';
-            @endphp
-            <p><strong>Status:</strong> {{ $status }}</p>
-        @endif
 
         @if (!empty($filters['origin']) && is_array($filters['origin']))
             @php

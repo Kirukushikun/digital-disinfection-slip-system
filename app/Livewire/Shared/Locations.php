@@ -43,11 +43,13 @@ class Locations extends Component
     
     // Filter properties
     public $filterStatus = null; // null = All Locations, 0 = Enabled, 1 = Disabled
+    public $filterCreateSlip = null; // null = All, true = Can Create Slip, false = Cannot Create Slip
     public $filterCreatedFrom = '';
     public $filterCreatedTo = '';
     
     // Applied filters
     public $appliedStatus = null; // null = All Locations, 0 = Enabled, 1 = Disabled
+    public $appliedCreateSlip = null; // null = All, true = Can Create Slip, false = Cannot Create Slip
     public $appliedCreatedFrom = '';
     public $appliedCreatedTo = '';
     
@@ -60,6 +62,11 @@ class Locations extends Component
     public $availableStatuses = [
         0 => 'Enabled',
         1 => 'Disabled',
+    ];
+
+    public $availableCreateSlipOptions = [
+        true => 'Can Create Slip',
+        false => 'Cannot Create Slip',
     ];
     
     // Restore functionality moved to Shared\Locations\Restore component
@@ -192,6 +199,7 @@ class Locations extends Component
     public function applyFilters()
     {
         $this->appliedStatus = $this->filterStatus;
+        $this->appliedCreateSlip = $this->filterCreateSlip;
         $this->appliedCreatedFrom = $this->filterCreatedFrom;
         $this->appliedCreatedTo = $this->filterCreatedTo;
         $this->showFilters = false;
@@ -203,6 +211,9 @@ class Locations extends Component
         if ($filterName === 'status') {
             $this->appliedStatus = null;
             $this->filterStatus = null;
+        } elseif ($filterName === 'createSlip') {
+            $this->appliedCreateSlip = null;
+            $this->filterCreateSlip = null;
         } elseif ($filterName === 'createdFrom') {
             $this->appliedCreatedFrom = '';
             $this->filterCreatedFrom = '';
@@ -216,9 +227,11 @@ class Locations extends Component
     public function clearFilters()
     {
         $this->appliedStatus = null;
+        $this->appliedCreateSlip = null;
         $this->appliedCreatedFrom = '';
         $this->appliedCreatedTo = '';
         $this->filterStatus = null;
+        $this->filterCreateSlip = null;
         $this->filterCreatedFrom = '';
         $this->filterCreatedTo = '';
         $this->resetPage();
@@ -337,6 +350,7 @@ class Locations extends Component
             return [
                 'location_name' => $location->location_name,
                 'disabled' => $location->disabled,
+                'create_slip' => $location->create_slip,
                 'created_at' => $location->created_at->toIso8601String(),
             ];
         })->toArray();
@@ -344,6 +358,7 @@ class Locations extends Component
         $filters = [
             'search' => $this->search,
             'status' => $this->appliedStatus,
+            'create_slip' => $this->appliedCreateSlip,
             'created_from' => $this->appliedCreatedFrom,
             'created_to' => $this->appliedCreatedTo,
         ];
@@ -379,13 +394,15 @@ class Locations extends Component
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            fputcsv($file, ['Location Name', 'Status', 'Created Date']);
-            
+            fputcsv($file, ['Location Name', 'Status', 'Can Create Slip', 'Created Date']);
+
             foreach ($data as $location) {
                 $status = $location->disabled ? 'Disabled' : 'Enabled';
+                $createSlip = $location->create_slip ? 'Yes' : 'No';
                 fputcsv($file, [
                     $location->location_name,
                     $status,
+                    $createSlip,
                     $location->created_at->format('Y-m-d H:i:s')
                 ]);
             }
@@ -424,6 +441,9 @@ class Locations extends Component
                 } elseif ($this->appliedStatus === 1) {
                     $query->where('disabled', true);
                 }
+            })
+            ->when($this->appliedCreateSlip !== null && !$this->showDeleted, function ($query) {
+                $query->where('create_slip', $this->appliedCreateSlip);
             })
             ->when(!$this->showDeleted, function ($query) {
                 $query->orderBy('location_name', 'asc');
@@ -471,6 +491,9 @@ class Locations extends Component
                     $query->where('disabled', true);
                 }
             })
+            ->when($this->appliedCreateSlip !== null && !$this->showDeleted, function ($query) {
+                $query->where('create_slip', $this->appliedCreateSlip);
+            })
             // Apply multi-column sorting
             ->when(!empty($this->sortColumns) && !$this->showDeleted, function($query) {
                 // Initialize sortColumns if it's not an array
@@ -502,7 +525,7 @@ class Locations extends Component
             })
             ->paginate(10);
 
-        $filtersActive = $this->appliedStatus !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
+        $filtersActive = $this->appliedStatus !== null || $this->appliedCreateSlip !== null || !empty($this->appliedCreatedFrom) || !empty($this->appliedCreatedTo);
 
         $defaultLogoPath = $this->getDefaultLogoPath();
 
