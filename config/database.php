@@ -61,6 +61,12 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+            'dump' => [
+                'dump_binary_path' => 'C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin', // adjust this
+                'use_single_transaction' => true,
+                'timeout' => 60,
+                'add_extra_option' => '--no-tablespaces', // handles permission issues
+            ],
         ],
 
         'mariadb' => [
