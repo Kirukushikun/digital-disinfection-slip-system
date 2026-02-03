@@ -28,3 +28,16 @@ Schedule::command('clean:soft-deleted')
     ->daily()
     ->at('00:00')
     ->description('Hard delete soft-deleted records older than retention period (cascades to disinfection slips)');
+
+// Backup tasks
+Schedule::command('backup:run')
+    ->dailyAt('19:00')
+    ->description('Run database backup daily after working hours');
+
+Schedule::command('backup:clean')
+    ->dailyAt('05:00')
+    ->description('Clean up old backups daily');
+
+Schedule::command('backup:monitor')
+    ->daily()
+    ->description('Monitor backup health daily');
