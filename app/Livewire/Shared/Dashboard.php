@@ -146,6 +146,9 @@ class Dashboard extends Component
     {
         return Issue::whereNull('resolved_at')
             ->whereNull('deleted_at')
+            ->whereHas('slip', function($query) {
+                $query->whereNull('deleted_at');
+            })
             ->count();
     }
 
