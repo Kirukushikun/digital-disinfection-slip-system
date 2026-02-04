@@ -215,7 +215,17 @@
                             @endphp
                             <span
                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Plate: @if ($vehicle){{ $vehicle->vehicle }}@if ($showRestore && $vehicle->trashed()) <span class="text-red-600 font-semibold">(Deleted)</span>@endif@else@if ($showRestore)<span class="text-red-600 font-semibold">(Deleted)</span>@endif@endif
+                                Plate: 
+                                @if ($vehicle)
+                                    {{ $vehicle->vehicle }}
+                                    @if ($showRestore && $vehicle->trashed())
+                                        <span class="text-red-600 font-semibold">(Deleted)</span>
+                                    @endif
+                                @else
+                                    @if ($showRestore)
+                                        <span class="text-red-600 font-semibold">(Deleted)</span>
+                                    @endif
+                                @endif
                                 <button wire:click="removeSpecificFilter('vehicle', {{ $vehicleId }})"
                                     class="ml-1.5 inline-flex items-center hover:cursor-pointer cursor-pointer">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
